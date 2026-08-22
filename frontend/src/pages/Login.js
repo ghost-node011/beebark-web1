@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, postAuthPath } from '../context/AuthContext';
 import { toast } from 'sonner';
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
 import AuthShell from '../components/auth/AuthShell';
@@ -19,9 +19,9 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await login(email.trim(), password, remember);
-      toast.success('Welcome back!');
-      navigate('/dashboard');
+      const data = await login(email.trim(), password, remember);
+      toast.success(data.user.onboardingCompleted ? 'Welcome back!' : 'Welcome to BeeBark!');
+      navigate(postAuthPath(data.user));
     } catch (error) {
       const data = error.response?.data;
       if (error.response?.status === 403 && data?.requiresVerification) {
@@ -38,8 +38,8 @@ const Login = () => {
   const handleGoogle = async (credential) => {
     try {
       const data = await googleLogin(credential);
-      toast.success(data.isNewUser ? 'Welcome to BeeBark!' : 'Welcome back!');
-      navigate(data.isNewUser ? '/onboarding' : '/dashboard');
+      toast.success(data.user.onboardingCompleted ? 'Welcome back!' : 'Welcome to BeeBark!');
+      navigate(postAuthPath(data.user));
     } catch (error) {
       toast.error(error.response?.data?.error || 'Google sign-in failed');
     }

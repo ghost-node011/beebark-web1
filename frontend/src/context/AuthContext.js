@@ -24,6 +24,9 @@ const clearStoredToken = () => {
   sessionStorage.removeItem('token');
 };
 
+// Single source of truth for where a just-authenticated user should land.
+export const postAuthPath = (user) => (user?.onboardingCompleted ? '/dashboard' : '/onboarding');
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

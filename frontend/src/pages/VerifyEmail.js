@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, postAuthPath } from '../context/AuthContext';
 import AuthShell from '../components/auth/AuthShell';
 import OtpVerification from '../components/auth/OtpVerification';
 
@@ -37,7 +37,7 @@ const VerifyEmail = () => {
 
   return (
     <AuthShell headline="Almost there" subline="Verify your email to access your account.">
-      <OtpVerification email={email} onVerified={() => navigate('/dashboard')} />
+      <OtpVerification email={email} onVerified={(data) => navigate(postAuthPath(data.user))} />
       <p className="mt-6 text-center text-sm text-gray-600">
         <Link to="/login" className="font-semibold text-black hover:underline">Back to login</Link>
       </p>

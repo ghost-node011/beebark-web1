@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
 import { toast } from 'sonner';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, postAuthPath } from '../context/AuthContext';
 import AuthShell from '../components/auth/AuthShell';
 import { getFirebaseAuth, FIREBASE_ENABLED } from '../config/firebase';
 
@@ -69,8 +69,8 @@ const PhoneLogin = () => {
       const cred = await confirmationRef.current.confirm(code);
       const idToken = await cred.user.getIdToken();
       const data = await firebaseLogin(idToken);
-      toast.success(data.isNewUser ? 'Welcome to BeeBark!' : 'Welcome back!');
-      navigate(data.isNewUser ? '/onboarding' : '/dashboard');
+      toast.success(data.user.onboardingCompleted ? 'Welcome back!' : 'Welcome to BeeBark!');
+      navigate(postAuthPath(data.user));
     } catch (err) {
       toast.error(err.response?.data?.error || err.message || 'Verification failed');
     } finally {

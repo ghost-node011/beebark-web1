@@ -37,8 +37,10 @@ const PrivateRoute = ({ children }) => {
   }
   
   if (!user) return <Navigate to="/login" />;
-  // Onboarding is only routed to right after a new signup — returning/legacy
-  // users are never force-redirected into it.
+  // Safety net: onboardingCompleted is now the single source of truth for
+  // gating onboarding (see postAuthPath in AuthContext) and is backfilled for
+  // legacy accounts, so this can no longer wrongly catch returning users.
+  if (user.onboardingCompleted === false) return <Navigate to="/onboarding" />;
   return children;
 };
 

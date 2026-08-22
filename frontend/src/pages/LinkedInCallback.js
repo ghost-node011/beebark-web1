@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, postAuthPath } from '../context/AuthContext';
 import AuthShell from '../components/auth/AuthShell';
 
 // Handles the redirect back from LinkedIn: validates state, exchanges the code
@@ -35,8 +35,8 @@ const LinkedInCallback = () => {
     const redirectUri = `${window.location.origin}/auth/linkedin/callback`;
     linkedinLogin(code, redirectUri)
       .then((data) => {
-        toast.success(data.isNewUser ? 'Welcome to BeeBark!' : 'Welcome back!');
-        navigate(data.isNewUser ? '/onboarding' : '/dashboard', { replace: true });
+        toast.success(data.user.onboardingCompleted ? 'Welcome back!' : 'Welcome to BeeBark!');
+        navigate(postAuthPath(data.user), { replace: true });
       })
       .catch((e) => setError(e.response?.data?.error || 'LinkedIn sign-in failed'));
   }, [params, linkedinLogin, navigate]);
