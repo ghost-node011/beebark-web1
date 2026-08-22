@@ -11,9 +11,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Badge } from '../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
+import { Switch } from '../components/ui/switch';
+import { Progress } from '../components/ui/progress';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
-import { FiUpload, FiBriefcase, FiMapPin, FiDollarSign, FiFileText, FiAward } from 'react-icons/fi';
+import { FiUpload, FiBriefcase, FiMapPin, FiDollarSign, FiFileText, FiAward, FiZap, FiCheckCircle } from 'react-icons/fi';
 import { API_URL } from '../config/api';
 
 const Jobs = () => {
@@ -25,6 +27,9 @@ const Jobs = () => {
   const [matchedCandidates, setMatchedCandidates] = useState([]);
   const [showPostDialog, setShowPostDialog] = useState(false);
   const [uploadingResume, setUploadingResume] = useState(false);
+  const [resumeReview, setResumeReview] = useState(null);
+  const [autoApplyEnabled, setAutoApplyEnabled] = useState(false);
+  const [savingPreference, setSavingPreference] = useState(false);
   const [formData, setFormData] = useState({ title: '', description: '', company: '', location: '', salary: '' });
   const { user } = useAuth();
 
@@ -33,6 +38,20 @@ const Jobs = () => {
     fetchRecommendedJobs();
     fetchMyApplications();
     if (user?.role === 'recruiter') fetchMyPostedJobs();
+  }, [user]);
+
+  // Seed resume score + auto-apply toggle from the persisted profile (survives page reloads)
+  useEffect(() => {
+    if (user?.resume?.score !== undefined) {
+      setResumeReview({
+        score: user.resume.score,
+        breakdown: user.resume.scoreBreakdown,
+        strengths: user.resume.strengths,
+        improvements: user.resume.improvements,
+        suggestedRoles: user.resume.suggestedRoles
+      });
+    }
+    setAutoApplyEnabled(!!user?.jobPreferences?.autoApplyEnabled);
   }, [user]);
 
   const fetchJobs = async () => {
@@ -93,11 +112,32 @@ const Jobs = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       toast.success('Resume uploaded and parsed successfully!');
+      if (response.data.review) {
+        setResumeReview(response.data.review);
+      } else {
+        toast.info("Uploaded, but AI scoring wasn't available right now.");
+      }
       fetchRecommendedJobs();
+      if (autoApplyEnabled) fetchMyApplications();
     } catch (error) {
       toast.error('Failed to upload resume');
     } finally {
       setUploadingResume(false);
+    }
+  };
+
+  const handleToggleAutoApply = async (checked) => {
+    setAutoApplyEnabled(checked);
+    setSavingPreference(true);
+    try {
+      await axios.put(`${API_URL}/api/jobs/preferences`, { autoApplyEnabled: checked });
+      toast.success(checked ? 'Auto-apply turned on — strong matches will be applied for you.' : 'Auto-apply turned off.');
+      if (checked) setTimeout(fetchMyApplications, 3000);
+    } catch (error) {
+      setAutoApplyEnabled(!checked);
+      toast.error('Could not update auto-apply preference');
+    } finally {
+      setSavingPreference(false);
     }
   };
 
@@ -142,7 +182,14 @@ const Jobs = () => {
             <h1 className="text-2xl sm:text-3xl font-bold text-black mb-2">Job Portal</h1>
             <p className="text-gray-600">AI-powered job matching for professionals</p>
           </div>
-          <div className="flex space-x-3">
+          <div className="flex items-center gap-4 flex-wrap">
+            {user?.role !== 'recruiter' && (
+              <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-4 py-2.5" data-testid="auto-apply-toggle">
+                <FiZap className={autoApplyEnabled ? 'text-yellow-500' : 'text-gray-400'} />
+                <span className="text-sm font-medium text-black">Auto-apply to strong matches</span>
+                <Switch checked={autoApplyEnabled} onCheckedChange={handleToggleAutoApply} disabled={savingPreference} />
+              </div>
+            )}
             {user?.role !== 'recruiter' && (
               <label className="cursor-pointer">
                 <input type="file" accept=".pdf,.docx" onChange={handleUploadResume} className="hidden" />
@@ -191,6 +238,73 @@ const Jobs = () => {
             )}
           </div>
         </div>
+
+        {resumeReview && (
+          <Card className="shadow-md mb-8 border-2 border-yellow-200" data-testid="resume-score-card">
+            <CardContent className="pt-6">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-6">
+                <div className="flex items-center gap-4">
+                  <div className={`${getMatchColor(resumeReview.score)} w-20 h-20 rounded-full flex items-center justify-center text-white font-bold text-2xl shrink-0`}>
+                    {resumeReview.score}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-black">Your Resume Score</h3>
+                    <p className="text-sm text-gray-600">AI-reviewed by Gemini</p>
+                  </div>
+                </div>
+
+                {resumeReview.breakdown && Object.keys(resumeReview.breakdown).length > 0 && (
+                  <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {Object.entries(resumeReview.breakdown).map(([key, val]) => (
+                      <div key={key}>
+                        <p className="text-xs text-gray-500 capitalize mb-1">{key}</p>
+                        <Progress value={val} className="h-2" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
+                {resumeReview.strengths?.length > 0 && (
+                  <div>
+                    <p className="text-sm font-semibold text-black mb-2">Strengths</p>
+                    <ul className="space-y-1">
+                      {resumeReview.strengths.map((s, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                          <FiCheckCircle className="text-green-500 mt-0.5 shrink-0" />{s}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {resumeReview.improvements?.length > 0 && (
+                  <div>
+                    <p className="text-sm font-semibold text-black mb-2">How to improve</p>
+                    <ul className="space-y-1">
+                      {resumeReview.improvements.map((s, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                          <FiAward className="text-yellow-500 mt-0.5 shrink-0" />{s}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              {resumeReview.suggestedRoles?.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-xs text-gray-600 mb-2">Well-suited roles:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {resumeReview.suggestedRoles.map((role, i) => (
+                      <Badge key={i} className="bg-gray-100 text-black">{role}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <Tabs defaultValue="browse" className="w-full">
           <TabsList className="flex w-full justify-start overflow-x-auto mb-6">
@@ -312,7 +426,14 @@ const Jobs = () => {
                           <p className="text-xs text-gray-500 mt-1">Applied on {new Date(app.appliedAt).toLocaleDateString()}</p>
                         </div>
                       </div>
-                      <Badge className={app.status === 'pending' ? 'bg-yellow-500' : 'bg-green-500'}>{app.status}</Badge>
+                      <div className="flex items-center gap-2">
+                        {app.source === 'auto' && (
+                          <Badge className="bg-purple-100 text-purple-700 flex items-center gap-1">
+                            <FiZap className="w-3 h-3" />Auto-applied
+                          </Badge>
+                        )}
+                        <Badge className={app.status === 'pending' ? 'bg-yellow-500' : 'bg-green-500'}>{app.status}</Badge>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

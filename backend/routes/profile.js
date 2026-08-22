@@ -30,7 +30,20 @@ router.get('/me', auth, async (req, res) => {
       experience: user.experience,
       connections: user.connections,
       pendingRequests: user.pendingRequests,
-      sentRequests: user.sentRequests
+      sentRequests: user.sentRequests,
+      resume: user.resume ? {
+        url: user.resume.url,
+        fileName: user.resume.fileName,
+        skills: user.resume.parsedData?.skills || [],
+        uploadedAt: user.resume.uploadedAt,
+        score: user.resume.score,
+        scoreBreakdown: user.resume.scoreBreakdown,
+        strengths: user.resume.strengths,
+        improvements: user.resume.improvements,
+        suggestedRoles: user.resume.suggestedRoles,
+        scoredAt: user.resume.scoredAt
+      } : null,
+      jobPreferences: user.jobPreferences
     };
     
     res.json({ user: userResponse });

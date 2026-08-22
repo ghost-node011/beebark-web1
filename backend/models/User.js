@@ -138,9 +138,21 @@ const userSchema = new mongoose.Schema({
       experience: mongoose.Schema.Types.Mixed,
       education: [String],
       email: String,
-      phone: String
+      phone: String,
+      rawText: String
     },
-    uploadedAt: Date
+    uploadedAt: Date,
+    // AI resume score (Gemini) — recomputed on every new upload
+    score: Number,
+    scoreBreakdown: mongoose.Schema.Types.Mixed,
+    strengths: [String],
+    improvements: [String],
+    suggestedRoles: [String],
+    scoredAt: Date
+  },
+  jobPreferences: {
+    // When true, the system auto-applies to strong job matches on the user's behalf
+    autoApplyEnabled: { type: Boolean, default: false }
   },
   resetPasswordToken: String,
   resetPasswordExpires: Date

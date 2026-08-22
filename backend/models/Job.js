@@ -39,6 +39,12 @@ const jobSchema = new mongoose.Schema({
       type: String,
       enum: ['pending', 'reviewed', 'accepted', 'rejected'],
       default: 'pending'
+    },
+    // Whether the user applied themselves or auto-apply submitted it for them
+    source: {
+      type: String,
+      enum: ['manual', 'auto'],
+      default: 'manual'
     }
   }],
   status: {

@@ -3,9 +3,11 @@ const router = express.Router();
 const Job = require('../models/Job');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
-const { upload, uploadToCloudinary } = require('../config/cloudinary');
+const { uploadDocument, uploadToCloudinary } = require('../config/cloudinary');
 const { parseResume } = require('../utils/resumeParser');
 const { matchCandidatesWithJobLLM, getJobRecommendationsLLM } = require('../utils/llmJobMatcher');
+const { analyzeResume } = require('../utils/resumeScorer');
+const { evaluateAutoApplyForUser, evaluateAutoApplyForJob } = require('../utils/autoApply');
 const path = require('path');
 const fs = require('fs');
 
@@ -41,6 +43,8 @@ router.post('/create', auth, async (req, res) => {
 
     await job.save();
     await job.populate('postedBy', 'name email profilePic');
+
+    evaluateAutoApplyForJob(job).catch((e) => console.error('Auto-apply trigger error:', e.message));
 
     res.status(201).json({ message: 'Job posted successfully', job });
   } catch (error) {
@@ -151,7 +155,7 @@ router.get('/my/posted', auth, async (req, res) => {
   }
 });
 
-router.post('/upload-resume', auth, upload.single('resume'), async (req, res) => {
+router.post('/upload-resume', auth, uploadDocument.single('resume'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No resume file provided' });
@@ -172,7 +176,9 @@ router.post('/upload-resume', auth, upload.single('resume'), async (req, res) =>
       resumeUrl = result.url;
     }
 
-    await User.findByIdAndUpdate(req.userId, {
+    const review = await analyzeResume(parsedData.rawText);
+
+    const user = await User.findByIdAndUpdate(req.userId, {
       resume: {
         url: resumeUrl,
         fileName: req.file.originalname,
@@ -181,15 +187,27 @@ router.post('/upload-resume', auth, upload.single('resume'), async (req, res) =>
           experience: parsedData.experience,
           education: parsedData.education,
           email: parsedData.email,
-          phone: parsedData.phone
+          phone: parsedData.phone,
+          rawText: parsedData.rawText
         },
-        uploadedAt: new Date()
+        uploadedAt: new Date(),
+        ...(review ? {
+          score: review.score,
+          scoreBreakdown: review.breakdown,
+          strengths: review.strengths,
+          improvements: review.improvements,
+          suggestedRoles: review.suggestedRoles,
+          scoredAt: new Date()
+        } : {})
       }
-    });
+    }, { new: true });
+
+    evaluateAutoApplyForUser(user).catch((e) => console.error('Auto-apply trigger error:', e.message));
 
     res.json({
       message: 'Resume uploaded and parsed successfully',
-      parsedData
+      parsedData,
+      review
     });
   } catch (error) {
     console.error('Resume upload error:', error);
@@ -221,6 +239,30 @@ router.get('/:jobId/matched-candidates', auth, async (req, res) => {
 });
 
 
+router.put('/preferences', auth, async (req, res) => {
+  try {
+    const { autoApplyEnabled } = req.body;
+    if (typeof autoApplyEnabled !== 'boolean') {
+      return res.status(400).json({ error: 'autoApplyEnabled must be a boolean' });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.userId,
+      { 'jobPreferences.autoApplyEnabled': autoApplyEnabled },
+      { new: true }
+    );
+
+    // Turning it on should catch existing good matches immediately, not just future ones
+    if (autoApplyEnabled) {
+      evaluateAutoApplyForUser(user).catch((e) => console.error('Auto-apply trigger error:', e.message));
+    }
+
+    res.json({ message: 'Preferences updated', jobPreferences: user.jobPreferences });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update preferences', message: error.message });
+  }
+});
+
 router.get('/my/applications', auth, async (req, res) => {
   try {
     const jobs = await Job.find({
@@ -242,7 +284,8 @@ router.get('/my/applications', auth, async (req, res) => {
           postedBy: job.postedBy
         },
         appliedAt: application.appliedAt,
-        status: application.status
+        status: application.status,
+        source: application.source || 'manual'
       };
     });
 
