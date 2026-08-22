@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { FiPlus, FiVideo, FiCalendar } from 'react-icons/fi';
+import { FiCalendar } from 'react-icons/fi';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -32,15 +32,7 @@ const Dashboard = () => {
             <Card className="card-yellow">
               <CardContent className="pt-6">
                 <h3 className="text-xl font-bold mb-4">Quick Actions</h3>
-                <div className="grid grid-cols-3 gap-4">
-                  <Button className="btn-black flex-col h-24">
-                    <FiPlus className="w-6 h-6 mb-2" />
-                    <span>New Post</span>
-                  </Button>
-                  <Button className="btn-black flex-col h-24">
-                    <FiVideo className="w-6 h-6 mb-2" />
-                    <span>Start Meeting</span>
-                  </Button>
+                <div className="grid grid-cols-1 max-w-[140px] gap-4">
                   <Button className="btn-black flex-col h-24">
                     <FiCalendar className="w-6 h-6 mb-2" />
                     <span>Schedule</span>

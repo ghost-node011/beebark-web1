@@ -17,7 +17,7 @@ const Sidebar = () => {
     { path: '/dashboard', icon: FiHome, label: 'Dashboard' },
     { path: '/chat', icon: FiMessageCircle, label: 'Messages' },
     { path: '/connections', icon: FiUsers, label: 'Connections' },
-    { path: '/feed', icon: FiLayers, label: 'Feed' },
+    // { path: '/feed', icon: FiLayers, label: 'Feed' },
     { path: '/portfolio', icon: FiImage, label: 'Portfolio' },
     // { path: '/reels', icon: FiFilm, label: 'Reels' },
     // { path: '/projects', icon: FiTrendingUp, label: 'Projects Center' },
@@ -27,7 +27,7 @@ const Sidebar = () => {
     // { path: '/events', icon: FiCalendar, label: 'Events' },
     // { path: '/memories', icon: FiImage, label: 'Memories' },
     // { path: '/wallet', icon: FiDollarSign, label: 'Wallet & Economy' },
-    { path: '/meetings', icon: FiVideo, label: 'Meetings' },
+    // { path: '/meetings', icon: FiVideo, label: 'Meetings' },
   ];
 
   return (

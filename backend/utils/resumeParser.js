@@ -120,4 +120,4 @@ const extractPhone = (text) => {
   return phones ? phones[0] : null;
 };
 
-module.exports = { parseResume, extractSkills };
+module.exports = { parseResume, extractSkills, skillsDatabase };

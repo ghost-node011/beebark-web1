@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { skillsDatabase } = require('./resumeParser');
 
 // LLM-powered job matching
 const matchCandidatesWithJobLLM = async (job, candidates) => {
@@ -226,15 +227,12 @@ function fallbackRecommendations(user, allJobs) {
 }
 
 function extractKeywords(text) {
-  const commonSkills = [
-    'JavaScript', 'Python', 'Java', 'React', 'Node.js', 'Angular', 'Vue',
-    'MongoDB', 'PostgreSQL', 'MySQL', 'AWS', 'Azure', 'Docker', 'Kubernetes',
-    'Machine Learning', 'AI', 'Data Science', 'DevOps', 'CI/CD',
-    'HTML', 'CSS', 'TypeScript', 'REST API', 'GraphQL', 'Git', 'Express'
-  ];
-  
+  // Reuse the same skills list resumes are parsed against (resumeParser.js) —
+  // covers this platform's actual domain (architecture/construction/real
+  // estate) as well as tech, instead of a tech-only list that could never
+  // match an AEC job description or resume.
   const lowerText = text.toLowerCase();
-  return commonSkills.filter(skill => lowerText.includes(skill.toLowerCase()));
+  return skillsDatabase.filter(skill => lowerText.includes(skill.toLowerCase()));
 }
 
 module.exports = {
