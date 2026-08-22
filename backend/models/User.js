@@ -154,6 +154,14 @@ const userSchema = new mongoose.Schema({
     // When true, the system auto-applies to strong job matches on the user's behalf
     autoApplyEnabled: { type: Boolean, default: false }
   },
+  portfolio: {
+    theme: {
+      type: String,
+      enum: ['grid', 'timeline', 'minimal', 'magazine'],
+      default: 'grid'
+    },
+    headline: { type: String, default: '' }
+  },
   resetPasswordToken: String,
   resetPasswordExpires: Date
 }, {

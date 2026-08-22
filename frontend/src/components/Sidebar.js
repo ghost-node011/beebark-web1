@@ -5,7 +5,7 @@ import { useUI } from '../context/UIContext';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import {
   FiHome, FiMessageCircle, FiUsers, FiLayers, FiBriefcase,
-  FiVideo, FiX
+  FiVideo, FiX, FiImage
 } from 'react-icons/fi';
 
 const Sidebar = () => {
@@ -18,6 +18,7 @@ const Sidebar = () => {
     { path: '/chat', icon: FiMessageCircle, label: 'Messages' },
     { path: '/connections', icon: FiUsers, label: 'Connections' },
     { path: '/feed', icon: FiLayers, label: 'Feed' },
+    { path: '/portfolio', icon: FiImage, label: 'Portfolio' },
     // { path: '/reels', icon: FiFilm, label: 'Reels' },
     // { path: '/projects', icon: FiTrendingUp, label: 'Projects Center' },
     { path: '/jobs', icon: FiBriefcase, label: 'Jobs' },

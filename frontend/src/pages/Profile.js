@@ -11,7 +11,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Badge } from '../components/ui/badge';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
-import { FiEdit2, FiSave, FiPlus, FiTrash2, FiBriefcase, FiMapPin } from 'react-icons/fi';
+import { FiEdit2, FiSave, FiPlus, FiTrash2, FiBriefcase, FiMapPin, FiImage } from 'react-icons/fi';
+import { Link } from 'react-router-dom';
 import { API_URL } from '../config/api';
 import { INTENTS, INDUSTRIES } from '../config/onboarding';
 import ImageUpload from '../components/ImageUpload';
@@ -120,7 +121,14 @@ const Profile = () => {
                   <div className="min-w-0">
                     <CardTitle className="text-xl sm:text-2xl font-bold truncate">{user?.name}</CardTitle>
                     <p className="text-gray-800 text-sm break-all">{user?.email}</p>
-                    <Badge className="mt-2 bg-gray-900 text-yellow-400 capitalize">{roleLabel}</Badge>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Badge className="bg-gray-900 text-yellow-400 capitalize">{roleLabel}</Badge>
+                      {user?.username && (
+                        <Link to={`/portfolio/${user.username}`} target="_blank" className="inline-flex items-center gap-1 text-xs font-medium text-gray-900 hover:underline">
+                          <FiImage className="w-3.5 h-3.5" />View my portfolio
+                        </Link>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <Button

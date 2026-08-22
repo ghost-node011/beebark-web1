@@ -14,6 +14,8 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import PhoneLogin from './pages/PhoneLogin';
 import Dashboard from './pages/Dashboard';
 import Feed from './pages/Feed';
+import Portfolio from './pages/Portfolio';
+import PublicPortfolio from './pages/PublicPortfolio';
 import Profile from './pages/Profile';
 import Connections from './pages/Connections';
 import Chat from './pages/Chat';
@@ -98,8 +100,10 @@ function App() {
             <Route path="/phone-login" element={<PublicRoute><PhoneLogin /></PublicRoute>} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/portfolio/:username" element={<PublicPortfolio />} />
             <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
             <Route path="/feed" element={<PrivateRoute><Feed /></PrivateRoute>} />
+            <Route path="/portfolio" element={<PrivateRoute><Portfolio /></PrivateRoute>} />
             <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
             <Route path="/connections" element={<PrivateRoute><Connections /></PrivateRoute>} />
             <Route path="/chat" element={<PrivateRoute><Chat /></PrivateRoute>} />
