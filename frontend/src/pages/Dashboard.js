@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar';
 import { useAuth } from '../context/AuthContext';
 import { Card, CardContent } from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import { FiCalendar, FiCheckCircle, FiTrendingUp } from 'react-icons/fi';
+import { FiCheckCircle, FiTrendingUp, FiArrowRight, FiZap } from 'react-icons/fi';
 import { API_URL } from '../config/api';
 
 const timeGreeting = () => {
@@ -13,6 +13,15 @@ const timeGreeting = () => {
   if (hour < 12) return 'Good morning';
   if (hour < 18) return 'Good afternoon';
   return 'Good evening';
+};
+
+// Route the top suggestion to wherever it's actually actionable
+const suggestionLink = (text = '') => {
+  const t = text.toLowerCase();
+  if (t.includes('portfolio') || t.includes('photo')) return { to: '/portfolio', label: 'Go to Portfolio' };
+  if (t.includes('resume')) return { to: '/jobs', label: 'Go to Jobs' };
+  if (t.includes('connect') || t.includes('messag')) return { to: '/connections', label: 'Go to Connections' };
+  return null;
 };
 
 const Dashboard = () => {
@@ -28,6 +37,8 @@ const Dashboard = () => {
   }, []);
 
   const connectionCount = insights?.metrics?.connectionCount ?? (user?.connections?.length || 0);
+  const topSuggestion = insights?.improvements?.[0];
+  const topSuggestionLink = topSuggestion ? suggestionLink(topSuggestion) : null;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -40,20 +51,27 @@ const Dashboard = () => {
           <p className="text-slate-600">{insights?.greeting || "Here's what's happening with your network today."}</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <Card className="card-yellow">
-              <CardContent className="pt-6">
-                <h3 className="text-xl font-bold mb-4">Quick Actions</h3>
-                <div className="grid grid-cols-1 max-w-[140px] gap-4">
-                  <Button className="btn-black flex-col h-24">
-                    <FiCalendar className="w-6 h-6 mb-2" />
-                    <span>Schedule</span>
-                  </Button>
+        {!loadingInsights && topSuggestion && (
+          <Card className="mb-6 bg-black text-white border-0">
+            <CardContent className="pt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <FiZap className="text-yellow-400 mt-1 shrink-0" />
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-white/50 mb-1">Suggested next step</p>
+                  <p className="font-medium">{topSuggestion}</p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+              {topSuggestionLink && (
+                <Link to={topSuggestionLink.to} className="inline-flex items-center gap-2 bg-yellow-400 text-black font-semibold px-4 py-2 rounded-lg whitespace-nowrap hover:bg-yellow-500 transition">
+                  {topSuggestionLink.label}<FiArrowRight />
+                </Link>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
             <Card>
               <CardContent className="pt-6">
                 <h3 className="text-lg font-bold mb-4">Your Analysis</h3>
@@ -92,22 +110,7 @@ const Dashboard = () => {
             </Card>
           </div>
 
-          <div className="space-y-6">
-            <Card>
-              <CardContent className="pt-6">
-                <h3 className="text-lg font-bold mb-4">Upcoming Events</h3>
-                <div className="space-y-3">
-                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <FiCalendar className="w-4 h-4 text-yellow-600" />
-                      <span className="text-sm font-semibold">Design Workshop</span>
-                    </div>
-                    <p className="text-xs text-slate-600">Wed 20 Sept, Online</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
+          <div>
             <Card>
               <CardContent className="pt-6">
                 <h3 className="text-lg font-bold mb-4">Network Stats</h3>
@@ -120,6 +123,12 @@ const Dashboard = () => {
                     <span className="text-slate-600">Portfolio entries</span>
                     <span className="font-bold">{insights?.metrics?.portfolioCount ?? '—'}</span>
                   </div>
+                  {typeof insights?.metrics?.resumeScore === 'number' && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Resume score</span>
+                      <span className="font-bold">{insights.metrics.resumeScore}/100</span>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

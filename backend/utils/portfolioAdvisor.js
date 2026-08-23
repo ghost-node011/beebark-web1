@@ -33,4 +33,50 @@ Respond ONLY with a single JSON object in this exact shape:
   }
 };
 
-module.exports = { analyzePortfolioItem };
+const VALID_FONTS = ['playfair', 'space', 'mono', 'classic'];
+const FONT_DESCRIPTIONS = {
+  playfair: 'Playfair Display — elegant serif, editorial/luxury feel',
+  space: 'Space Grotesk — modern geometric sans, clean/tech feel',
+  mono: 'JetBrains Mono — technical monospace, precise/architectural feel',
+  classic: 'Libre Baskerville — classic book serif, traditional/scholarly feel'
+};
+
+/**
+ * AI-suggested visual style (font pairing + accent color + layout) for a
+ * user's portfolio, based on what's actually in it. Returns null (never
+ * throws) if Gemini is unavailable — the user can still pick manually.
+ */
+const suggestPortfolioStyle = async (items, role) => {
+  const summary = items.slice(0, 8).map((i) => `- ${i.title}: ${i.description || ''} [${(i.tags || []).join(', ')}]`).join('\n') || '(no items yet)';
+
+  const prompt = `You are a design advisor for a professional portfolio website. Based on the work
+below, suggest a visual style that fits.
+
+Role: ${role || 'professional'}
+Portfolio items:
+${summary}
+
+Available fonts (pick exactly one key):
+${Object.entries(FONT_DESCRIPTIONS).map(([k, v]) => `- "${k}": ${v}`).join('\n')}
+
+Also suggest one accent color as a hex code that fits the mood of this work (not necessarily bright —
+consider muted/earthy tones for architecture, bold colors for creative/design work, etc).
+
+Respond ONLY with a JSON object in this exact shape:
+{ "font": "one of the keys above", "accentColor": "#RRGGBB", "reason": "one short sentence explaining the choice" }`;
+
+  try {
+    const result = await askGeminiForJson(prompt);
+    if (!VALID_FONTS.includes(result.font) || !/^#[0-9a-fA-F]{6}$/.test(result.accentColor || '')) return null;
+    return {
+      font: result.font,
+      accentColor: result.accentColor,
+      reason: typeof result.reason === 'string' ? result.reason : ''
+    };
+  } catch (error) {
+    console.error('Portfolio style suggestion error:', error.message);
+    return null;
+  }
+};
+
+module.exports = { analyzePortfolioItem, suggestPortfolioStyle };

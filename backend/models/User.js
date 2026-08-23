@@ -160,7 +160,13 @@ const userSchema = new mongoose.Schema({
       enum: ['grid', 'timeline', 'minimal', 'magazine'],
       default: 'grid'
     },
-    headline: { type: String, default: '' }
+    headline: { type: String, default: '' },
+    font: {
+      type: String,
+      enum: ['playfair', 'space', 'mono', 'classic'],
+      default: 'playfair'
+    },
+    accentColor: { type: String, default: '#D4F547' }
   },
   resetPasswordToken: String,
   resetPasswordExpires: Date

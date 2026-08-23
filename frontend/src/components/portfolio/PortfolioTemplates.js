@@ -9,7 +9,16 @@ export const THEME_META = [
   { key: 'magazine', label: 'Bold', description: 'Color-blocked magazine spreads' }
 ];
 
-const signature = { fontFamily: "'Playfair Display', Georgia, serif" };
+export const FONT_META = [
+  { key: 'playfair', label: 'Playfair', description: 'Elegant serif · editorial', stack: "'Playfair Display', Georgia, serif" },
+  { key: 'space', label: 'Space Grotesk', description: 'Modern geometric sans', stack: "'Space Grotesk', sans-serif" },
+  { key: 'mono', label: 'JetBrains Mono', description: 'Technical monospace', stack: "'JetBrains Mono', monospace" },
+  { key: 'classic', label: 'Baskerville', description: 'Classic book serif', stack: "'Libre Baskerville', Georgia, serif" }
+];
+
+export const ACCENT_PRESETS = ['#D4F547', '#FFB347', '#7DD3FC', '#FCA5A5', '#C4B5FD', '#000000'];
+
+const fontStack = (font) => FONT_META.find((f) => f.key === font)?.stack || FONT_META[0].stack;
 const num = (i) => String(i + 1).padStart(2, '0');
 // Own-account view passes `connections` (populated array); public view passes `connectionCount` (number)
 const connCount = (user) => (typeof user?.connectionCount === 'number' ? user.connectionCount : (user?.connections?.length ?? null));
@@ -41,10 +50,10 @@ const Tags = ({ tags, light }) => {
   );
 };
 
-const ContactStrip = ({ user }) => (
+const ContactStrip = ({ user, accentColor }) => (
   <div className="bg-black text-white py-16 px-6 sm:px-10 mt-2 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
     <div>
-      <span className="text-xs tracking-[0.3em] uppercase text-white/50">Get in touch</span>
+      <span className="text-xs tracking-[0.3em] uppercase" style={{ color: accentColor }}>Get in touch</span>
       <h3 className="text-3xl sm:text-4xl font-black uppercase tracking-tight mt-2">Open for new work</h3>
     </div>
     <div className="flex items-center gap-2 text-white/80">
@@ -55,13 +64,14 @@ const ContactStrip = ({ user }) => (
 );
 
 // ---------- COVER: full-bleed hero, bold uppercase title, thin index rule ----------
-const Cover = ({ user, headline, heroImage, kicker = 'Portfolio', count }) => (
+const Cover = ({ user, headline, heroImage, kicker = 'Portfolio', count, accentColor }) => (
   <div className="relative bg-black text-white min-h-[70vh] flex flex-col justify-end overflow-hidden">
     {heroImage && <img src={heroImage} alt="" className="absolute inset-0 w-full h-full object-cover opacity-60" />}
     <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.05) 30%, rgba(0,0,0,0.92) 100%)' }} />
     <div className="relative p-6 sm:p-14">
-      <div className="flex items-center justify-between text-xs tracking-[0.3em] uppercase text-white/60 mb-8">
-        <span>{kicker}</span>
+      <div className="flex items-center gap-2 text-xs tracking-[0.3em] uppercase text-white/60 mb-8">
+        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: accentColor }} />
+        <span className="flex-1">{kicker}</span>
         <span>{count} {count === 1 ? 'Entry' : 'Entries'}</span>
       </div>
       <h1 className="text-5xl sm:text-8xl font-black uppercase tracking-tighter leading-[0.9]">{user?.name}</h1>
@@ -72,7 +82,7 @@ const Cover = ({ user, headline, heroImage, kicker = 'Portfolio', count }) => (
         </p>
       )}
       {(headline || user?.bio) && (
-        <p className="mt-4 text-base sm:text-lg text-white/70 max-w-md" style={signature}>{headline || user?.bio}</p>
+        <p className="mt-4 text-base sm:text-lg text-white/70 max-w-md italic">{headline || user?.bio}</p>
       )}
       {user?.skills?.length > 0 && (
         <div className="flex flex-wrap gap-2 mt-6">
@@ -104,9 +114,9 @@ const ExperienceSection = ({ experience }) => {
 };
 
 // ---------- GRID / "Contemporary": strict numbered grid, monochrome, sharp edges ----------
-export const GridTemplate = ({ items, user, headline, editable, onEdit, onDelete }) => (
-  <div className="bg-white">
-    <Cover user={user} headline={headline} heroImage={items[0]?.images?.[0]} count={items.length} />
+export const GridTemplate = ({ items, user, headline, editable, onEdit, onDelete, font = 'playfair', accentColor = '#D4F547' }) => (
+  <div className="bg-white" style={{ fontFamily: fontStack(font) }}>
+    <Cover user={user} headline={headline} heroImage={items[0]?.images?.[0]} count={items.length} accentColor={accentColor} />
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 border-t border-black/10">
       {items.map((item, i) => (
         <div key={item._id} className="border-b border-r border-black/10 sm:[&:nth-child(2n)]:border-r-0 lg:[&:nth-child(2n)]:border-r lg:[&:nth-child(3n)]:border-r-0">
@@ -114,7 +124,7 @@ export const GridTemplate = ({ items, user, headline, editable, onEdit, onDelete
             {item.images?.[0] && <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500" />}
           </div>
           <div className="p-6">
-            <span className="text-xs tracking-widest text-gray-400">{num(i)}</span>
+            <span className="text-xs tracking-widest" style={{ color: accentColor }}>{num(i)}</span>
             <h3 className="text-xl font-black uppercase tracking-tight mt-1">{item.title}</h3>
             {item.description && <p className="text-sm text-gray-600 mt-2 line-clamp-3">{item.description}</p>}
             <Tags tags={item.tags} />
@@ -124,14 +134,14 @@ export const GridTemplate = ({ items, user, headline, editable, onEdit, onDelete
       ))}
     </div>
     <ExperienceSection experience={user?.experience} />
-    <ContactStrip user={user} />
+    <ContactStrip user={user} accentColor={accentColor} />
   </div>
 );
 
 // ---------- TIMELINE / "Spec Sheet": full-bleed image + meta block per chapter ----------
-export const TimelineTemplate = ({ items, user, headline, editable, onEdit, onDelete }) => (
-  <div className="bg-white">
-    <Cover user={user} headline={headline} heroImage={items[0]?.images?.[0]} kicker="Project Log" count={items.length} />
+export const TimelineTemplate = ({ items, user, headline, editable, onEdit, onDelete, font = 'playfair', accentColor = '#D4F547' }) => (
+  <div className="bg-white" style={{ fontFamily: fontStack(font) }}>
+    <Cover user={user} headline={headline} heroImage={items[0]?.images?.[0]} kicker="Project Log" count={items.length} accentColor={accentColor} />
     {items.map((item, i) => (
       <div key={item._id} className="border-t border-black/10">
         {item.images?.[0] && (
@@ -153,15 +163,15 @@ export const TimelineTemplate = ({ items, user, headline, editable, onEdit, onDe
       </div>
     ))}
     <ExperienceSection experience={user?.experience} />
-    <ContactStrip user={user} />
+    <ContactStrip user={user} accentColor={accentColor} />
   </div>
 );
 
 // ---------- MINIMAL / "Editorial": large-format book, generous margins, serif captions ----------
-export const MinimalTemplate = ({ items, user, headline, editable, onEdit, onDelete }) => (
-  <div className="bg-white max-w-4xl mx-auto">
+export const MinimalTemplate = ({ items, user, headline, editable, onEdit, onDelete, font = 'playfair', accentColor = '#D4F547' }) => (
+  <div className="bg-white max-w-4xl mx-auto" style={{ fontFamily: fontStack(font) }}>
     <div className="text-center py-20 px-6 border-b border-black/10">
-      <span className="text-xs tracking-[0.3em] uppercase text-gray-400">Portfolio</span>
+      <span className="text-xs tracking-[0.3em] uppercase" style={{ color: accentColor }}>Portfolio</span>
       <h1 className="text-4xl sm:text-6xl font-black uppercase tracking-tight mt-4">{user?.name}</h1>
       {(user?.role || user?.location) && (
         <p className="mt-2 text-sm text-gray-400 uppercase tracking-wide">
@@ -169,7 +179,7 @@ export const MinimalTemplate = ({ items, user, headline, editable, onEdit, onDel
           {connCount(user) !== null && ` · ${connCount(user)} connection${connCount(user) === 1 ? '' : 's'}`}
         </p>
       )}
-      {(headline || user?.bio) && <p className="mt-4 text-gray-500 max-w-md mx-auto" style={signature}>{headline || user?.bio}</p>}
+      {(headline || user?.bio) && <p className="mt-4 text-gray-500 max-w-md mx-auto italic">{headline || user?.bio}</p>}
       {user?.skills?.length > 0 && (
         <div className="flex flex-wrap justify-center gap-2 mt-5">
           {user.skills.slice(0, 8).map((s, i) => (
@@ -180,32 +190,30 @@ export const MinimalTemplate = ({ items, user, headline, editable, onEdit, onDel
     </div>
     {items.map((item, i) => (
       <div key={item._id} className="py-14 px-6 border-b border-black/10">
-        <span className="text-xs tracking-widest text-gray-400">{num(i)} / {num(items.length - 1)}</span>
+        <span className="text-xs tracking-widest" style={{ color: accentColor }}>{num(i)} / {num(items.length - 1)}</span>
         {item.images?.[0] && (
           <img src={item.images[0]} alt={item.title} className="w-full max-h-[520px] object-cover mt-5" />
         )}
         <h3 className="text-2xl font-black uppercase tracking-tight mt-6">{item.title}</h3>
-        {item.description && <p className="text-gray-700 mt-3 leading-relaxed italic" style={signature}>{item.description}</p>}
+        {item.description && <p className="text-gray-700 mt-3 leading-relaxed italic">{item.description}</p>}
         <Tags tags={item.tags} />
         <Controls item={item} editable={editable} onEdit={onEdit} onDelete={onDelete} />
       </div>
     ))}
     <ExperienceSection experience={user?.experience} />
-    <ContactStrip user={user} />
+    <ContactStrip user={user} accentColor={accentColor} />
   </div>
 );
 
 // ---------- MAGAZINE / "Bold": color-blocked spreads, alternating layout ----------
-const ACCENT = '#D4F547';
-
-export const MagazineTemplate = ({ items, user, headline, editable, onEdit, onDelete }) => {
+export const MagazineTemplate = ({ items, user, headline, editable, onEdit, onDelete, font = 'playfair', accentColor = '#D4F547' }) => {
   const [featured, ...rest] = items;
   return (
-    <div className="bg-white">
-      <Cover user={user} headline={headline} heroImage={featured?.images?.[0]} count={items.length} />
+    <div className="bg-white" style={{ fontFamily: fontStack(font) }}>
+      <Cover user={user} headline={headline} heroImage={featured?.images?.[0]} count={items.length} accentColor={accentColor} />
       {featured && (
         <div className="grid grid-cols-1 sm:grid-cols-2 border-t border-black/10">
-          <div className="p-8 sm:p-14 flex flex-col justify-center" style={{ backgroundColor: ACCENT }}>
+          <div className="p-8 sm:p-14 flex flex-col justify-center" style={{ backgroundColor: accentColor }}>
             <span className="text-xs tracking-widest uppercase text-black/60">Featured — 01</span>
             <h3 className="text-3xl sm:text-4xl font-black uppercase tracking-tight mt-3">{featured.title}</h3>
             {featured.description && <p className="text-black/70 mt-4">{featured.description}</p>}
@@ -227,7 +235,7 @@ export const MagazineTemplate = ({ items, user, headline, editable, onEdit, onDe
             </div>
           )}
           <div className="p-8 sm:p-14 flex flex-col justify-center" style={{ direction: 'ltr' }}>
-            <span className="text-xs tracking-widest uppercase text-gray-400">{num(i + 1)}</span>
+            <span className="text-xs tracking-widest" style={{ color: accentColor }}>{num(i + 1)}</span>
             <h3 className="text-2xl sm:text-3xl font-black uppercase tracking-tight mt-2">{item.title}</h3>
             {item.description && <p className="text-gray-700 mt-3">{item.description}</p>}
             <Tags tags={item.tags} />
@@ -236,7 +244,7 @@ export const MagazineTemplate = ({ items, user, headline, editable, onEdit, onDe
         </div>
       ))}
       <ExperienceSection experience={user?.experience} />
-      <ContactStrip user={user} />
+      <ContactStrip user={user} accentColor={accentColor} />
     </div>
   );
 };

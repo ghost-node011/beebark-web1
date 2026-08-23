@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 import { FiCamera, FiImage, FiPlus, FiZap, FiDownload } from 'react-icons/fi';
 import { API_URL } from '../config/api';
-import { TEMPLATES, THEME_META } from '../components/portfolio/PortfolioTemplates';
+import { TEMPLATES, THEME_META, FONT_META, ACCENT_PRESETS } from '../components/portfolio/PortfolioTemplates';
 import { exportPortfolioPdf } from '../utils/exportPortfolioPdf';
 
 const emptyForm = { title: '', description: '', images: [] };
@@ -22,6 +22,9 @@ const Portfolio = () => {
   const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [theme, setTheme] = useState('grid');
+  const [font, setFont] = useState('playfair');
+  const [accentColor, setAccentColor] = useState('#D4F547');
+  const [suggestingStyle, setSuggestingStyle] = useState(false);
   const [starterSuggestions, setStarterSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -42,6 +45,8 @@ const Portfolio = () => {
       const response = await axios.get(`${API_URL}/api/portfolio/me`);
       setItems(response.data.items || []);
       setTheme(response.data.theme || 'grid');
+      setFont(response.data.font || 'playfair');
+      setAccentColor(response.data.accentColor || '#D4F547');
       setStarterSuggestions(response.data.starterSuggestions || []);
     } catch (error) {
       toast.error('Failed to load your portfolio');
@@ -128,6 +133,39 @@ const Portfolio = () => {
     }
   };
 
+  const handleFontChange = async (nextFont) => {
+    setFont(nextFont);
+    try {
+      await axios.put(`${API_URL}/api/portfolio/theme`, { font: nextFont });
+    } catch (error) {
+      toast.error('Failed to save font');
+    }
+  };
+
+  const handleAccentChange = async (nextColor) => {
+    setAccentColor(nextColor);
+    try {
+      await axios.put(`${API_URL}/api/portfolio/theme`, { accentColor: nextColor });
+    } catch (error) {
+      toast.error('Failed to save color');
+    }
+  };
+
+  const handleSuggestStyle = async () => {
+    setSuggestingStyle(true);
+    try {
+      const response = await axios.get(`${API_URL}/api/portfolio/style-suggestion`);
+      const { font: suggestedFont, accentColor: suggestedColor, reason } = response.data;
+      await handleFontChange(suggestedFont);
+      await handleAccentChange(suggestedColor);
+      toast.success(reason || 'Applied an AI-suggested style');
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Could not generate a suggestion right now');
+    } finally {
+      setSuggestingStyle(false);
+    }
+  };
+
   const Template = TEMPLATES[theme] || TEMPLATES.grid;
 
   const handleExport = async () => {
@@ -162,19 +200,66 @@ const Portfolio = () => {
           </div>
         </div>
 
-        {/* Theme picker */}
-        <div className="flex flex-wrap gap-3 mb-8" data-pdf-ignore>
-          {THEME_META.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => handleThemeChange(t.key)}
-              className={`px-4 py-2 rounded-lg border-2 text-left transition ${theme === t.key ? 'border-yellow-400 bg-yellow-50' : 'border-gray-200 hover:border-gray-300'}`}
-              data-testid={`theme-${t.key}`}
-            >
-              <p className="font-semibold text-sm text-black">{t.label}</p>
-              <p className="text-xs text-gray-500">{t.description}</p>
-            </button>
-          ))}
+        {/* Design controls: layout, font, color — fully user-managed, or let AI suggest one from your actual work */}
+        <div className="border border-gray-200 rounded-xl p-4 sm:p-5 mb-8 bg-white" data-pdf-ignore>
+          <div className="flex items-center justify-between mb-4">
+            <p className="font-semibold text-black">Design your portfolio</p>
+            <Button size="sm" onClick={handleSuggestStyle} disabled={suggestingStyle} className="bg-black text-white hover:bg-gray-800 flex items-center gap-2">
+              <FiZap className={suggestingStyle ? 'animate-pulse' : ''} />{suggestingStyle ? 'Thinking...' : 'Suggest a style for me'}
+            </Button>
+          </div>
+
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Layout</p>
+          <div className="flex flex-wrap gap-3 mb-5">
+            {THEME_META.map((t) => (
+              <button
+                key={t.key}
+                onClick={() => handleThemeChange(t.key)}
+                className={`px-4 py-2 rounded-lg border-2 text-left transition ${theme === t.key ? 'border-yellow-400 bg-yellow-50' : 'border-gray-200 hover:border-gray-300'}`}
+                data-testid={`theme-${t.key}`}
+              >
+                <p className="font-semibold text-sm text-black">{t.label}</p>
+                <p className="text-xs text-gray-500">{t.description}</p>
+              </button>
+            ))}
+          </div>
+
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Typography</p>
+          <div className="flex flex-wrap gap-3 mb-5">
+            {FONT_META.map((f) => (
+              <button
+                key={f.key}
+                onClick={() => handleFontChange(f.key)}
+                className={`px-4 py-2 rounded-lg border-2 text-left transition ${font === f.key ? 'border-yellow-400 bg-yellow-50' : 'border-gray-200 hover:border-gray-300'}`}
+                style={{ fontFamily: f.stack }}
+                data-testid={`font-${f.key}`}
+              >
+                <p className="font-bold text-sm text-black">{f.label}</p>
+                <p className="text-xs text-gray-500" style={{ fontFamily: 'inherit' }}>{f.description}</p>
+              </button>
+            ))}
+          </div>
+
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Accent color</p>
+          <div className="flex flex-wrap items-center gap-3">
+            {ACCENT_PRESETS.map((c) => (
+              <button
+                key={c}
+                onClick={() => handleAccentChange(c)}
+                className={`w-9 h-9 rounded-full border-2 transition ${accentColor === c ? 'border-black scale-110' : 'border-gray-200'}`}
+                style={{ backgroundColor: c }}
+                aria-label={c}
+                data-testid={`accent-${c}`}
+              />
+            ))}
+            <input
+              type="color"
+              value={accentColor}
+              onChange={(e) => handleAccentChange(e.target.value)}
+              className="w-9 h-9 rounded-full border-2 border-gray-200 cursor-pointer p-0 overflow-hidden"
+              title="Custom color"
+            />
+          </div>
         </div>
 
         {/* Starter suggestions from resume, shown only when portfolio is empty */}
@@ -211,7 +296,7 @@ const Portfolio = () => {
 
       {!loading && items.length > 0 && (
         <div ref={captureRef}>
-          <Template items={items} user={user} headline={user?.portfolio?.headline} editable onEdit={openEditDialog} onDelete={handleDelete} />
+          <Template items={items} user={user} headline={user?.portfolio?.headline} editable onEdit={openEditDialog} onDelete={handleDelete} font={font} accentColor={accentColor} />
         </div>
       )}
       </div>

@@ -65,7 +65,7 @@ const PublicPortfolio = () => {
         <p className="text-gray-500 px-4 sm:px-6">This portfolio is empty for now.</p>
       ) : (
         <div ref={captureRef}>
-          <Template items={data.items} user={data.user} headline={data.headline} editable={false} />
+          <Template items={data.items} user={data.user} headline={data.headline} editable={false} font={data.font} accentColor={data.accentColor} />
         </div>
       )}
     </div>

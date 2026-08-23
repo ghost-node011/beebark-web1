@@ -3,7 +3,7 @@ const router = express.Router();
 const User = require('../models/User');
 const PortfolioItem = require('../models/PortfolioItem');
 const auth = require('../middleware/auth');
-const { analyzePortfolioItem } = require('../utils/portfolioAdvisor');
+const { analyzePortfolioItem, suggestPortfolioStyle } = require('../utils/portfolioAdvisor');
 
 // Build one-time "starter" suggestions from resume/experience data, without
 // saving anything — used only when the user's portfolio is still empty.
@@ -32,10 +32,29 @@ router.get('/me', auth, async (req, res) => {
       items,
       theme: user.portfolio?.theme || 'grid',
       headline: user.portfolio?.headline || '',
+      font: user.portfolio?.font || 'playfair',
+      accentColor: user.portfolio?.accentColor || '#D4F547',
       starterSuggestions
     });
   } catch (error) {
     res.status(500).json({ error: 'Failed to load portfolio', message: error.message });
+  }
+});
+
+// AI-suggested style based on the user's actual portfolio content — the user
+// can accept it as-is or keep adjusting manually afterward.
+// IMPORTANT: must be registered BEFORE /:username to avoid route collision.
+router.get('/style-suggestion', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    const items = await PortfolioItem.find({ user: req.userId }).sort({ createdAt: -1 });
+    const suggestion = await suggestPortfolioStyle(items, user.role);
+    if (!suggestion) {
+      return res.status(503).json({ error: 'Style suggestions are unavailable right now' });
+    }
+    res.json(suggestion);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to generate style suggestion', message: error.message });
   }
 });
 
@@ -62,7 +81,9 @@ router.get('/:username', async (req, res) => {
       },
       items,
       theme: user.portfolio?.theme || 'grid',
-      headline: user.portfolio?.headline || ''
+      headline: user.portfolio?.headline || '',
+      font: user.portfolio?.font || 'playfair',
+      accentColor: user.portfolio?.accentColor || '#D4F547'
     });
   } catch (error) {
     res.status(500).json({ error: 'Failed to load portfolio', message: error.message });
@@ -125,15 +146,24 @@ router.delete('/items/:id', auth, async (req, res) => {
 
 router.put('/theme', auth, async (req, res) => {
   try {
-    const { theme, headline } = req.body;
+    const { theme, headline, font, accentColor } = req.body;
     const validThemes = ['grid', 'timeline', 'minimal', 'magazine'];
+    const validFonts = ['playfair', 'space', 'mono', 'classic'];
     if (theme && !validThemes.includes(theme)) {
       return res.status(400).json({ error: 'Invalid theme' });
+    }
+    if (font && !validFonts.includes(font)) {
+      return res.status(400).json({ error: 'Invalid font' });
+    }
+    if (accentColor && !/^#[0-9a-fA-F]{6}$/.test(accentColor)) {
+      return res.status(400).json({ error: 'accentColor must be a hex color like #RRGGBB' });
     }
 
     const update = {};
     if (theme) update['portfolio.theme'] = theme;
     if (headline !== undefined) update['portfolio.headline'] = headline;
+    if (font) update['portfolio.font'] = font;
+    if (accentColor) update['portfolio.accentColor'] = accentColor;
 
     const user = await User.findByIdAndUpdate(req.userId, update, { new: true });
     res.json({ message: 'Portfolio settings updated', portfolio: user.portfolio });
