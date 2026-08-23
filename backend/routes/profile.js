@@ -33,6 +33,9 @@ router.get('/me', auth, async (req, res) => {
       coverPhoto: user.coverPhoto,
       bio: user.bio,
       skills: user.skills,
+      specialization: user.specialization || [],
+      projectTypeFocus: user.projectTypeFocus || [],
+      markets: user.markets || [],
       experience: user.experience,
       connections: user.connections,
       pendingRequests: user.pendingRequests,
@@ -87,17 +90,20 @@ router.get('/completion', auth, async (req, res) => {
 router.get('/public/:username', auth, async (req, res) => {
   try {
     const user = await User.findOne({ username: req.params.username })
-      .select('name username profilePic coverPhoto bio role location industries skills experience connections createdAt')
-      .populate('connections', '_id');
+      .select('name username profilePic coverPhoto bio role location industries skills specialization projectTypeFocus markets experience connections createdAt')
+      .populate('connections', 'name username profilePic role');
     if (!user) return res.status(404).json({ error: 'Profile not found' });
 
-    if (user._id.toString() !== req.userId.toString()) {
+    const isOwnProfile = user._id.toString() === req.userId.toString();
+    if (!isOwnProfile) {
       await User.updateOne({ _id: user._id }, { $inc: { profileViews: 1 } });
     }
     const fresh = await User.findById(user._id).select('profileViews');
 
-    const portfolioItems = await PortfolioItem.find({ user: user._id }).sort({ createdAt: -1 }).limit(6);
-    const portfolioCount = await PortfolioItem.countDocuments({ user: user._id });
+    const [portfolioItems, portfolioCount] = await Promise.all([
+      PortfolioItem.find({ user: user._id }).sort({ createdAt: -1 }).limit(6),
+      PortfolioItem.countDocuments({ user: user._id })
+    ]);
 
     res.json({
       user: {
@@ -110,14 +116,21 @@ router.get('/public/:username', auth, async (req, res) => {
         location: user.location,
         industries: user.industries || [],
         skills: user.skills || [],
+        specialization: user.specialization || [],
+        projectTypeFocus: user.projectTypeFocus || [],
+        markets: user.markets || [],
         experience: user.experience || [],
         connectionCount: user.connections?.length || 0,
         memberSince: user.createdAt,
         profileViews: fresh.profileViews
       },
+      // Real connections, not fabricated "associated professionals"
+      associatedProfessionals: (user.connections || []).slice(0, 8).map((c) => ({
+        _id: c._id, name: c.name, username: c.username, profilePic: c.profilePic, role: c.role
+      })),
       portfolioPreview: portfolioItems,
       portfolioCount,
-      isOwnProfile: user._id.toString() === req.userId.toString()
+      isOwnProfile
     });
   } catch (error) {
     res.status(500).json({ error: 'Failed to load profile', message: error.message });
@@ -163,9 +176,10 @@ router.get('/:userId', auth, async (req, res) => {
 
 router.put('/update', auth, async (req, res) => {
   try {
-    const { name, bio, profilePic, coverPhoto, skills, experience, location, intent, industries } = req.body;
+    const { name, bio, profilePic, coverPhoto, skills, experience, location, intent, industries, specialization, projectTypeFocus, markets } = req.body;
     const VALID_INTENT = ['learn', 'network', 'hire', 'get_hired'];
     const VALID_INDUSTRY = ['architecture', 'interiors', 'construction', 'real_estate', 'related'];
+    const asTagList = (arr) => arr.map((s) => String(s).trim()).filter(Boolean).slice(0, 20);
 
     const updateData = {};
     if (name) updateData.name = name;
@@ -177,6 +191,9 @@ router.put('/update', auth, async (req, res) => {
     if (experience) updateData.experience = experience;
     if (Array.isArray(intent)) updateData.intent = intent.filter((i) => VALID_INTENT.includes(i));
     if (Array.isArray(industries)) updateData.industries = industries.filter((i) => VALID_INDUSTRY.includes(i));
+    if (Array.isArray(specialization)) updateData.specialization = asTagList(specialization);
+    if (Array.isArray(projectTypeFocus)) updateData.projectTypeFocus = asTagList(projectTypeFocus);
+    if (Array.isArray(markets)) updateData.markets = asTagList(markets);
 
     const user = await User.findByIdAndUpdate(
       req.userId,

@@ -41,9 +41,13 @@ const Profile = () => {
     profilePic: '',
     coverPhoto: '',
     skills: [],
+    specialization: [],
+    projectTypeFocus: [],
+    markets: [],
     experience: []
   });
   const [newSkill, setNewSkill] = useState('');
+  const [tagInputs, setTagInputs] = useState({ specialization: '', projectTypeFocus: '', markets: '' });
   const [newExperience, setNewExperience] = useState({ title: '', company: '', duration: '', description: '' });
   const [showAddExperience, setShowAddExperience] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -60,6 +64,9 @@ const Profile = () => {
         profilePic: user.profilePic || '',
         coverPhoto: user.coverPhoto || '',
         skills: user.skills || [],
+        specialization: user.specialization || [],
+        projectTypeFocus: user.projectTypeFocus || [],
+        markets: user.markets || [],
         experience: user.experience || []
       });
     }
@@ -88,6 +95,18 @@ const Profile = () => {
 
   const handleRemoveSkill = (skill) => {
     setFormData({ ...formData, skills: formData.skills.filter((s) => s !== skill) });
+  };
+
+  const addTag = (field) => {
+    const value = tagInputs[field].trim();
+    if (value && !formData[field].includes(value)) {
+      setFormData((f) => ({ ...f, [field]: [...f[field], value] }));
+    }
+    setTagInputs((t) => ({ ...t, [field]: '' }));
+  };
+
+  const removeTag = (field, value) => {
+    setFormData((f) => ({ ...f, [field]: f[field].filter((v) => v !== value) }));
   };
 
   const handleAddExperience = () => {
@@ -249,6 +268,36 @@ const Profile = () => {
                         </Badge>
                       ))}
                     </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <Label className="text-lg font-semibold">Professional Identity</Label>
+                    {[
+                      { field: 'specialization', label: 'Specialization', placeholder: 'e.g. Sustainable Urban Design' },
+                      { field: 'projectTypeFocus', label: 'Project Type Focus', placeholder: 'e.g. Mixed-Use, High-Rise Residential' },
+                      { field: 'markets', label: 'Markets', placeholder: 'e.g. Mumbai, Pune' }
+                    ].map(({ field, label, placeholder }) => (
+                      <div key={field} className="space-y-2">
+                        <Label>{label}</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            value={tagInputs[field]}
+                            onChange={(e) => setTagInputs((t) => ({ ...t, [field]: e.target.value }))}
+                            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag(field))}
+                            placeholder={placeholder}
+                            className="border-slate-300"
+                          />
+                          <Button onClick={() => addTag(field)} type="button" className="bg-yellow-500 hover:bg-yellow-600 shrink-0">Add</Button>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {formData[field].map((v, idx) => (
+                            <Badge key={idx} className="bg-gray-100 text-gray-800 hover:bg-gray-200 cursor-pointer" onClick={() => removeTag(field, v)}>
+                              {v} ×
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
 
                   <div className="space-y-3">

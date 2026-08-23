@@ -66,6 +66,10 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  // "Professional Identity" sub-fields shown on the public profile
+  specialization: [{ type: String }],
+  projectTypeFocus: [{ type: String }],
+  markets: [{ type: String }],
   bio: {
     type: String,
     default: '',
