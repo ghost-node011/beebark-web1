@@ -5,26 +5,39 @@ import TopBar from '../components/TopBar';
 import { useAuth } from '../context/AuthContext';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { FiCalendar } from 'react-icons/fi';
+import { FiCalendar, FiCheckCircle, FiTrendingUp } from 'react-icons/fi';
+import { API_URL } from '../config/api';
+
+const timeGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+};
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const [stats, setStats] = useState({
-    connections: 0,
-    posts: 0,
-    messages: 0
-  });
+  const [insights, setInsights] = useState(null);
+  const [loadingInsights, setLoadingInsights] = useState(true);
+
+  useEffect(() => {
+    axios.get(`${API_URL}/api/profile/insights`)
+      .then((res) => setInsights(res.data))
+      .catch(() => setInsights(null))
+      .finally(() => setLoadingInsights(false));
+  }, []);
+
+  const connectionCount = insights?.metrics?.connectionCount ?? (user?.connections?.length || 0);
 
   return (
     <div className="min-h-screen bg-slate-50">
       <Sidebar />
       <TopBar />
-      
+
       <div className="lg:ml-64 mt-16 p-4 sm:p-6 lg:p-8">
         <div className="mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-black mb-2">Welcome back, {user?.name}!</h1>
-          <p className="text-slate-600">Here's what's happening with your network today.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-black mb-2">{timeGreeting()}, {user?.name}.</h1>
+          <p className="text-slate-600">{insights?.greeting || "Here's what's happening with your network today."}</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -43,20 +56,38 @@ const Dashboard = () => {
 
             <Card>
               <CardContent className="pt-6">
-                <h3 className="text-lg font-bold mb-4">Recent Activity</h3>
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-center space-x-3 p-3 hover:bg-slate-50 rounded-lg">
-                      <Avatar>
-                        <AvatarFallback className="bg-yellow-400 text-black">U</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold">New connection request</p>
-                        <p className="text-xs text-slate-500">2 hours ago</p>
+                <h3 className="text-lg font-bold mb-4">Your Analysis</h3>
+                {loadingInsights ? (
+                  <p className="text-sm text-slate-500">Analyzing your activity...</p>
+                ) : (
+                  <div className="space-y-6">
+                    {insights?.wins?.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-green-700 mb-2">What's going well</p>
+                        <ul className="space-y-2">
+                          {insights.wins.map((w, i) => (
+                            <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
+                              <FiCheckCircle className="text-green-500 mt-0.5 shrink-0" />{w}
+                            </li>
+                          ))}
+                        </ul>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    )}
+                    {insights?.improvements?.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-yellow-700 mb-2">What to do better</p>
+                        <ul className="space-y-2">
+                          {insights.improvements.map((imp, i) => (
+                            <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
+                              <FiTrendingUp className="text-yellow-500 mt-0.5 shrink-0" />{imp}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {!insights && <p className="text-sm text-slate-500">Couldn't load your analysis right now.</p>}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -83,15 +114,11 @@ const Dashboard = () => {
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-slate-600">Connections</span>
-                    <span className="font-bold">{stats.connections}</span>
+                    <span className="font-bold">{connectionCount}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Posts</span>
-                    <span className="font-bold">{stats.posts}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Messages</span>
-                    <span className="font-bold">{stats.messages}</span>
+                    <span className="text-slate-600">Portfolio entries</span>
+                    <span className="font-bold">{insights?.metrics?.portfolioCount ?? '—'}</span>
                   </div>
                 </div>
               </CardContent>

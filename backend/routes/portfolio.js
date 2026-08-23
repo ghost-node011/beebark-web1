@@ -42,13 +42,24 @@ router.get('/me', auth, async (req, res) => {
 router.get('/:username', async (req, res) => {
   try {
     const user = await User.findOne({ username: req.params.username })
-      .select('name username profilePic bio portfolio');
+      .select('name username profilePic bio portfolio role skills experience location connections')
+      .populate('connections', '_id');
     if (!user) return res.status(404).json({ error: 'Portfolio not found' });
 
     const items = await PortfolioItem.find({ user: user._id }).sort({ createdAt: -1 });
 
     res.json({
-      user: { name: user.name, username: user.username, profilePic: user.profilePic, bio: user.bio },
+      user: {
+        name: user.name,
+        username: user.username,
+        profilePic: user.profilePic,
+        bio: user.bio,
+        role: user.role,
+        location: user.location,
+        skills: user.skills || [],
+        experience: user.experience || [],
+        connectionCount: user.connections?.length || 0
+      },
       items,
       theme: user.portfolio?.theme || 'grid',
       headline: user.portfolio?.headline || ''

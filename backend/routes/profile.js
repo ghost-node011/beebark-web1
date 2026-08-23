@@ -5,6 +5,7 @@ const User = require('../models/User');
 const auth = require('../middleware/auth');
 const { uploadDocument, uploadToCloudinary } = require('../config/cloudinary');
 const { parseResume } = require('../utils/resumeParser');
+const { getDashboardInsights } = require('../utils/dashboardInsights');
 
 router.get('/me', auth, async (req, res) => {
   try {
@@ -49,6 +50,17 @@ router.get('/me', auth, async (req, res) => {
     res.json({ user: userResponse });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch profile', message: error.message });
+  }
+});
+
+// IMPORTANT: /insights must be registered BEFORE /:userId to avoid route collision
+router.get('/insights', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    const insights = await getDashboardInsights(user);
+    res.json(insights);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to load insights', message: error.message });
   }
 });
 

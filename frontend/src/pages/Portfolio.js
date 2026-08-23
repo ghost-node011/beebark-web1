@@ -145,7 +145,8 @@ const Portfolio = () => {
     <div className="min-h-screen bg-gray-50">
       <Sidebar />
       <TopBar />
-      <div className="lg:ml-64 mt-16 p-4 sm:p-6 lg:p-8">
+      <div className="lg:ml-64 mt-16">
+      <div className="p-4 sm:p-6 lg:p-8 pb-0">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6" data-pdf-ignore>
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-black mb-2">Portfolio</h1>
@@ -198,20 +199,24 @@ const Portfolio = () => {
           </Card>
         )}
 
-        <div ref={captureRef} className="bg-gray-50">
-          {loading ? (
-            <p className="text-gray-500">Loading...</p>
-          ) : items.length === 0 && starterSuggestions.length === 0 ? (
-            <div className="text-center py-16" data-pdf-ignore>
-              <FiImage className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-              <p className="text-gray-500 mb-4">Nothing here yet — add your first piece of work</p>
-              <Button onClick={() => openAddDialog()} className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold">Add Work</Button>
-            </div>
-          ) : (
-            <Template items={items} user={user} headline={user?.portfolio?.headline} editable onEdit={openEditDialog} onDelete={handleDelete} />
-          )}
-        </div>
+        {loading && <p className="text-gray-500 pb-8">Loading...</p>}
+        {!loading && items.length === 0 && starterSuggestions.length === 0 && (
+          <div className="text-center py-16 pb-8" data-pdf-ignore>
+            <FiImage className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+            <p className="text-gray-500 mb-4">Nothing here yet — add your first piece of work</p>
+            <Button onClick={() => openAddDialog()} className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold">Add Work</Button>
+          </div>
+        )}
+      </div>
 
+      {!loading && items.length > 0 && (
+        <div ref={captureRef}>
+          <Template items={items} user={user} headline={user?.portfolio?.headline} editable onEdit={openEditDialog} onDelete={handleDelete} />
+        </div>
+      )}
+      </div>
+
+      <div className="p-4 sm:p-6 lg:p-8">
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
           <DialogContent className="max-w-lg">
             <DialogHeader>

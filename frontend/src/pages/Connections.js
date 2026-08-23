@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar';
@@ -11,6 +12,7 @@ import { FiSearch, FiUserPlus, FiUserCheck, FiMessageCircle, FiX, FiUsers } from
 import { API_URL } from '../config/api';
 
 const Connections = () => {
+  const navigate = useNavigate();
   const [suggestions, setSuggestions] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -197,7 +199,7 @@ const Connections = () => {
                   <div key={suggestion._id} className="connection-card-pro animate-fadeIn" data-testid={`suggestion-card-${suggestion._id}`}>
                     <div className="pro-match-badge">PRO MATCH</div>
                     <div className="flex items-start justify-between mt-8">
-                      <div className="flex items-center space-x-4">
+                      <Link to={`/portfolio/${suggestion.username}`} className="flex items-center space-x-4 hover:opacity-80 transition-opacity">
                         <Avatar className="w-20 h-20 border-4 border-white shadow-lg">
                           <AvatarImage src={suggestion.profilePic} />
                           <AvatarFallback className="bg-white text-black text-2xl font-bold">
@@ -205,7 +207,7 @@ const Connections = () => {
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <h3 className="text-xl font-bold text-black">{suggestion.name}</h3>
+                          <h3 className="text-xl font-bold text-black hover:underline">{suggestion.name}</h3>
                           {suggestion.username && (
                             <p className="text-sm text-gray-800">@{suggestion.username}</p>
                           )}
@@ -213,7 +215,7 @@ const Connections = () => {
                             {suggestion.role === 'recruiter' ? 'Recruiter' : 'Professional'}
                           </p>
                         </div>
-                      </div>
+                      </Link>
                     </div>
                     
                     {suggestion.bio && (
@@ -252,18 +254,14 @@ const Connections = () => {
                       </div>
                     )}
 
-                    <div className="mt-6 grid grid-cols-2 gap-3">
+                    <div className="mt-6">
                       <Button
                         onClick={() => handleConnect(suggestion._id)}
-                        className="bg-white text-black font-semibold hover:bg-gray-100"
+                        className="w-full bg-white text-black font-semibold hover:bg-gray-100"
                         data-testid={`connect-btn-${suggestion._id}`}
                       >
                         <FiUserPlus className="w-5 h-5 mr-2" />
                         Connect
-                      </Button>
-                      <Button className="bg-black text-white font-semibold hover:bg-gray-800">
-                        <FiMessageCircle className="w-5 h-5 mr-2" />
-                        Message
                       </Button>
                     </div>
                   </div>
@@ -283,7 +281,7 @@ const Connections = () => {
               <div className="space-y-4">
                 {searchResults.map((user) => (
                   <div key={user._id} className="connection-card flex items-center justify-between animate-fadeIn" data-testid={`search-result-${user._id}`}>
-                    <div className="flex items-center space-x-4">
+                    <Link to={`/portfolio/${user.username}`} className="flex items-center space-x-4 hover:opacity-80 transition-opacity">
                       <Avatar className="w-16 h-16 border-2 border-gray-200">
                         <AvatarImage src={user.profilePic} />
                         <AvatarFallback className="bg-yellow-400 text-black text-xl font-bold">
@@ -291,7 +289,7 @@ const Connections = () => {
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <h3 className="text-lg font-bold text-black">{user.name}</h3>
+                        <h3 className="text-lg font-bold text-black hover:underline">{user.name}</h3>
                         {user.username && (
                           <p className="text-sm text-gray-600">@{user.username}</p>
                         )}
@@ -300,7 +298,7 @@ const Connections = () => {
                           <p className="text-sm text-gray-600 mt-1 line-clamp-1">{user.bio}</p>
                         )}
                       </div>
-                    </div>
+                    </Link>
                     <div className="flex items-center space-x-3">
                       {user.isConnected ? (
                         <span className="flex items-center text-green-600 font-medium">
@@ -339,7 +337,7 @@ const Connections = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {connections.map((connection) => (
                   <div key={connection._id} className="connection-card animate-fadeIn" data-testid={`connection-${connection._id}`}>
-                    <div className="flex items-center space-x-4">
+                    <Link to={`/portfolio/${connection.username}`} className="flex items-center space-x-4 hover:opacity-80 transition-opacity">
                       <Avatar className="w-14 h-14 border-2 border-yellow-400">
                         <AvatarImage src={connection.profilePic} />
                         <AvatarFallback className="bg-yellow-400 text-black font-bold">
@@ -347,7 +345,7 @@ const Connections = () => {
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
-                        <h3 className="font-bold text-black">{connection.name}</h3>
+                        <h3 className="font-bold text-black hover:underline">{connection.name}</h3>
                         {connection.username && (
                           <p className="text-sm text-gray-600">@{connection.username}</p>
                         )}
@@ -355,9 +353,9 @@ const Connections = () => {
                           {connection.role === 'recruiter' ? 'Recruiter' : 'Professional'}
                         </p>
                       </div>
-                    </div>
+                    </Link>
                     <div className="mt-4 flex space-x-2">
-                      <Button size="sm" className="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black">
+                      <Button size="sm" onClick={() => navigate(`/chat?with=${connection._id}`)} className="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black">
                         <FiMessageCircle className="w-4 h-4 mr-1" />
                         Message
                       </Button>

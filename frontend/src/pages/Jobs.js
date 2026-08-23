@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar';
@@ -172,6 +172,11 @@ const Jobs = () => {
     return 'bg-gray-400';
   };
 
+  const appliedJobIds = useMemo(
+    () => new Set(myApplications.map((app) => app.job.id)),
+    [myApplications]
+  );
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Sidebar />
@@ -344,9 +349,15 @@ const Jobs = () => {
                       )}
                     </div>
                     <p className="text-gray-700 line-clamp-3 mb-4">{job.description}</p>
-                    <Button onClick={() => handleApply(job._id)} className="w-full bg-black hover:bg-gray-900 text-white">
-                      Apply Now
-                    </Button>
+                    {appliedJobIds.has(job._id) ? (
+                      <Button disabled className="w-full bg-gray-200 text-gray-500 cursor-not-allowed">
+                        <FiCheckCircle className="mr-2" />Applied
+                      </Button>
+                    ) : (
+                      <Button onClick={() => handleApply(job._id)} className="w-full bg-black hover:bg-gray-900 text-white">
+                        Apply Now
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               ))}
@@ -395,9 +406,15 @@ const Jobs = () => {
                       )}
                     </div>
                     <p className="text-gray-700 line-clamp-3 mb-4">{job.description}</p>
-                    <Button onClick={() => handleApply(job._id)} className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-semibold">
-                      Quick Apply
-                    </Button>
+                    {appliedJobIds.has(job._id) ? (
+                      <Button disabled className="w-full bg-gray-200 text-gray-500 cursor-not-allowed">
+                        <FiCheckCircle className="mr-2" />Applied
+                      </Button>
+                    ) : (
+                      <Button onClick={() => handleApply(job._id)} className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-semibold">
+                        Quick Apply
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               ))}

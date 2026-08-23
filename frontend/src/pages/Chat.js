@@ -534,6 +534,7 @@
 // export default Chat;
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import Peer from 'simple-peer';
 import Sidebar from '../components/Sidebar';
@@ -577,6 +578,7 @@ const Chat = () => {
 
   const socket = useSocket();
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const messagesEndRef = useRef(null);
   const myVideo = useRef(null);
   const userVideo = useRef(null);
@@ -679,7 +681,17 @@ const Chat = () => {
     setSelectedConnection(connection);
     fetchMessages(connection._id);
   };
-  
+
+  // Support arriving from another page (e.g. Connections) with ?with=<userId> to jump straight into that chat
+  useEffect(() => {
+    const withId = searchParams.get('with');
+    if (!withId || !connections.length || selectedConnection) return;
+    const match = connections.find((c) => c._id === withId);
+    if (match) handleSelectConnection(match);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connections, searchParams]);
+
+
   useEffect(() => {
     if (!selectedConnection) return;
     if (socket && socket.connected) return;

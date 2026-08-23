@@ -50,26 +50,24 @@ const PublicPortfolio = () => {
   const Template = TEMPLATES[data.theme] || TEMPLATES.grid;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
-      <div className="max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-6" data-pdf-ignore>
-          <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-black">
-            <FiArrowLeft />Back to BeeBark
-          </Link>
-          {data.items.length > 0 && (
-            <Button onClick={handleExport} disabled={exporting} variant="outline" className="flex items-center gap-2">
-              <FiDownload />{exporting ? 'Exporting...' : 'Export as PDF'}
-            </Button>
-          )}
-        </div>
-        <div ref={captureRef} className="bg-gray-50">
-          {data.items.length === 0 ? (
-            <p className="text-gray-500">This portfolio is empty for now.</p>
-          ) : (
-            <Template items={data.items} user={data.user} headline={data.headline} editable={false} />
-          )}
-        </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="flex items-center justify-between p-4 sm:p-6" data-pdf-ignore>
+        <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-black">
+          <FiArrowLeft />Back to BeeBark
+        </Link>
+        {data.items.length > 0 && (
+          <Button onClick={handleExport} disabled={exporting} variant="outline" className="flex items-center gap-2">
+            <FiDownload />{exporting ? 'Exporting...' : 'Export as PDF'}
+          </Button>
+        )}
       </div>
+      {data.items.length === 0 ? (
+        <p className="text-gray-500 px-4 sm:px-6">This portfolio is empty for now.</p>
+      ) : (
+        <div ref={captureRef}>
+          <Template items={data.items} user={data.user} headline={data.headline} editable={false} />
+        </div>
+      )}
     </div>
   );
 };
