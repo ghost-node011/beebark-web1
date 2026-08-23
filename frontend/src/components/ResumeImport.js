@@ -27,7 +27,9 @@ const ResumeImport = ({ onImported }) => {
       toast.success(count ? `Imported ${count} skill${count === 1 ? '' : 's'} from your résumé` : 'Résumé imported');
       onImported?.(res.data);
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Could not read that file');
+      const data = error.response?.data;
+      const message = data?.reason ? `${data.error} — ${data.reason}` : data?.error;
+      toast.error(message || 'Could not read that file');
     } finally {
       setLoading(false);
       if (inputRef.current) inputRef.current.value = '';

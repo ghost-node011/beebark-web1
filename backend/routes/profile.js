@@ -5,7 +5,8 @@ const User = require('../models/User');
 const auth = require('../middleware/auth');
 const { uploadDocument, uploadToCloudinary } = require('../config/cloudinary');
 const { parseResume } = require('../utils/resumeParser');
-const { getDashboardInsights } = require('../utils/dashboardInsights');
+const { getDashboardInsights, computeProfileCompletion } = require('../utils/dashboardInsights');
+const { analyzeResumeForProfile } = require('../utils/resumeVerifier');
 
 router.get('/me', auth, async (req, res) => {
   try {
@@ -22,6 +23,7 @@ router.get('/me', auth, async (req, res) => {
       role: user.role,
       intent: user.intent || [],
       industries: user.industries || [],
+      industriesOther: user.industriesOther || '',
       location: user.location || '',
       onboardingCompleted: user.onboardingCompleted,
       isVerified: user.isVerified,
@@ -53,7 +55,7 @@ router.get('/me', auth, async (req, res) => {
   }
 });
 
-// IMPORTANT: /insights must be registered BEFORE /:userId to avoid route collision
+// IMPORTANT: /insights and /completion must be registered BEFORE /:userId to avoid route collision
 router.get('/insights', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
@@ -61,6 +63,18 @@ router.get('/insights', auth, async (req, res) => {
     res.json(insights);
   } catch (error) {
     res.status(500).json({ error: 'Failed to load insights', message: error.message });
+  }
+});
+
+// Cheap, no-AI-call endpoint for the persistent completion badge shown on
+// every page (TopBar) — /insights is intentionally not used there since it
+// also runs a full Gemini analysis on every call.
+router.get('/completion', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    res.json(computeProfileCompletion(user));
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to load profile completion', message: error.message });
   }
 });
 
@@ -82,7 +96,9 @@ router.get('/:userId', auth, async (req, res) => {
 
 router.put('/update', auth, async (req, res) => {
   try {
-    const { name, bio, profilePic, skills, experience, location } = req.body;
+    const { name, bio, profilePic, skills, experience, location, intent, industries } = req.body;
+    const VALID_INTENT = ['learn', 'network', 'hire', 'get_hired'];
+    const VALID_INDUSTRY = ['architecture', 'interiors', 'construction', 'real_estate', 'related'];
 
     const updateData = {};
     if (name) updateData.name = name;
@@ -91,6 +107,8 @@ router.put('/update', auth, async (req, res) => {
     if (profilePic !== undefined) updateData.profilePic = profilePic;
     if (skills) updateData.skills = skills;
     if (experience) updateData.experience = experience;
+    if (Array.isArray(intent)) updateData.intent = intent.filter((i) => VALID_INTENT.includes(i));
+    if (Array.isArray(industries)) updateData.industries = industries.filter((i) => VALID_INDUSTRY.includes(i));
 
     const user = await User.findByIdAndUpdate(
       req.userId,
@@ -108,7 +126,7 @@ router.put('/update', auth, async (req, res) => {
 // Partial saves are allowed (per-step), completion is set on the final step.
 router.put('/onboarding', auth, async (req, res) => {
   try {
-    const { role, intent, industries, bio, location, skills, profilePic, complete } = req.body;
+    const { role, intent, industries, industriesOther, bio, location, skills, profilePic, complete } = req.body;
 
     const VALID_ROLES = ['student', 'professional', 'firm'];
     const VALID_INTENT = ['learn', 'network', 'hire', 'get_hired'];
@@ -122,6 +140,7 @@ router.put('/onboarding', auth, async (req, res) => {
     if (Array.isArray(industries)) {
       update.industries = industries.filter((i) => VALID_INDUSTRY.includes(i));
     }
+    if (industriesOther !== undefined) update.industriesOther = String(industriesOther).slice(0, 100);
     if (bio !== undefined) update.bio = String(bio).slice(0, 500);
     if (location !== undefined) update.location = String(location).slice(0, 120);
     if (Array.isArray(skills)) update.skills = skills.map((s) => String(s).trim()).filter(Boolean).slice(0, 30);
@@ -154,6 +173,15 @@ router.post('/import-resume', auth, (req, res) => {
 
       const user = await User.findById(req.userId);
 
+      // AI check: is this actually a résumé? Skip (don't block) if Gemini is unavailable.
+      const analysis = await analyzeResumeForProfile(parsed.rawText, user.name);
+      if (analysis && analysis.isResume === false) {
+        return res.status(400).json({
+          error: "This doesn't look like a résumé",
+          reason: analysis.reason
+        });
+      }
+
       // Merge extracted skills into existing (case-insensitive dedupe, cap 30)
       const merged = [...(user.skills || [])];
       const seen = new Set(merged.map((s) => s.toLowerCase()));
@@ -164,6 +192,17 @@ router.post('/import-resume', auth, (req, res) => {
         }
       }
       user.skills = merged.slice(0, 30);
+
+      // Auto-fill intent/industries from the résumé — only where the user
+      // hasn't already made an explicit choice, never overwriting one.
+      if (analysis) {
+        if ((user.intent || []).length === 0 && analysis.suggestedIntent.length > 0) {
+          user.intent = analysis.suggestedIntent;
+        }
+        if ((user.industries || []).length === 0 && analysis.suggestedIndustries.length > 0) {
+          user.industries = analysis.suggestedIndustries;
+        }
+      }
 
       // Best-effort: store the original file in Cloudinary (also frees the temp file)
       let resumeUrl = '';
@@ -182,7 +221,8 @@ router.post('/import-resume', auth, (req, res) => {
           experience: parsed.experience,
           education: parsed.education || [],
           email: parsed.email,
-          phone: parsed.phone
+          phone: parsed.phone,
+          rawText: parsed.rawText
         },
         uploadedAt: new Date()
       };
@@ -191,12 +231,18 @@ router.post('/import-resume', auth, (req, res) => {
       res.json({
         message: 'Résumé imported',
         skills: user.skills,
+        intent: user.intent,
+        industries: user.industries,
         parsed: {
           skills: parsed.skills || [],
           education: parsed.education || [],
           experience: parsed.experience,
           phone: parsed.phone
-        }
+        },
+        nameMismatch: analysis?.nameMismatch || false,
+        detectedName: analysis?.detectedName || null,
+        currentName: user.name,
+        bios: analysis?.bios || []
       });
     } catch (e) {
       console.error('Resume import error:', e);

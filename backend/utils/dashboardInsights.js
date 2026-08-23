@@ -81,8 +81,28 @@ const fallbackInsights = (m) => {
   };
 };
 
+// Simple, transparent checklist — used for the "X% complete" indicator shown
+// across the app so users always know what's left, and why.
+const computeProfileCompletion = (user) => {
+  const checks = [
+    { key: 'profilePic', label: 'Add a profile photo', done: !!user.profilePic },
+    { key: 'bio', label: 'Write a short bio', done: !!user.bio?.trim() },
+    { key: 'location', label: 'Add your location', done: !!user.location?.trim() },
+    { key: 'skills', label: 'Add at least one skill', done: (user.skills || []).length > 0 },
+    { key: 'experience', label: 'Add work experience', done: (user.experience || []).length > 0 },
+    { key: 'industries', label: 'Pick an industry focus', done: (user.industries || []).length > 0 },
+    { key: 'resume', label: 'Upload your résumé', done: !!user.resume?.url }
+  ];
+  const doneCount = checks.filter((c) => c.done).length;
+  return {
+    percent: Math.round((doneCount / checks.length) * 100),
+    missing: checks.filter((c) => !c.done).map((c) => c.label)
+  };
+};
+
 const getDashboardInsights = async (user) => {
   const m = await computeMetrics(user);
+  const profileCompletion = computeProfileCompletion(user);
   const fallback = fallbackInsights(m);
 
   const prompt = `You are a friendly career coach inside a professional networking app. Based ONLY on
@@ -109,17 +129,18 @@ Respond ONLY with a JSON object in this exact shape:
 
   try {
     const result = await askGeminiForJson(prompt);
-    if (!Array.isArray(result.wins) || !Array.isArray(result.improvements)) return { ...fallback, metrics: m };
+    if (!Array.isArray(result.wins) || !Array.isArray(result.improvements)) return { ...fallback, metrics: m, profileCompletion };
     return {
       greeting: typeof result.greeting === 'string' ? result.greeting : fallback.greeting,
       wins: result.wins,
       improvements: result.improvements,
-      metrics: m
+      metrics: m,
+      profileCompletion
     };
   } catch (error) {
     console.error('Dashboard insights error:', error.message);
-    return { ...fallback, metrics: m };
+    return { ...fallback, metrics: m, profileCompletion };
   }
 };
 
-module.exports = { getDashboardInsights };
+module.exports = { getDashboardInsights, computeProfileCompletion };

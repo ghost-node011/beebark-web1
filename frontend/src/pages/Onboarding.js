@@ -7,6 +7,7 @@ import ImageUpload from '../components/ImageUpload';
 import ResumeImport from '../components/ResumeImport';
 import { ROLES } from '../config/roles';
 import { INTENTS, INDUSTRIES } from '../config/onboarding';
+import { SuggestChip, useSuggestChip } from '../components/ai/SuggestChip';
 
 const TOTAL_STEPS = 4;
 
@@ -50,6 +51,8 @@ const Onboarding = () => {
   const [role, setRole] = useState(user?.role && ['student', 'professional', 'firm'].includes(user.role) ? user.role : '');
   const [intent, setIntent] = useState(user?.intent || []);
   const [industries, setIndustries] = useState(user?.industries || []);
+  const [industriesOther, setIndustriesOther] = useState(user?.industriesOther || '');
+  const domainSuggest = useSuggestChip('professional industry/domain');
   const [profilePic, setProfilePic] = useState(user?.profilePic || '');
   const [bio, setBio] = useState(user?.bio || '');
   const [location, setLocation] = useState(user?.location || '');
@@ -85,7 +88,7 @@ const Onboarding = () => {
   const finish = async () => {
     setSaving(true);
     try {
-      await updateOnboarding({ role, intent, industries, bio, location, skills, profilePic, complete: true });
+      await updateOnboarding({ role, intent, industries, industriesOther, bio, location, skills, profilePic, complete: true });
       toast.success("You're all set!");
       navigate('/dashboard');
     } catch (error) {
@@ -161,16 +164,38 @@ const Onboarding = () => {
 
             {/* Step 3 — Industry (multi select) */}
             {step === 2 && (
-              <div className="grid sm:grid-cols-2 gap-4" data-testid="onboarding-industry">
-                {INDUSTRIES.map((ind) => (
-                  <OptionCard
-                    key={ind.value}
-                    active={industries.includes(ind.value)}
-                    onClick={() => setIndustries(toggle(industries, ind.value))}
-                    title={ind.label}
-                    testId={`industry-${ind.value}`}
-                  />
-                ))}
+              <div data-testid="onboarding-industry">
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {INDUSTRIES.map((ind) => (
+                    <OptionCard
+                      key={ind.value}
+                      active={industries.includes(ind.value)}
+                      onClick={() => setIndustries(toggle(industries, ind.value))}
+                      title={ind.label}
+                      testId={`industry-${ind.value}`}
+                    />
+                  ))}
+                </div>
+                {industries.includes('related') && (
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-black mb-1">What field?</label>
+                    <input
+                      type="text"
+                      value={industriesOther}
+                      onChange={(e) => setIndustriesOther(e.target.value)}
+                      onBlur={(e) => domainSuggest.check(e.target.value)}
+                      placeholder="e.g. Product Design, Quantity Surveying, Facilities Management"
+                      className="w-full rounded-xl border-2 border-gray-200 p-3 text-sm focus:border-yellow-400 focus:outline-none"
+                      data-testid="industry-other-input"
+                    />
+                    <SuggestChip
+                      suggestion={domainSuggest.suggestion}
+                      onAccept={(corrected) => { setIndustriesOther(corrected); domainSuggest.dismiss(); }}
+                      onAcceptAlternative={(alt) => setIndustriesOther(alt)}
+                      onDismiss={domainSuggest.dismiss}
+                    />
+                  </div>
+                )}
               </div>
             )}
 

@@ -105,6 +105,8 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['architecture', 'interiors', 'construction', 'real_estate', 'related']
   }],
+  // Free-text domain when "related" is selected — AI-confirmed at entry time
+  industriesOther: { type: String, default: '' },
   onboardingCompleted: {
     type: Boolean,
     default: false

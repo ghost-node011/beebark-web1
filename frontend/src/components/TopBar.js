@@ -13,6 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator
 } from './ui/dropdown-menu';
+import ProfileCompletionBadge from './ProfileCompletionBadge';
 
 const ROLE_LABELS = {
   student: 'Student',
@@ -61,6 +62,7 @@ const TopBar = () => {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        <ProfileCompletionBadge />
         <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors relative" aria-label="Notifications">
           <FiBell className="w-5 h-5 text-slate-600" />
           <span className="absolute top-1 right-1 w-2 h-2 bg-yellow-400 rounded-full"></span>

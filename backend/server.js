@@ -83,6 +83,7 @@ const uploadRoutes = require('./routes/upload');
 const meetingRoutes = require('./routes/meeting');
 const storyRoutes = require('./routes/story');
 const portfolioRoutes = require('./routes/portfolio');
+const aiRoutes = require('./routes/ai');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
@@ -94,6 +95,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/meetings', meetingRoutes);
 app.use('/api/stories', storyRoutes);
 app.use('/api/portfolio', portfolioRoutes);
+app.use('/api/ai', aiRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

@@ -7,16 +7,18 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Badge } from '../components/ui/badge';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
-import { FiEdit2, FiSave, FiPlus, FiTrash2, FiBriefcase, FiMapPin, FiImage } from 'react-icons/fi';
+import { FiEdit2, FiSave, FiPlus, FiTrash2, FiBriefcase, FiMapPin, FiImage, FiZap } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import { API_URL } from '../config/api';
 import { INTENTS, INDUSTRIES } from '../config/onboarding';
 import ImageUpload from '../components/ImageUpload';
 import ResumeImport from '../components/ResumeImport';
+import { SuggestChip, useSuggestChip } from '../components/ai/SuggestChip';
 
 const ROLE_LABELS = {
   student: 'Student',
@@ -44,6 +46,9 @@ const Profile = () => {
   const [newExperience, setNewExperience] = useState({ title: '', company: '', duration: '', description: '' });
   const [showAddExperience, setShowAddExperience] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [nameMismatch, setNameMismatch] = useState(null); // { detectedName, currentName }
+  const [bioSuggestions, setBioSuggestions] = useState(null); // string[]
+  const skillSuggest = useSuggestChip('skill');
 
   useEffect(() => {
     if (user) {
@@ -96,6 +101,38 @@ const Profile = () => {
 
   const handleRemoveExperience = (index) => {
     setFormData({ ...formData, experience: formData.experience.filter((_, i) => i !== index) });
+  };
+
+  const handleResumeImported = (data) => {
+    if (Array.isArray(data?.skills)) setFormData((f) => ({ ...f, skills: data.skills }));
+    if (data?.bios?.length > 0) {
+      setFormData((f) => ({ ...f, bio: data.bios[0] })); // auto-fill with the first suggestion
+      setBioSuggestions(data.bios);
+    }
+    if (data?.nameMismatch && data?.detectedName) {
+      setNameMismatch({ detectedName: data.detectedName, currentName: data.currentName });
+    }
+    // Backend may have auto-filled intent/industries too — refresh context so read-view badges update
+    axios.get(`${API_URL}/api/profile/me`).then((res) => setUser(res.data.user)).catch(() => {});
+  };
+
+  const confirmNameChange = async (useResumeName) => {
+    if (useResumeName && nameMismatch) {
+      try {
+        const response = await axios.put(`${API_URL}/api/profile/update`, { name: nameMismatch.detectedName });
+        setUser(response.data.user);
+        setFormData((f) => ({ ...f, name: nameMismatch.detectedName }));
+        toast.success('Name updated everywhere on your account');
+      } catch (error) {
+        toast.error('Could not update your name');
+      }
+    }
+    setNameMismatch(null);
+  };
+
+  const chooseBio = (bio) => {
+    setFormData((f) => ({ ...f, bio }));
+    setBioSuggestions(null);
   };
 
   const roleLabel = ROLE_LABELS[user?.role] || 'Professional';
@@ -172,11 +209,27 @@ const Profile = () => {
                   </div>
                   <div className="space-y-2">
                     <Label>Skills</Label>
-                    <ResumeImport onImported={(data) => Array.isArray(data?.skills) && setFormData((f) => ({ ...f, skills: data.skills }))} />
+                    <ResumeImport onImported={handleResumeImported} />
                     <div className="flex gap-2">
-                      <Input value={newSkill} onChange={(e) => setNewSkill(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSkill())} placeholder="Add a skill" className="border-slate-300" data-testid="skill-input" />
+                      <Input
+                        value={newSkill}
+                        onChange={(e) => setNewSkill(e.target.value)}
+                        onBlur={(e) => skillSuggest.check(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSkill())}
+                        placeholder="Add a skill"
+                        className="border-slate-300"
+                        data-testid="skill-input"
+                      />
                       <Button onClick={handleAddSkill} type="button" className="bg-yellow-500 hover:bg-yellow-600 shrink-0" data-testid="add-skill-button">Add</Button>
                     </div>
+                    <SuggestChip
+                      suggestion={skillSuggest.suggestion}
+                      onAccept={(corrected) => { setNewSkill(corrected); skillSuggest.dismiss(); }}
+                      onAcceptAlternative={(alt) => {
+                        if (!formData.skills.includes(alt)) setFormData((f) => ({ ...f, skills: [...f.skills, alt] }));
+                      }}
+                      onDismiss={skillSuggest.dismiss}
+                    />
                     <div className="flex flex-wrap gap-2 mt-3">
                       {formData.skills.map((skill, idx) => (
                         <Badge key={idx} className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 cursor-pointer" onClick={() => handleRemoveSkill(skill)}>
@@ -305,6 +358,46 @@ const Profile = () => {
           </Card>
         </div>
       </div>
+
+      <Dialog open={!!nameMismatch} onOpenChange={(open) => !open && confirmNameChange(false)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Name doesn't match</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-gray-600">
+            Your résumé says <span className="font-semibold text-black">{nameMismatch?.detectedName}</span>, but
+            your account name is <span className="font-semibold text-black">{nameMismatch?.currentName}</span>.
+            Update your name everywhere on BeeBark to match your résumé?
+          </p>
+          <div className="flex gap-2 mt-2">
+            <Button onClick={() => confirmNameChange(true)} className="flex-1 bg-black text-white">
+              Yes, update to {nameMismatch?.detectedName}
+            </Button>
+            <Button onClick={() => confirmNameChange(false)} variant="outline" className="flex-1">Keep current name</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!bioSuggestions} onOpenChange={(open) => !open && setBioSuggestions(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><FiZap className="text-yellow-500" />Pick a bio</DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-gray-500 -mt-2">Generated from your résumé — we've filled in the first one, pick a different one if you'd rather.</p>
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {bioSuggestions?.map((bio, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => chooseBio(bio)}
+                className={`w-full text-left p-3 rounded-lg border-2 text-sm transition ${formData.bio === bio ? 'border-yellow-400 bg-yellow-50' : 'border-gray-200 hover:border-gray-300'}`}
+              >
+                {bio}
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
