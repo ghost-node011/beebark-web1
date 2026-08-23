@@ -254,7 +254,7 @@ const Jobs = () => {
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-black">Your Resume Score</h3>
-                    <p className="text-sm text-gray-600">AI-reviewed by Gemini</p>
+                    <p className="text-sm text-gray-600">AI-reviewed</p>
                   </div>
                 </div>
 
