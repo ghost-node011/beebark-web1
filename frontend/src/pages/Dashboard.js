@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { Card, CardContent } from '../components/ui/card';
 import { FiCheckCircle, FiTrendingUp, FiArrowRight, FiZap } from 'react-icons/fi';
 import { API_URL } from '../config/api';
+import { getCopy } from '../config/roleDomainCopy';
 
 const timeGreeting = () => {
   const hour = new Date().getHours();
@@ -16,11 +17,11 @@ const timeGreeting = () => {
 };
 
 // Route the top suggestion to wherever it's actually actionable
-const suggestionLink = (text = '') => {
+const suggestionLink = (text = '', copy) => {
   const t = text.toLowerCase();
-  if (t.includes('portfolio') || t.includes('photo')) return { to: '/portfolio', label: 'Go to Portfolio' };
-  if (t.includes('resume')) return { to: '/jobs', label: 'Go to Jobs' };
-  if (t.includes('connect') || t.includes('messag')) return { to: '/connections', label: 'Go to Connections' };
+  if (t.includes('portfolio') || t.includes('photo')) return { to: '/portfolio', label: `Go to ${copy.domain === 'real_estate' ? 'Listings' : 'Portfolio'}` };
+  if (t.includes('resume')) return { to: '/jobs', label: `Go to ${copy.jobsLabel}` };
+  if (t.includes('connect') || t.includes('messag')) return { to: '/connections', label: `Go to ${copy.connectionsLabel}` };
   return null;
 };
 
@@ -28,6 +29,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const [insights, setInsights] = useState(null);
   const [loadingInsights, setLoadingInsights] = useState(true);
+  const copy = getCopy(user);
 
   useEffect(() => {
     axios.get(`${API_URL}/api/profile/insights`)
@@ -38,7 +40,7 @@ const Dashboard = () => {
 
   const connectionCount = insights?.metrics?.connectionCount ?? (user?.connections?.length || 0);
   const topSuggestion = insights?.improvements?.[0];
-  const topSuggestionLink = topSuggestion ? suggestionLink(topSuggestion) : null;
+  const topSuggestionLink = topSuggestion ? suggestionLink(topSuggestion, copy) : null;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -48,7 +50,7 @@ const Dashboard = () => {
       <div className="lg:ml-64 mt-16 p-4 sm:p-6 lg:p-8">
         <div className="mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-black mb-2">{timeGreeting()}, {user?.name}.</h1>
-          <p className="text-slate-600">{insights?.greeting || "Here's what's happening with your network today."}</p>
+          <p className="text-slate-600">{insights?.greeting || copy.dashboardSubtitle}</p>
         </div>
 
         {!loadingInsights && topSuggestion && (
@@ -120,7 +122,7 @@ const Dashboard = () => {
                     <span className="font-bold">{connectionCount}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Portfolio entries</span>
+                    <span className="text-slate-600 capitalize">{copy.workNounPlural === 'work' ? 'Portfolio entries' : copy.workNounPlural}</span>
                     <span className="font-bold">{insights?.metrics?.portfolioCount ?? '—'}</span>
                   </div>
                   {typeof insights?.metrics?.resumeScore === 'number' && (

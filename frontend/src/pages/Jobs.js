@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 import { FiUpload, FiBriefcase, FiMapPin, FiDollarSign, FiFileText, FiAward, FiZap, FiCheckCircle } from 'react-icons/fi';
 import { API_URL } from '../config/api';
+import { getCopy } from '../config/roleDomainCopy';
 
 const Jobs = () => {
   const [jobs, setJobs] = useState([]);
@@ -32,6 +33,7 @@ const Jobs = () => {
   const [savingPreference, setSavingPreference] = useState(false);
   const [formData, setFormData] = useState({ title: '', description: '', company: '', location: '', salary: '' });
   const { user } = useAuth();
+  const copy = getCopy(user);
 
   useEffect(() => {
     fetchJobs();
@@ -184,8 +186,8 @@ const Jobs = () => {
       <div className="lg:ml-64 mt-16 p-4 sm:p-6 lg:p-8">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-black mb-2">Job Portal</h1>
-            <p className="text-gray-600">AI-powered job matching for professionals</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-black mb-2">{copy.jobsLabel}</h1>
+            <p className="text-gray-600">{copy.jobsSubtitle}</p>
           </div>
           <div className="flex items-center gap-4 flex-wrap">
             {user?.role !== 'recruiter' && (
@@ -313,7 +315,7 @@ const Jobs = () => {
 
         <Tabs defaultValue="browse" className="w-full">
           <TabsList className="flex w-full justify-start overflow-x-auto mb-6">
-            <TabsTrigger value="browse">Browse Jobs</TabsTrigger>
+            <TabsTrigger value="browse">Browse {copy.jobsLabel}</TabsTrigger>
             <TabsTrigger value="recommended">Recommended ({recommendedJobs.length})</TabsTrigger>
             <TabsTrigger value="applied">My Applications ({myApplications.length})</TabsTrigger>
             {user?.role === 'recruiter' && <TabsTrigger value="posted">Posted Jobs ({myJobs.length})</TabsTrigger>}

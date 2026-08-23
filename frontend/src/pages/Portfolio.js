@@ -15,11 +15,13 @@ import { FiCamera, FiImage, FiPlus, FiZap, FiDownload } from 'react-icons/fi';
 import { API_URL } from '../config/api';
 import { TEMPLATES, THEME_META, FONT_META, ACCENT_PRESETS } from '../components/portfolio/PortfolioTemplates';
 import { exportPortfolioPdf } from '../utils/exportPortfolioPdf';
+import { getCopy } from '../config/roleDomainCopy';
 
 const emptyForm = { title: '', description: '', images: [] };
 
 const Portfolio = () => {
   const { user } = useAuth();
+  const copy = getCopy(user);
   const [items, setItems] = useState([]);
   const [theme, setTheme] = useState('grid');
   const [font, setFont] = useState('playfair');
@@ -187,15 +189,15 @@ const Portfolio = () => {
       <div className="p-4 sm:p-6 lg:p-8 pb-0">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6" data-pdf-ignore>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-black mb-2">Portfolio</h1>
-            <p className="text-gray-600">Add your work — it updates here automatically</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-black mb-2">{copy.domain === 'real_estate' ? 'Listings' : 'Portfolio'}</h1>
+            <p className="text-gray-600">{copy.portfolioSubtitle}</p>
           </div>
           <div className="flex gap-3">
             <Button onClick={handleExport} disabled={exporting || items.length === 0} variant="outline" className="flex items-center gap-2">
               <FiDownload />{exporting ? 'Exporting...' : 'Export as PDF'}
             </Button>
             <Button onClick={() => openAddDialog()} className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold flex items-center gap-2">
-              <FiPlus />Add Work
+              <FiPlus />{copy.portfolioAddLabel}
             </Button>
           </div>
         </div>
@@ -288,8 +290,8 @@ const Portfolio = () => {
         {!loading && items.length === 0 && starterSuggestions.length === 0 && (
           <div className="text-center py-16 pb-8" data-pdf-ignore>
             <FiImage className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-            <p className="text-gray-500 mb-4">Nothing here yet — add your first piece of work</p>
-            <Button onClick={() => openAddDialog()} className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold">Add Work</Button>
+            <p className="text-gray-500 mb-4">Nothing here yet — add your first {copy.workNoun}</p>
+            <Button onClick={() => openAddDialog()} className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold">{copy.portfolioAddLabel}</Button>
           </div>
         )}
       </div>
@@ -305,7 +307,7 @@ const Portfolio = () => {
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>{editingItem ? 'Edit work' : 'Add work'}</DialogTitle>
+              <DialogTitle>{editingItem ? `Edit ${copy.workNoun}` : `Add ${copy.workNoun}`}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSave} className="space-y-4 mt-2">
               <div>
@@ -342,7 +344,7 @@ const Portfolio = () => {
                 )}
               </div>
               <Button type="submit" disabled={saving || uploadingImages} className="w-full bg-black text-white">
-                {saving ? 'Saving...' : editingItem ? 'Save changes' : 'Add to portfolio'}
+                {saving ? 'Saving...' : editingItem ? 'Save changes' : `Add ${copy.workNoun}`}
               </Button>
             </form>
           </DialogContent>

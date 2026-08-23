@@ -109,6 +109,12 @@ const getDashboardInsights = async (user) => {
 these real, measured stats for this user — do not invent anything not listed here — write a short,
 warm, specific analysis.
 
+This user is a ${user.role || 'professional'}${(user.industries || []).length ? ` in ${user.industries.join('/')}` : ''}.
+Use vocabulary that fits: e.g. a student's network is about mentors/internships/learning, a firm's is
+about hiring/talent, a professional's is about clients/career growth. Reference their specific
+domain (e.g. listings for real estate, projects for architecture/construction) instead of generic
+"work" if their industry is known.
+
 Stats:
 - Connections: ${m.connectionCount}
 - Connections they've messaged at least once: ${m.messagedCount}

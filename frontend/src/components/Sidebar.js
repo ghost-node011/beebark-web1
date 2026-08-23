@@ -7,27 +7,29 @@ import {
   FiHome, FiMessageCircle, FiUsers, FiLayers, FiBriefcase,
   FiVideo, FiX, FiImage
 } from 'react-icons/fi';
+import { getCopy } from '../config/roleDomainCopy';
 
 const Sidebar = () => {
   const { user } = useAuth();
   const { sidebarOpen, setSidebarOpen } = useUI();
   const close = () => setSidebarOpen(false);
+  const copy = getCopy(user);
 
   const menuItems = [
-    { path: '/dashboard', icon: FiHome, label: 'Dashboard' },
-    { path: '/chat', icon: FiMessageCircle, label: 'Messages' },
-    { path: '/connections', icon: FiUsers, label: 'Connections' },
-    // { path: '/feed', icon: FiLayers, label: 'Feed' },
-    { path: '/portfolio', icon: FiImage, label: 'Portfolio' },
-    // { path: '/reels', icon: FiFilm, label: 'Reels' },
-    // { path: '/projects', icon: FiTrendingUp, label: 'Projects Center' },
-    { path: '/jobs', icon: FiBriefcase, label: 'Jobs' },
-    // { path: '/store', icon: FiShoppingBag, label: 'Store' },
-    // { path: '/rent', icon: FiDollarSign, label: 'Rent & Sell' },
-    // { path: '/events', icon: FiCalendar, label: 'Events' },
-    // { path: '/memories', icon: FiImage, label: 'Memories' },
-    // { path: '/wallet', icon: FiDollarSign, label: 'Wallet & Economy' },
-    // { path: '/meetings', icon: FiVideo, label: 'Meetings' },
+    { id: 'dashboard', path: '/dashboard', icon: FiHome, label: 'Dashboard' },
+    { id: 'messages', path: '/chat', icon: FiMessageCircle, label: 'Messages' },
+    { id: 'connections', path: '/connections', icon: FiUsers, label: copy.connectionsLabel },
+    // { id: 'feed', path: '/feed', icon: FiLayers, label: 'Feed' },
+    { id: 'portfolio', path: '/portfolio', icon: FiImage, label: copy.domain === 'real_estate' ? 'Listings' : 'Portfolio' },
+    // { id: 'reels', path: '/reels', icon: FiFilm, label: 'Reels' },
+    // { id: 'projects', path: '/projects', icon: FiTrendingUp, label: 'Projects Center' },
+    { id: 'jobs', path: '/jobs', icon: FiBriefcase, label: copy.jobsLabel },
+    // { id: 'store', path: '/store', icon: FiShoppingBag, label: 'Store' },
+    // { id: 'rent', path: '/rent', icon: FiDollarSign, label: 'Rent & Sell' },
+    // { id: 'events', path: '/events', icon: FiCalendar, label: 'Events' },
+    // { id: 'memories', path: '/memories', icon: FiImage, label: 'Memories' },
+    // { id: 'wallet', path: '/wallet', icon: FiDollarSign, label: 'Wallet & Economy' },
+    // { id: 'meetings', path: '/meetings', icon: FiVideo, label: 'Meetings' },
   ];
 
   return (
@@ -72,7 +74,7 @@ const Sidebar = () => {
                 className={({ isActive }) =>
                   `sidebar-item ${isActive ? 'active' : ''}`
                 }
-                data-testid={`sidebar-${item.label.toLowerCase()}`}
+                data-testid={`sidebar-${item.id}`}
               >
                 <Icon className="w-5 h-5" />
                 <span>{item.label}</span>

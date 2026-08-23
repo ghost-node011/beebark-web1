@@ -10,9 +10,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { toast } from 'sonner';
 import { FiSearch, FiUserPlus, FiUserCheck, FiMessageCircle, FiX, FiUsers } from 'react-icons/fi';
 import { API_URL } from '../config/api';
+import { getCopy } from '../config/roleDomainCopy';
+import { useAuth } from '../context/AuthContext';
 
 const Connections = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const copy = getCopy(user);
   const [suggestions, setSuggestions] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -132,8 +136,8 @@ const Connections = () => {
       <div className="lg:ml-64 mt-16 p-4 sm:p-6 lg:p-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-black mb-2">Network & Growth</h1>
-          <p className="text-gray-600">Find and connect with professionals. Search by name, username, or email.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-black mb-2">{copy.connectionsLabel}</h1>
+          <p className="text-gray-600">{copy.connectionsSubtitle}</p>
         </div>
 
         {/* Search Bar */}
@@ -179,7 +183,7 @@ const Connections = () => {
               Search Results ({searchResults.length})
             </TabsTrigger>
             <TabsTrigger value="connections" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black rounded-lg">
-              My Network ({connections.length})
+              My {copy.connectionsLabel} ({connections.length})
             </TabsTrigger>
             <TabsTrigger value="pending" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black rounded-lg">
               Pending ({pendingRequests.length})
