@@ -203,7 +203,7 @@ const Connections = () => {
                   <div key={suggestion._id} className="connection-card-pro animate-fadeIn" data-testid={`suggestion-card-${suggestion._id}`}>
                     <div className="pro-match-badge">PRO MATCH</div>
                     <div className="flex items-start justify-between mt-8">
-                      <Link to={`/portfolio/${suggestion.username}`} className="flex items-center space-x-4 hover:opacity-80 transition-opacity">
+                      <Link to={`/profile/${suggestion.username}`} className="flex items-center space-x-4 hover:opacity-80 transition-opacity">
                         <Avatar className="w-20 h-20 border-4 border-white shadow-lg">
                           <AvatarImage src={suggestion.profilePic} />
                           <AvatarFallback className="bg-white text-black text-2xl font-bold">
@@ -285,7 +285,7 @@ const Connections = () => {
               <div className="space-y-4">
                 {searchResults.map((user) => (
                   <div key={user._id} className="connection-card flex items-center justify-between animate-fadeIn" data-testid={`search-result-${user._id}`}>
-                    <Link to={`/portfolio/${user.username}`} className="flex items-center space-x-4 hover:opacity-80 transition-opacity">
+                    <Link to={`/profile/${user.username}`} className="flex items-center space-x-4 hover:opacity-80 transition-opacity">
                       <Avatar className="w-16 h-16 border-2 border-gray-200">
                         <AvatarImage src={user.profilePic} />
                         <AvatarFallback className="bg-yellow-400 text-black text-xl font-bold">
@@ -341,7 +341,7 @@ const Connections = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {connections.map((connection) => (
                   <div key={connection._id} className="connection-card animate-fadeIn" data-testid={`connection-${connection._id}`}>
-                    <Link to={`/portfolio/${connection.username}`} className="flex items-center space-x-4 hover:opacity-80 transition-opacity">
+                    <Link to={`/profile/${connection.username}`} className="flex items-center space-x-4 hover:opacity-80 transition-opacity">
                       <Avatar className="w-14 h-14 border-2 border-yellow-400">
                         <AvatarImage src={connection.profilePic} />
                         <AvatarFallback className="bg-yellow-400 text-black font-bold">

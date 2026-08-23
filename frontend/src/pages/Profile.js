@@ -39,6 +39,7 @@ const Profile = () => {
     bio: '',
     location: '',
     profilePic: '',
+    coverPhoto: '',
     skills: [],
     experience: []
   });
@@ -57,6 +58,7 @@ const Profile = () => {
         bio: user.bio || '',
         location: user.location || '',
         profilePic: user.profilePic || '',
+        coverPhoto: user.coverPhoto || '',
         skills: user.skills || [],
         experience: user.experience || []
       });
@@ -146,18 +148,28 @@ const Profile = () => {
       <div className="lg:ml-64 mt-16 p-4 sm:p-6 lg:p-8">
         <div className="max-w-4xl mx-auto">
           <Card className="shadow-sm border-slate-200 overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between">
-                <div className="flex items-center gap-4 min-w-0">
-                  <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-white shrink-0">
+            <div
+              className="h-40 sm:h-56 bg-gradient-to-br from-yellow-400 to-amber-500 relative"
+              style={formData.coverPhoto ? { backgroundImage: `url(${formData.coverPhoto})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
+            >
+              {editing && (
+                <div className="absolute bottom-3 right-3" data-testid="cover-photo-upload">
+                  <ImageUpload onUploadComplete={(url) => setFormData((f) => ({ ...f, coverPhoto: url }))} />
+                </div>
+              )}
+            </div>
+            <div className="px-6 pb-2">
+              <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-12 sm:-mt-14 justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+                  <Avatar className="w-24 h-24 sm:w-28 sm:h-28 border-4 border-white shadow-lg shrink-0">
                     <AvatarImage src={formData.profilePic} />
-                    <AvatarFallback className="bg-white text-yellow-700 text-2xl font-bold">
+                    <AvatarFallback className="bg-yellow-400 text-black text-2xl font-bold">
                       {(formData.name || 'U').charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="min-w-0">
-                    <CardTitle className="text-xl sm:text-2xl font-bold truncate">{user?.name}</CardTitle>
-                    <p className="text-gray-800 text-sm break-all">{user?.email}</p>
+                  <div className="min-w-0 sm:pb-1">
+                    <CardTitle className="text-xl sm:text-2xl font-bold truncate text-black">{user?.name}</CardTitle>
+                    <p className="text-gray-500 text-sm break-all">{user?.email}</p>
                     <div className="flex items-center gap-2 mt-2">
                       <Badge className="bg-gray-900 text-yellow-400 capitalize">{roleLabel}</Badge>
                       {user?.username && (
@@ -170,16 +182,16 @@ const Profile = () => {
                 </div>
                 <Button
                   onClick={() => (editing ? handleSave() : setEditing(true))}
-                  className="bg-gray-900 text-yellow-400 hover:bg-gray-800 w-full sm:w-auto shrink-0"
+                  className="bg-gray-900 text-yellow-400 hover:bg-gray-800 sm:mb-1 shrink-0"
                   disabled={loading}
                   data-testid="edit-profile-button"
                 >
                   {editing ? <><FiSave className="mr-2" /> Save</> : <><FiEdit2 className="mr-2" /> Edit Profile</>}
                 </Button>
               </div>
-            </CardHeader>
+            </div>
 
-            <CardContent className="mt-6 space-y-6">
+            <CardContent className="mt-4 space-y-6">
               {editing ? (
                 <>
                   <div className="space-y-2">

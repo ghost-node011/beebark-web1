@@ -7,6 +7,8 @@ const { uploadDocument, uploadToCloudinary } = require('../config/cloudinary');
 const { parseResume } = require('../utils/resumeParser');
 const { getDashboardInsights, computeProfileCompletion } = require('../utils/dashboardInsights');
 const { analyzeResumeForProfile } = require('../utils/resumeVerifier');
+const { rateProfile } = require('../utils/profileRating');
+const PortfolioItem = require('../models/PortfolioItem');
 
 router.get('/me', auth, async (req, res) => {
   try {
@@ -28,6 +30,7 @@ router.get('/me', auth, async (req, res) => {
       onboardingCompleted: user.onboardingCompleted,
       isVerified: user.isVerified,
       profilePic: user.profilePic,
+      coverPhoto: user.coverPhoto,
       bio: user.bio,
       skills: user.skills,
       experience: user.experience,
@@ -78,6 +81,70 @@ router.get('/completion', auth, async (req, res) => {
   }
 });
 
+// Full public-facing profile — hero/bio/skills/experience/portfolio preview,
+// for viewing OTHER users (own profile still uses /me). Counts a real view
+// (excluding self-views) instead of showing a fabricated number.
+router.get('/public/:username', auth, async (req, res) => {
+  try {
+    const user = await User.findOne({ username: req.params.username })
+      .select('name username profilePic coverPhoto bio role location industries skills experience connections createdAt')
+      .populate('connections', '_id');
+    if (!user) return res.status(404).json({ error: 'Profile not found' });
+
+    if (user._id.toString() !== req.userId.toString()) {
+      await User.updateOne({ _id: user._id }, { $inc: { profileViews: 1 } });
+    }
+    const fresh = await User.findById(user._id).select('profileViews');
+
+    const portfolioItems = await PortfolioItem.find({ user: user._id }).sort({ createdAt: -1 }).limit(6);
+    const portfolioCount = await PortfolioItem.countDocuments({ user: user._id });
+
+    res.json({
+      user: {
+        name: user.name,
+        username: user.username,
+        profilePic: user.profilePic,
+        coverPhoto: user.coverPhoto,
+        bio: user.bio,
+        role: user.role,
+        location: user.location,
+        industries: user.industries || [],
+        skills: user.skills || [],
+        experience: user.experience || [],
+        connectionCount: user.connections?.length || 0,
+        memberSince: user.createdAt,
+        profileViews: fresh.profileViews
+      },
+      portfolioPreview: portfolioItems,
+      portfolioCount,
+      isOwnProfile: user._id.toString() === req.userId.toString()
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to load profile', message: error.message });
+  }
+});
+
+// Interactive AI rating of a profile, shown to the viewer (not the owner) —
+// "Hey {viewer}, I think this is 8/10...".
+router.get('/public/:username/rating', auth, async (req, res) => {
+  try {
+    const [profileUser, viewer] = await Promise.all([
+      User.findOne({ username: req.params.username }),
+      User.findById(req.userId)
+    ]);
+    if (!profileUser) return res.status(404).json({ error: 'Profile not found' });
+
+    const portfolioCount = await PortfolioItem.countDocuments({ user: profileUser._id });
+    const rating = await rateProfile(profileUser, viewer?.name?.split(' ')[0] || 'there', portfolioCount);
+    if (!rating) {
+      return res.status(503).json({ error: 'Rating is unavailable right now' });
+    }
+    res.json(rating);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to generate rating', message: error.message });
+  }
+});
+
 router.get('/:userId', auth, async (req, res) => {
   try {
     const user = await User.findById(req.params.userId)
@@ -96,13 +163,14 @@ router.get('/:userId', auth, async (req, res) => {
 
 router.put('/update', auth, async (req, res) => {
   try {
-    const { name, bio, profilePic, skills, experience, location, intent, industries } = req.body;
+    const { name, bio, profilePic, coverPhoto, skills, experience, location, intent, industries } = req.body;
     const VALID_INTENT = ['learn', 'network', 'hire', 'get_hired'];
     const VALID_INDUSTRY = ['architecture', 'interiors', 'construction', 'real_estate', 'related'];
 
     const updateData = {};
     if (name) updateData.name = name;
     if (bio !== undefined) updateData.bio = bio;
+    if (coverPhoto !== undefined) updateData.coverPhoto = coverPhoto;
     if (location !== undefined) updateData.location = String(location).slice(0, 120);
     if (profilePic !== undefined) updateData.profilePic = profilePic;
     if (skills) updateData.skills = skills;

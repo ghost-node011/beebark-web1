@@ -17,6 +17,7 @@ import Feed from './pages/Feed';
 import Portfolio from './pages/Portfolio';
 import PublicPortfolio from './pages/PublicPortfolio';
 import Profile from './pages/Profile';
+import PublicProfile from './pages/PublicProfile';
 import Connections from './pages/Connections';
 import Chat from './pages/Chat';
 import Jobs from './pages/Jobs';
@@ -105,6 +106,7 @@ function App() {
             <Route path="/feed" element={<PrivateRoute><Feed /></PrivateRoute>} />
             <Route path="/portfolio" element={<PrivateRoute><Portfolio /></PrivateRoute>} />
             <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+            <Route path="/profile/:username" element={<PrivateRoute><PublicProfile /></PrivateRoute>} />
             <Route path="/connections" element={<PrivateRoute><Connections /></PrivateRoute>} />
             <Route path="/chat" element={<PrivateRoute><Chat /></PrivateRoute>} />
             <Route path="/jobs" element={<PrivateRoute><Jobs /></PrivateRoute>} />

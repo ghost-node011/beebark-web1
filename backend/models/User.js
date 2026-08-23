@@ -58,6 +58,14 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  coverPhoto: {
+    type: String,
+    default: ''
+  },
+  profileViews: {
+    type: Number,
+    default: 0
+  },
   bio: {
     type: String,
     default: '',
