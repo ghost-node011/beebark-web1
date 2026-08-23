@@ -49,8 +49,8 @@ router.get('/style-suggestion', auth, async (req, res) => {
     const user = await User.findById(req.userId);
     const items = await PortfolioItem.find({ user: req.userId }).sort({ createdAt: -1 });
     const suggestion = await suggestPortfolioStyle(items, user.role);
-    if (!suggestion) {
-      return res.status(503).json({ error: 'Style suggestions are unavailable right now' });
+    if (suggestion?.error) {
+      return res.status(503).json({ error: 'Style suggestions are unavailable right now', detail: suggestion.error });
     }
     res.json(suggestion);
   } catch (error) {

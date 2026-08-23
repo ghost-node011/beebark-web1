@@ -200,7 +200,7 @@ const Profile = () => {
                         </button>
                       </div>
                     ) : (
-                      <ImageUpload onUploadComplete={(url) => setFormData((f) => ({ ...f, profilePic: url }))} />
+                      <ImageUpload onUploadComplete={(url) => setFormData((f) => ({ ...f, profilePic: url }))} endpoint="/api/upload/profile-photo" />
                     )}
                   </div>
                   <div className="space-y-2">

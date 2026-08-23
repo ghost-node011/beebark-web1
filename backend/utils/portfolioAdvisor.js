@@ -67,7 +67,10 @@ Respond ONLY with a JSON object in this exact shape:
 
   try {
     const result = await askGeminiForJson(prompt);
-    if (!VALID_FONTS.includes(result.font) || !/^#[0-9a-fA-F]{6}$/.test(result.accentColor || '')) return null;
+    if (!VALID_FONTS.includes(result.font) || !/^#[0-9a-fA-F]{6}$/.test(result.accentColor || '')) {
+      console.error('Portfolio style suggestion: Gemini returned an unusable shape:', JSON.stringify(result));
+      return { error: 'Gemini returned an unexpected format' };
+    }
     return {
       font: result.font,
       accentColor: result.accentColor,
@@ -75,7 +78,7 @@ Respond ONLY with a JSON object in this exact shape:
     };
   } catch (error) {
     console.error('Portfolio style suggestion error:', error.message);
-    return null;
+    return { error: error.message };
   }
 };
 

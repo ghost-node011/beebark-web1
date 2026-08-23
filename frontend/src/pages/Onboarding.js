@@ -221,7 +221,7 @@ const Onboarding = () => {
                       </button>
                     </div>
                   ) : (
-                    <ImageUpload onUploadComplete={(url) => setProfilePic(url)} />
+                    <ImageUpload onUploadComplete={(url) => setProfilePic(url)} endpoint="/api/upload/profile-photo" />
                   )}
                 </div>
 

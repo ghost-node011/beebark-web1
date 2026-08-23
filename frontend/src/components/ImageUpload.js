@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { FiUpload, FiX } from 'react-icons/fi';
 import { API_URL } from '../config/api';
 
-const ImageUpload = ({ onUploadComplete, multiple = false }) => {
+const ImageUpload = ({ onUploadComplete, multiple = false, endpoint }) => {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState(null);
 
@@ -26,8 +26,8 @@ const ImageUpload = ({ onUploadComplete, multiple = false }) => {
     }
 
     try {
-      const endpoint = multiple ? '/api/upload/multiple' : '/api/upload/image';
-      const response = await axios.post(`${API_URL}${endpoint}`, formData, {
+      const targetEndpoint = endpoint || (multiple ? '/api/upload/multiple' : '/api/upload/image');
+      const response = await axios.post(`${API_URL}${targetEndpoint}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -41,11 +41,12 @@ const ImageUpload = ({ onUploadComplete, multiple = false }) => {
       toast.success('Image uploaded successfully!');
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error('Failed to upload image');
+      setPreview(null);
+      toast.error(error.response?.data?.error || 'Failed to upload image');
     } finally {
       setUploading(false);
     }
-  }, [multiple, onUploadComplete, API_URL]);
+  }, [multiple, onUploadComplete, endpoint]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,

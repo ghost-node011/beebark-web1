@@ -4,22 +4,25 @@ const axios = require('axios');
 // renames/deprecates it.
 const DEFAULT_MODEL = 'gemini-3.6-flash';
 
-/**
- * Ask Gemini a prompt and get back the raw text response.
- * Throws on any failure (missing key, network, non-2xx) so callers can
- * fall back to non-AI behavior instead of failing the request.
- */
-const askGemini = async (prompt) => {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error('GEMINI_API_KEY is not configured');
-  }
-  const model = process.env.GEMINI_MODEL || DEFAULT_MODEL;
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Google's actual error message (quota, invalid key, blocked, ...) is inside
+// the response body, not axios's generic "Request failed with status code
+// X" — surface it so failures are diagnosable from logs alone.
+const describeAxiosError = (error) => {
+  if (error.response) {
+    const body = error.response.data?.error?.message || JSON.stringify(error.response.data)?.slice(0, 300);
+    return `HTTP ${error.response.status}: ${body}`;
+  }
+  if (error.code) return `${error.code}: ${error.message}`;
+  return error.message;
+};
+
+const requestGemini = async (parts, model, apiKey) => {
   const { data } = await axios.post(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
     {
-      contents: [{ parts: [{ text: prompt }] }],
+      contents: [{ parts }],
       generationConfig: { temperature: 0.3, maxOutputTokens: 2000 }
     },
     { headers: { 'Content-Type': 'application/json' }, timeout: 30000 }
@@ -32,9 +35,43 @@ const askGemini = async (prompt) => {
   return text;
 };
 
-// Ask Gemini for a prompt whose response should be a single JSON object/array.
-const askGeminiForJson = async (prompt) => {
-  const text = await askGemini(prompt);
+/**
+ * Send Gemini a set of content parts (text and/or inline images) and get
+ * back the raw text response. Throws on any failure (missing key, network,
+ * non-2xx) so callers can fall back to non-AI behavior instead of failing
+ * the request. Retries transient failures (timeouts, 429/5xx) once with a
+ * short backoff before giving up — production network blips shouldn't take
+ * an AI feature down.
+ */
+const askGeminiParts = async (parts) => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY is not configured');
+  }
+  const model = process.env.GEMINI_MODEL || DEFAULT_MODEL;
+
+  try {
+    return await requestGemini(parts, model, apiKey);
+  } catch (firstError) {
+    const status = firstError.response?.status;
+    const retryable = !status || status === 429 || status >= 500;
+    if (!retryable) {
+      throw new Error(describeAxiosError(firstError));
+    }
+    console.error('Gemini call failed, retrying once:', describeAxiosError(firstError));
+    await sleep(1000);
+    try {
+      return await requestGemini(parts, model, apiKey);
+    } catch (secondError) {
+      throw new Error(describeAxiosError(secondError));
+    }
+  }
+};
+
+// Ask Gemini a plain text prompt and get back the raw text response.
+const askGemini = (prompt) => askGeminiParts([{ text: prompt }]);
+
+const parseJson = (text) => {
   const match = text.match(/[[{][\s\S]*[\]}]/);
   if (!match) {
     throw new Error('Gemini did not return valid JSON');
@@ -42,4 +79,17 @@ const askGeminiForJson = async (prompt) => {
   return JSON.parse(match[0]);
 };
 
-module.exports = { askGemini, askGeminiForJson };
+// Ask Gemini for a prompt whose response should be a single JSON object/array.
+const askGeminiForJson = async (prompt) => parseJson(await askGemini(prompt));
+
+// Ask Gemini a question about an image (base64-encoded) plus a text prompt,
+// expecting a single JSON object/array back.
+const askGeminiVisionForJson = async (prompt, base64Data, mimeType) => {
+  const text = await askGeminiParts([
+    { text: prompt },
+    { inline_data: { mime_type: mimeType, data: base64Data } }
+  ]);
+  return parseJson(text);
+};
+
+module.exports = { askGemini, askGeminiForJson, askGeminiVisionForJson };
