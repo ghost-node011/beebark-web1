@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar';
@@ -11,9 +11,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/
 import { Badge } from '../components/ui/badge';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
-import { FiCamera, FiImage, FiPlus, FiZap } from 'react-icons/fi';
+import { FiCamera, FiImage, FiPlus, FiZap, FiDownload } from 'react-icons/fi';
 import { API_URL } from '../config/api';
 import { TEMPLATES, THEME_META } from '../components/portfolio/PortfolioTemplates';
+import { exportPortfolioPdf } from '../utils/exportPortfolioPdf';
 
 const emptyForm = { title: '', description: '', images: [] };
 
@@ -29,6 +30,8 @@ const Portfolio = () => {
   const [saving, setSaving] = useState(false);
   const [lastFeedback, setLastFeedback] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
+  const [exporting, setExporting] = useState(false);
+  const captureRef = useRef(null);
 
   useEffect(() => {
     fetchPortfolio();
@@ -127,23 +130,39 @@ const Portfolio = () => {
 
   const Template = TEMPLATES[theme] || TEMPLATES.grid;
 
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await exportPortfolioPdf(captureRef.current, `${user?.username || 'portfolio'}.pdf`);
+    } catch (error) {
+      toast.error('Failed to export PDF');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Sidebar />
       <TopBar />
       <div className="lg:ml-64 mt-16 p-4 sm:p-6 lg:p-8">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6" data-pdf-ignore>
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-black mb-2">Portfolio</h1>
             <p className="text-gray-600">Add your work — it updates here automatically</p>
           </div>
-          <Button onClick={() => openAddDialog()} className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold flex items-center gap-2">
-            <FiPlus />Add Work
-          </Button>
+          <div className="flex gap-3">
+            <Button onClick={handleExport} disabled={exporting || items.length === 0} variant="outline" className="flex items-center gap-2">
+              <FiDownload />{exporting ? 'Exporting...' : 'Export as PDF'}
+            </Button>
+            <Button onClick={() => openAddDialog()} className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold flex items-center gap-2">
+              <FiPlus />Add Work
+            </Button>
+          </div>
         </div>
 
         {/* Theme picker */}
-        <div className="flex flex-wrap gap-3 mb-8">
+        <div className="flex flex-wrap gap-3 mb-8" data-pdf-ignore>
           {THEME_META.map((t) => (
             <button
               key={t.key}
@@ -159,7 +178,7 @@ const Portfolio = () => {
 
         {/* Starter suggestions from resume, shown only when portfolio is empty */}
         {starterSuggestions.length > 0 && (
-          <Card className="mb-8 border-2 border-yellow-200 shadow-md">
+          <Card className="mb-8 border-2 border-yellow-200 shadow-md" data-pdf-ignore>
             <CardContent className="pt-6">
               <p className="font-semibold text-black mb-3 flex items-center gap-2">
                 <FiZap className="text-yellow-500" />We found these from your resume — add them with one tap
@@ -179,17 +198,19 @@ const Portfolio = () => {
           </Card>
         )}
 
-        {loading ? (
-          <p className="text-gray-500">Loading...</p>
-        ) : items.length === 0 && starterSuggestions.length === 0 ? (
-          <div className="text-center py-16">
-            <FiImage className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-            <p className="text-gray-500 mb-4">Nothing here yet — add your first piece of work</p>
-            <Button onClick={() => openAddDialog()} className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold">Add Work</Button>
-          </div>
-        ) : (
-          <Template items={items} user={user} headline={user?.portfolio?.headline} editable onEdit={openEditDialog} onDelete={handleDelete} />
-        )}
+        <div ref={captureRef} className="bg-gray-50">
+          {loading ? (
+            <p className="text-gray-500">Loading...</p>
+          ) : items.length === 0 && starterSuggestions.length === 0 ? (
+            <div className="text-center py-16" data-pdf-ignore>
+              <FiImage className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+              <p className="text-gray-500 mb-4">Nothing here yet — add your first piece of work</p>
+              <Button onClick={() => openAddDialog()} className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold">Add Work</Button>
+            </div>
+          ) : (
+            <Template items={items} user={user} headline={user?.portfolio?.headline} editable onEdit={openEditDialog} onDelete={handleDelete} />
+          )}
+        </div>
 
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
           <DialogContent className="max-w-lg">
