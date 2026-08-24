@@ -1,4 +1,4 @@
-const { askGeminiForJson } = require('./geminiClient');
+const { askGroqForJson } = require('./groqClient');
 
 const VALID_INTENT = ['learn', 'network', 'hire', 'get_hired'];
 const VALID_INDUSTRY = ['architecture', 'interiors', 'construction', 'real_estate', 'related'];
@@ -12,9 +12,9 @@ const namesLikelyDiffer = (resumeName, currentName) => {
 };
 
 /**
- * One combined Gemini pass over an uploaded résumé: is this actually a
+ * One combined Groq pass over an uploaded résumé: is this actually a
  * résumé, what name does it contain, and — if so — a bio to suggest and
- * likely intent/industry tags. Returns null (never throws) if Gemini is
+ * likely intent/industry tags. Returns null (never throws) if Groq is
  * unavailable; the caller should then skip verification/auto-fill entirely
  * rather than block the upload.
  */
@@ -54,7 +54,7 @@ If it is NOT a résumé, respond with:
 { "isResume": false, "reason": "one short sentence explaining what it looks like instead", "detectedName": null, "detectedLocation": null, "bios": [], "suggestedIntent": [], "suggestedIndustries": [] }`;
 
   try {
-    const result = await askGeminiForJson(prompt);
+    const result = await askGroqForJson(prompt);
     if (typeof result.isResume !== 'boolean') return null;
 
     return {

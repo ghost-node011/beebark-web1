@@ -74,7 +74,7 @@ router.get('/insights', auth, async (req, res) => {
 
 // Cheap, no-AI-call endpoint for the persistent completion badge shown on
 // every page (TopBar) — /insights is intentionally not used there since it
-// also runs a full Gemini analysis on every call.
+// also runs a full Groq analysis on every call.
 router.get('/completion', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
@@ -259,7 +259,7 @@ router.post('/import-resume', auth, (req, res) => {
 
       const user = await User.findById(req.userId);
 
-      // AI check: is this actually a résumé? Skip (don't block) if Gemini is unavailable.
+      // AI check: is this actually a résumé? Skip (don't block) if Groq is unavailable.
       const analysis = await analyzeResumeForProfile(parsed.rawText, user.name);
       if (analysis && analysis.isResume === false) {
         return res.status(400).json({

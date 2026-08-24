@@ -1,5 +1,5 @@
 const fs = require('fs');
-const { askGeminiVisionForJson } = require('./geminiClient');
+const { askGroqVisionForJson } = require('./groqClient');
 
 const PROMPT = `You are checking whether an uploaded image is suitable as a profile photo on a
 professional networking app.
@@ -14,13 +14,13 @@ Respond ONLY with a JSON object in this exact shape:
 
 /**
  * Vision check for a profile photo upload. Returns null (never throws) if
- * Gemini is unavailable — the caller should then allow the upload through
+ * Groq is unavailable — the caller should then allow the upload through
  * rather than block users because an AI call failed.
  */
 const verifyProfilePhoto = async (filePath, mimeType) => {
   try {
     const base64Data = fs.readFileSync(filePath).toString('base64');
-    const result = await askGeminiVisionForJson(PROMPT, base64Data, mimeType);
+    const result = await askGroqVisionForJson(PROMPT, base64Data, mimeType);
     if (typeof result.suitable !== 'boolean') return null;
     return {
       suitable: result.suitable,

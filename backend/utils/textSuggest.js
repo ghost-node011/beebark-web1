@@ -1,10 +1,10 @@
-const { askGeminiForJson } = require('./geminiClient');
+const { askGroqForJson } = require('./groqClient');
 
 /**
  * Generic "did you mean X" correction for a short free-text value — a skill,
  * a custom industry/domain, a tag, etc. Domain-aware: e.g. "photograph" as a
  * skill should suggest "Photography" plus adjacent tools like "Adobe
- * Photoshop". Returns null (never throws) if Gemini is unavailable — the
+ * Photoshop". Returns null (never throws) if Groq is unavailable — the
  * caller should just keep the user's original text.
  */
 const suggestCorrection = async (text, context = 'skill') => {
@@ -32,7 +32,7 @@ Respond ONLY with a JSON object in this exact shape:
 { "corrected": "the corrected/standard term", "alternatives": ["related term", "..."], "changed": true, "relevant": true, "relevantReason": "" }`;
 
   try {
-    const result = await askGeminiForJson(prompt);
+    const result = await askGroqForJson(prompt);
     if (typeof result.corrected !== 'string') return null;
     return {
       corrected: result.corrected,

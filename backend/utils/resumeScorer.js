@@ -1,8 +1,8 @@
-const { askGeminiForJson } = require('./geminiClient');
+const { askGroqForJson } = require('./groqClient');
 
 /**
  * AI resume review: a 0-100 score, a breakdown, and concrete improvement tips.
- * Returns null (never throws) if Gemini is unavailable or misbehaves — resume
+ * Returns null (never throws) if Groq is unavailable or misbehaves — resume
  * upload must succeed regardless of whether scoring works.
  */
 const analyzeResume = async (rawText) => {
@@ -28,7 +28,7 @@ Respond ONLY with a single JSON object in this exact shape:
 }`;
 
   try {
-    const result = await askGeminiForJson(prompt);
+    const result = await askGroqForJson(prompt);
     if (typeof result.score !== 'number') return null;
     return {
       score: Math.max(0, Math.min(100, Math.round(result.score))),

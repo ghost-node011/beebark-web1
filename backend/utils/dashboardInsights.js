@@ -1,8 +1,8 @@
 const Message = require('../models/Message');
 const PortfolioItem = require('../models/PortfolioItem');
-const { askGeminiForJson } = require('./geminiClient');
+const { askGroqForJson } = require('./groqClient');
 
-// Real, computed metrics — never invented. Gemini (or the fallback) only
+// Real, computed metrics — never invented. Groq (or the fallback) only
 // turns these numbers into readable coaching copy.
 const computeMetrics = async (user) => {
   const connectionIds = (user.connections || []).map((id) => id.toString());
@@ -38,7 +38,7 @@ const computeMetrics = async (user) => {
   };
 };
 
-// Deterministic, rule-based narrative — used if Gemini is unavailable so the
+// Deterministic, rule-based narrative — used if Groq is unavailable so the
 // dashboard always has something real to show, never a blank/broken panel.
 const fallbackInsights = (m) => {
   const wins = [];
@@ -134,7 +134,7 @@ Respond ONLY with a JSON object in this exact shape:
 { "greeting": "one short warm sentence", "wins": ["short specific win", "..."], "improvements": ["short specific, actionable suggestion", "..."] }`;
 
   try {
-    const result = await askGeminiForJson(prompt);
+    const result = await askGroqForJson(prompt);
     if (!Array.isArray(result.wins) || !Array.isArray(result.improvements)) return { ...fallback, metrics: m, profileCompletion };
     return {
       greeting: typeof result.greeting === 'string' ? result.greeting : fallback.greeting,

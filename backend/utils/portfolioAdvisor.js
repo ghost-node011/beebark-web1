@@ -1,9 +1,9 @@
-const { askGeminiForJson } = require('./geminiClient');
+const { askGroqForJson } = require('./groqClient');
 
 /**
  * Quick AI take on a portfolio work item: a short piece of feedback and a
  * few suggested tags, so the user doesn't have to categorize it by hand.
- * Returns null (never throws) if Gemini is unavailable — saving the item
+ * Returns null (never throws) if Groq is unavailable — saving the item
  * must succeed regardless.
  */
 const analyzePortfolioItem = async (title, description) => {
@@ -22,7 +22,7 @@ Respond ONLY with a single JSON object in this exact shape:
 }`;
 
   try {
-    const result = await askGeminiForJson(prompt);
+    const result = await askGroqForJson(prompt);
     return {
       feedback: typeof result.feedback === 'string' ? result.feedback : '',
       suggestedTags: Array.isArray(result.suggestedTags) ? result.suggestedTags.slice(0, 6) : []
@@ -44,7 +44,7 @@ const FONT_DESCRIPTIONS = {
 /**
  * AI-suggested visual style (font pairing + accent color + layout) for a
  * user's portfolio, based on what's actually in it. Returns null (never
- * throws) if Gemini is unavailable — the user can still pick manually.
+ * throws) if Groq is unavailable — the user can still pick manually.
  */
 const suggestPortfolioStyle = async (items, role) => {
   const summary = items.slice(0, 8).map((i) => `- ${i.title}: ${i.description || ''} [${(i.tags || []).join(', ')}]`).join('\n') || '(no items yet)';
@@ -66,10 +66,10 @@ Respond ONLY with a JSON object in this exact shape:
 { "font": "one of the keys above", "accentColor": "#RRGGBB", "reason": "one short sentence explaining the choice" }`;
 
   try {
-    const result = await askGeminiForJson(prompt);
+    const result = await askGroqForJson(prompt);
     if (!VALID_FONTS.includes(result.font) || !/^#[0-9a-fA-F]{6}$/.test(result.accentColor || '')) {
-      console.error('Portfolio style suggestion: Gemini returned an unusable shape:', JSON.stringify(result));
-      return { error: 'Gemini returned an unexpected format' };
+      console.error('Portfolio style suggestion: Groq returned an unusable shape:', JSON.stringify(result));
+      return { error: 'Groq returned an unexpected format' };
     }
     return {
       font: result.font,
