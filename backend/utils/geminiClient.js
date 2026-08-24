@@ -54,7 +54,9 @@ const askGeminiParts = async (parts) => {
     return await requestGemini(parts, model, apiKey);
   } catch (firstError) {
     const status = firstError.response?.status;
-    const retryable = !status || status === 429 || status >= 500;
+    // 429 (rate limit) is deliberately excluded: Google's own retry-after for
+    // it runs 30-50s, so a 1s backoff just burns a second call for nothing.
+    const retryable = !status || status >= 500;
     if (!retryable) {
       throw new Error(describeAxiosError(firstError));
     }
