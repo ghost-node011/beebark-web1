@@ -386,6 +386,13 @@ const Onboarding = () => {
 
       {/* Bottom action bar */}
       <div className="sticky bottom-0 w-full border-t border-gray-100 bg-white/90 backdrop-blur px-5 py-5">
+        {industryOtherUnresolved && (
+          <p className="mx-auto max-w-3xl mb-2 text-xs font-medium text-red-600" data-testid="onboarding-blocked-reason">
+            {domainSuggest.suggestion?.relevant === false
+              ? "That field doesn't match BeeBark's domain — fix it above to continue."
+              : 'Confirm or dismiss the suggestion above to continue.'}
+          </p>
+        )}
         <div className="mx-auto max-w-3xl flex items-center gap-4">
           {step > 0 ? (
             <button type="button" onClick={back} className="flex items-center gap-2 text-sm text-gray-500 hover:text-black px-2 shrink-0">
