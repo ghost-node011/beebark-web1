@@ -101,12 +101,17 @@ const Profile = () => {
   const [nameMismatch, setNameMismatch] = useState(null); // { detectedName, currentName }
   const [bioSuggestions, setBioSuggestions] = useState(null); // string[]
   const skillSuggest = useSuggestChip('skill');
+  const specializationSuggest = useSuggestChip('specialization for a professional profile');
+  const projectTypeSuggest = useSuggestChip('project type focus for a professional profile');
+  const marketsSuggest = useSuggestChip('market / region a professional works in');
+  const tagSuggesters = { specialization: specializationSuggest, projectTypeFocus: projectTypeSuggest, markets: marketsSuggest };
+  const jobTitleSuggest = useSuggestChip('job title');
+  const fieldOfStudySuggest = useSuggestChip('field of study');
   const [galleryPreview, setGalleryPreview] = useState({ items: [], count: 0, associatedProfessionals: [] });
   const [galleryCategory, setGalleryCategory] = useState('All');
   const [activity, setActivity] = useState([]);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
-  const [activeTab, setActiveTab] = useState('Overview');
 
   useEffect(() => {
     if (user) setFormData(emptyFormFromUser(user));
@@ -310,8 +315,6 @@ const Profile = () => {
             subtitle={user?.email}
             location={formData.location}
             connectionCount={user?.connections?.length || 0}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
             actions={
               <Button onClick={() => edit('header')} variant="outline" data-testid="edit-header-button">
                 <FiEdit2 className="mr-2 w-4 h-4" /> Edit
@@ -355,8 +358,7 @@ const Profile = () => {
             </Card>
           )}
 
-          {activeTab === 'Overview' && (
-            <>
+          <div id="section-overview" className="space-y-6 scroll-mt-24">
               <Card className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-slate-900 font-serif">Analytics</h3>
@@ -396,11 +398,18 @@ const Profile = () => {
                           <Input
                             value={tagInputs[field]}
                             onChange={(e) => setTagInputs((t) => ({ ...t, [field]: e.target.value }))}
+                            onBlur={(e) => tagSuggesters[field].check(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag(field))}
                             placeholder={placeholder}
                           />
                           <Button onClick={() => addTag(field)} type="button" className="bg-yellow-500 hover:bg-yellow-600 shrink-0">Add</Button>
                         </div>
+                        <SuggestChip
+                          suggestion={tagSuggesters[field].suggestion}
+                          onAccept={(corrected) => { setTagInputs((t) => ({ ...t, [field]: corrected })); tagSuggesters[field].dismiss(); }}
+                          onAcceptAlternative={(alt) => { if (!formData[field].includes(alt)) setFormData((f) => ({ ...f, [field]: [...f[field], alt] })); }}
+                          onDismiss={tagSuggesters[field].dismiss}
+                        />
                         <div className="flex flex-wrap gap-2">
                           {formData[field].map((v, idx) => (
                             <Badge key={idx} className="bg-gray-100 text-gray-800 hover:bg-gray-200 cursor-pointer" onClick={() => removeTag(field, v)}>{v} ×</Badge>
@@ -489,10 +498,9 @@ const Profile = () => {
                   </span>
                 </label>
               </SectionCard>
-            </>
-          )}
+          </div>
 
-          {activeTab === 'Portfolio' && (
+          <div id="section-portfolio" className="space-y-6 scroll-mt-24">
             <SectionCard
               title="Work Gallery" sectionKey="gallery-noop" editingSection={editingSection} editable={false}
               action={
@@ -531,10 +539,9 @@ const Profile = () => {
                 <p className="text-slate-500">Nothing here yet — add your first work photo above</p>
               )}
             </SectionCard>
-          )}
+          </div>
 
-          {activeTab === 'Experience' && (
-            <>
+          <div id="section-experience" className="space-y-6 scroll-mt-24">
               <SectionCard
                 title="Experience" sectionKey="experience" editingSection={editingSection} icon={FiBriefcase}
                 onEditClick={() => edit('experience')} onCancel={cancelSection} onSave={saveSection} saving={saving}
@@ -546,7 +553,18 @@ const Profile = () => {
                     {showAddExperience && (
                       <Card className="p-4 bg-slate-50">
                         <div className="space-y-3">
-                          <Input placeholder="Job Title" value={newExperience.title} onChange={(e) => setNewExperience({ ...newExperience, title: e.target.value })} />
+                          <Input
+                            placeholder="Job Title"
+                            value={newExperience.title}
+                            onChange={(e) => setNewExperience({ ...newExperience, title: e.target.value })}
+                            onBlur={(e) => jobTitleSuggest.check(e.target.value)}
+                          />
+                          <SuggestChip
+                            suggestion={jobTitleSuggest.suggestion}
+                            onAccept={(corrected) => { setNewExperience((f) => ({ ...f, title: corrected })); jobTitleSuggest.dismiss(); }}
+                            onAcceptAlternative={(alt) => setNewExperience((f) => ({ ...f, title: alt }))}
+                            onDismiss={jobTitleSuggest.dismiss}
+                          />
                           <Input placeholder="Company" value={newExperience.company} onChange={(e) => setNewExperience({ ...newExperience, company: e.target.value })} />
                           <Input placeholder="Duration (e.g., Jan 2020 - Present)" value={newExperience.duration} onChange={(e) => setNewExperience({ ...newExperience, duration: e.target.value })} />
                           <Textarea placeholder="Description" value={newExperience.description} onChange={(e) => setNewExperience({ ...newExperience, description: e.target.value })} rows={3} />
@@ -602,7 +620,18 @@ const Profile = () => {
                         <div className="space-y-3">
                           <Input placeholder="School / Institution" value={newEducation.school} onChange={(e) => setNewEducation({ ...newEducation, school: e.target.value })} />
                           <Input placeholder="Degree (e.g. B.Arch)" value={newEducation.degree} onChange={(e) => setNewEducation({ ...newEducation, degree: e.target.value })} />
-                          <Input placeholder="Field of Study" value={newEducation.field} onChange={(e) => setNewEducation({ ...newEducation, field: e.target.value })} />
+                          <Input
+                            placeholder="Field of Study"
+                            value={newEducation.field}
+                            onChange={(e) => setNewEducation({ ...newEducation, field: e.target.value })}
+                            onBlur={(e) => fieldOfStudySuggest.check(e.target.value)}
+                          />
+                          <SuggestChip
+                            suggestion={fieldOfStudySuggest.suggestion}
+                            onAccept={(corrected) => { setNewEducation((f) => ({ ...f, field: corrected })); fieldOfStudySuggest.dismiss(); }}
+                            onAcceptAlternative={(alt) => setNewEducation((f) => ({ ...f, field: alt }))}
+                            onDismiss={fieldOfStudySuggest.dismiss}
+                          />
                           <Input placeholder="Duration (e.g. 2016 - 2020)" value={newEducation.duration} onChange={(e) => setNewEducation({ ...newEducation, duration: e.target.value })} />
                           <Textarea placeholder="Description (optional)" value={newEducation.description} onChange={(e) => setNewEducation({ ...newEducation, description: e.target.value })} rows={2} />
                           <div className="flex gap-2">
@@ -643,11 +672,9 @@ const Profile = () => {
                   </div>
                 ) : <p className="text-slate-500">No education added yet</p>}
               </SectionCard>
-            </>
-          )}
+          </div>
 
-          {activeTab === 'Activity' && (
-            <>
+          <div id="section-activity" className="space-y-6 scroll-mt-24">
               {activity.length > 0 ? (
                 <SectionCard title="Recent Activity" sectionKey="activity-noop" editingSection={editingSection} editable={false}>
                   <div className="space-y-3">
@@ -683,8 +710,7 @@ const Profile = () => {
                   </div>
                 </SectionCard>
               )}
-            </>
-          )}
+          </div>
         </div>
       </div>
 

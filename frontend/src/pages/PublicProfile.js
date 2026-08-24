@@ -32,7 +32,6 @@ const PublicProfile = () => {
   const [connecting, setConnecting] = useState(false);
   const [rating, setRating] = useState(null);
   const [ratingDismissed, setRatingDismissed] = useState(false);
-  const [activeTab, setActiveTab] = useState('Overview');
   const [galleryCategory, setGalleryCategory] = useState('All');
 
   useEffect(() => {
@@ -99,8 +98,6 @@ const PublicProfile = () => {
             subtitle={`@${user.username}${industryLabels.length > 0 ? ' · ' + industryLabels.join(', ') : ''}`}
             location={user.location}
             connectionCount={user.connectionCount}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
             actions={
               !data.isOwnProfile && (
                 <>
@@ -142,8 +139,7 @@ const PublicProfile = () => {
             </Card>
           )}
 
-          {activeTab === 'Overview' && (
-            <>
+          <div id="section-overview" className="space-y-6 scroll-mt-24">
               {showAnalytics && (
                 <Card className="p-6">
                   <div className="flex items-center justify-between mb-4">
@@ -197,10 +193,9 @@ const PublicProfile = () => {
                   </div>
                 ) : <p className="text-gray-400 text-sm">No skills added yet</p>}
               </Card>
-            </>
-          )}
+          </div>
 
-          {activeTab === 'Portfolio' && (
+          <div id="section-portfolio" className="space-y-6 scroll-mt-24">
             <Card className="p-6">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-lg font-bold text-black flex items-center font-serif"><FiImage className="mr-2" />Work Gallery</h3>
@@ -230,10 +225,9 @@ const PublicProfile = () => {
                 </div>
               ) : <p className="text-gray-400">Nothing here yet</p>}
             </Card>
-          )}
+          </div>
 
-          {activeTab === 'Experience' && (
-            <>
+          <div id="section-experience" className="space-y-6 scroll-mt-24">
               <Card className="p-6">
                 <h3 className="text-lg font-bold text-black mb-3 flex items-center font-serif"><FiBriefcase className="mr-2" />Experience</h3>
                 {user.experience?.length > 0 ? (
@@ -265,11 +259,9 @@ const PublicProfile = () => {
                   </div>
                 </Card>
               )}
-            </>
-          )}
+          </div>
 
-          {activeTab === 'Activity' && (
-            <>
+          <div id="section-activity" className="space-y-6 scroll-mt-24">
               {data.isOwnProfile ? (
                 <Card className="p-6"><p className="text-gray-400">Visit your own profile page to see your activity.</p></Card>
               ) : (
@@ -293,8 +285,7 @@ const PublicProfile = () => {
                   </div>
                 </Card>
               )}
-            </>
-          )}
+          </div>
         </div>
       </div>
     </div>
