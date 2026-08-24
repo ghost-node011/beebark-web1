@@ -171,13 +171,13 @@ const userSchema = new mongoose.Schema({
   portfolio: {
     theme: {
       type: String,
-      enum: ['grid', 'timeline', 'minimal', 'magazine'],
+      enum: ['grid', 'timeline', 'minimal', 'magazine', 'stack', 'mosaic', 'index', 'brutalist'],
       default: 'grid'
     },
     headline: { type: String, default: '' },
     font: {
       type: String,
-      enum: ['playfair', 'space', 'mono', 'classic'],
+      enum: ['playfair', 'space', 'mono', 'classic', 'inter', 'dmserif', 'cormorant', 'bodoni', 'fraunces', 'archivo', 'bigshoulders', 'oswald', 'bebas', 'plexmono', 'plexsans', 'poppins', 'manrope', 'syne', 'unbounded', 'spectral'],
       default: 'playfair'
     },
     accentColor: { type: String, default: '#D4F547' }

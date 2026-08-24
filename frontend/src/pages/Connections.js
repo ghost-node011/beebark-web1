@@ -303,14 +303,14 @@ const Connections = () => {
                         )}
                       </div>
                     </Link>
-                    <div className="flex items-center space-x-3 shrink-0">
+                    <div className="flex items-center space-x-3 shrink-0 w-full sm:w-auto">
                       {user.isConnected ? (
-                        <span className="flex items-center text-green-600 font-medium">
-                          <FiUserCheck className="w-5 h-5 mr-1" />
+                        <span className="flex items-center justify-center gap-1.5 h-9 px-4 rounded-md text-sm font-medium bg-green-50 text-green-600 border border-green-200 w-full sm:w-auto">
+                          <FiUserCheck className="w-5 h-5" />
                           Connected
                         </span>
                       ) : user.requestSent ? (
-                        <span className="text-gray-500 font-medium">Request Sent</span>
+                        <span className="flex items-center justify-center h-9 px-4 rounded-md text-sm font-medium bg-gray-50 text-gray-500 border border-gray-200 w-full sm:w-auto">Request Sent</span>
                       ) : (
                         <Button
                           onClick={() => handleConnect(user._id)}

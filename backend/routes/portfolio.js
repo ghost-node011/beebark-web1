@@ -147,8 +147,8 @@ router.delete('/items/:id', auth, async (req, res) => {
 router.put('/theme', auth, async (req, res) => {
   try {
     const { theme, headline, font, accentColor } = req.body;
-    const validThemes = ['grid', 'timeline', 'minimal', 'magazine'];
-    const validFonts = ['playfair', 'space', 'mono', 'classic'];
+    const validThemes = ['grid', 'timeline', 'minimal', 'magazine', 'stack', 'mosaic', 'index', 'brutalist'];
+    const validFonts = ['playfair', 'space', 'mono', 'classic', 'inter', 'dmserif', 'cormorant', 'bodoni', 'fraunces', 'archivo', 'bigshoulders', 'oswald', 'bebas', 'plexmono', 'plexsans', 'poppins', 'manrope', 'syne', 'unbounded', 'spectral'];
     if (theme && !validThemes.includes(theme)) {
       return res.status(400).json({ error: 'Invalid theme' });
     }

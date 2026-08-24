@@ -44,12 +44,12 @@ const Sidebar = () => {
       )}
 
       <div
-        className={`fixed left-0 top-0 h-screen w-64 bg-white border-r border-slate-200 overflow-y-auto z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+        className={`fixed left-0 top-0 h-screen w-64 bg-white border-r border-slate-200 flex flex-col z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         data-testid="sidebar"
       >
-        <div className="p-6">
+        <div className="p-6 shrink-0">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-lg flex items-center justify-center">
@@ -63,7 +63,7 @@ const Sidebar = () => {
           </div>
         </div>
 
-        <nav className="space-y-1 pb-6">
+        <nav className="flex-1 overflow-y-auto space-y-1 pb-6">
           {menuItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -83,7 +83,7 @@ const Sidebar = () => {
           })}
         </nav>
 
-        <div className="border-t border-slate-200 p-4">
+        <div className="border-t border-slate-200 p-4 shrink-0">
           <NavLink to="/profile" onClick={close} className="flex items-center space-x-3 p-3 hover:bg-slate-50 rounded-lg">
             <Avatar className="w-10 h-10">
               <AvatarImage src={user?.profilePic} />

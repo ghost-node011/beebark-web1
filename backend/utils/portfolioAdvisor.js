@@ -33,12 +33,28 @@ Respond ONLY with a single JSON object in this exact shape:
   }
 };
 
-const VALID_FONTS = ['playfair', 'space', 'mono', 'classic'];
+const VALID_FONTS = ['playfair', 'space', 'mono', 'classic', 'inter', 'dmserif', 'cormorant', 'bodoni', 'fraunces', 'archivo', 'bigshoulders', 'oswald', 'bebas', 'plexmono', 'plexsans', 'poppins', 'manrope', 'syne', 'unbounded', 'spectral'];
 const FONT_DESCRIPTIONS = {
   playfair: 'Playfair Display — elegant serif, editorial/luxury feel',
   space: 'Space Grotesk — modern geometric sans, clean/tech feel',
   mono: 'JetBrains Mono — technical monospace, precise/architectural feel',
-  classic: 'Libre Baskerville — classic book serif, traditional/scholarly feel'
+  classic: 'Libre Baskerville — classic book serif, traditional/scholarly feel',
+  inter: 'Inter — clean modern sans, neutral/versatile feel',
+  dmserif: 'DM Serif Display — elegant display serif, high-fashion feel',
+  cormorant: 'Cormorant Garamond — refined literary serif, delicate/luxury feel',
+  bodoni: 'Bodoni Moda — high-contrast fashion serif, editorial/couture feel',
+  fraunces: 'Fraunces — warm expressive soft-serif, friendly/creative feel',
+  archivo: 'Archivo Black — heavyweight display sans, blunt/confident feel',
+  bigshoulders: 'Big Shoulders Display — condensed industrial display, urban/structural feel',
+  oswald: 'Oswald — condensed editorial headline sans, punchy/news feel',
+  bebas: 'Bebas Neue — tall condensed display, poster/impact feel',
+  plexmono: 'IBM Plex Mono — precise technical monospace, engineering feel',
+  plexsans: 'IBM Plex Sans — neutral technical sans, corporate/clean feel',
+  poppins: 'Poppins — rounded geometric sans, friendly/modern feel',
+  manrope: 'Manrope — modern grotesque sans, minimal/startup feel',
+  syne: 'Syne — contemporary quirky display, experimental/artistic feel',
+  unbounded: 'Unbounded — bold geometric display, futuristic/loud feel',
+  spectral: 'Spectral — literary book serif, calm/scholarly feel'
 };
 
 /**
