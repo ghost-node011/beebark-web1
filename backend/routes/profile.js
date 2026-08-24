@@ -211,7 +211,7 @@ router.put('/update', auth, async (req, res) => {
 // Partial saves are allowed (per-step), completion is set on the final step.
 router.put('/onboarding', auth, async (req, res) => {
   try {
-    const { role, intent, industries, industriesOther, bio, location, skills, profilePic, complete } = req.body;
+    const { role, intent, industries, industriesOther, bio, location, skills, profilePic, complete, name } = req.body;
 
     const VALID_ROLES = ['student', 'professional', 'firm'];
     const VALID_INTENT = ['learn', 'network', 'hire', 'get_hired'];
@@ -219,6 +219,7 @@ router.put('/onboarding', auth, async (req, res) => {
 
     const update = {};
     if (VALID_ROLES.includes(role)) update.role = role;
+    if (typeof name === 'string' && name.trim()) update.name = name.trim().slice(0, 100);
     if (Array.isArray(intent)) {
       update.intent = intent.filter((i) => VALID_INTENT.includes(i));
     }
@@ -327,6 +328,7 @@ router.post('/import-resume', auth, (req, res) => {
         nameMismatch: analysis?.nameMismatch || false,
         detectedName: analysis?.detectedName || null,
         currentName: user.name,
+        detectedLocation: analysis?.detectedLocation || null,
         bios: analysis?.bios || []
       });
     } catch (e) {

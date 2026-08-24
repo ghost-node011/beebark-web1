@@ -20,8 +20,16 @@ If it's already fine, just return it unchanged. Also suggest up to 3 closely-rel
 terms someone in this exact field would recognize (e.g. "photography" -> "Adobe Photoshop", "Adobe
 Lightroom") — skip this if there's nothing meaningfully more specific to suggest.
 
+This app is a professional network built for architecture, interior design, construction, and real
+estate — plus closely adjacent professional/creative fields (e.g. product design, urban planning,
+facilities management, structural engineering, quantity surveying, graphic design, and similar all
+count as related). Judge whether this value is a plausible answer for that "${context}" field on
+this app. Set "relevant" to false only if it's gibberish, spam, or has no discernible connection to
+any real profession or creative field — not merely because it's outside architecture/construction
+specifically. If false, give a one-sentence "relevantReason" explaining what it looks like instead.
+
 Respond ONLY with a JSON object in this exact shape:
-{ "corrected": "the corrected/standard term", "alternatives": ["related term", "..."], "changed": true }`;
+{ "corrected": "the corrected/standard term", "alternatives": ["related term", "..."], "changed": true, "relevant": true, "relevantReason": "" }`;
 
   try {
     const result = await askGeminiForJson(prompt);
@@ -29,7 +37,9 @@ Respond ONLY with a JSON object in this exact shape:
     return {
       corrected: result.corrected,
       alternatives: Array.isArray(result.alternatives) ? result.alternatives.slice(0, 3) : [],
-      changed: !!result.changed && result.corrected.toLowerCase() !== text.trim().toLowerCase()
+      changed: !!result.changed && result.corrected.toLowerCase() !== text.trim().toLowerCase(),
+      relevant: result.relevant !== false,
+      relevantReason: typeof result.relevantReason === 'string' ? result.relevantReason : ''
     };
   } catch (error) {
     console.error('Text suggestion error:', error.message);

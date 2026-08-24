@@ -32,23 +32,26 @@ ${rawText.slice(0, 8000)}
 First, decide if this text is actually a résumé/CV (a document about one person's work history,
 skills, and education) — not a project brief, a book, an invoice, or unrelated text.
 
-If it IS a résumé, also extract the person's full name as written, and write 5 short (1-2 sentence)
-professional bio options for their profile, each with a slightly different angle (achievement-
-focused, personality-focused, concise/punchy, etc). Also suggest which of these platform intents
-apply — ${VALID_INTENT.join(', ')} — and which industries apply — ${VALID_INDUSTRY.join(', ')} —
-based only on what the résumé actually shows.
+If it IS a résumé, also extract the person's full name as written, their current city/country if the
+résumé states one (else null), and write 5 short (1-2 sentence) professional bio options for their
+profile, each with a slightly different angle (achievement-focused, personality-focused,
+concise/punchy, etc) — order them best-first, since the first one will be offered as the
+recommended default. Also suggest which of these platform intents apply —
+${VALID_INTENT.join(', ')} — and which industries apply — ${VALID_INDUSTRY.join(', ')} — based only
+on what the résumé actually shows.
 
 Respond ONLY with a JSON object in this exact shape:
 {
   "isResume": true,
   "reason": "one short sentence",
   "detectedName": "Full Name or null",
+  "detectedLocation": "City, Country or null",
   "bios": ["bio option 1", "bio option 2", "bio option 3", "bio option 4", "bio option 5"],
   "suggestedIntent": ["learn"],
   "suggestedIndustries": ["architecture"]
 }
 If it is NOT a résumé, respond with:
-{ "isResume": false, "reason": "one short sentence explaining what it looks like instead", "detectedName": null, "bios": [], "suggestedIntent": [], "suggestedIndustries": [] }`;
+{ "isResume": false, "reason": "one short sentence explaining what it looks like instead", "detectedName": null, "detectedLocation": null, "bios": [], "suggestedIntent": [], "suggestedIndustries": [] }`;
 
   try {
     const result = await askGeminiForJson(prompt);
@@ -58,6 +61,7 @@ If it is NOT a résumé, respond with:
       isResume: result.isResume,
       reason: typeof result.reason === 'string' ? result.reason : '',
       detectedName: typeof result.detectedName === 'string' ? result.detectedName : null,
+      detectedLocation: typeof result.detectedLocation === 'string' && result.detectedLocation.trim() ? result.detectedLocation.trim() : null,
       nameMismatch: namesLikelyDiffer(result.detectedName, currentName),
       bios: Array.isArray(result.bios) ? result.bios.slice(0, 5) : [],
       suggestedIntent: (Array.isArray(result.suggestedIntent) ? result.suggestedIntent : []).filter((i) => VALID_INTENT.includes(i)),

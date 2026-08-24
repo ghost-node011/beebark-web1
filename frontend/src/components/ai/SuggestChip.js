@@ -15,18 +15,20 @@ const useSuggestChip = (context) => {
   const [loading, setLoading] = useState(false);
 
   const check = async (text) => {
-    if (!text?.trim()) return;
+    if (!text?.trim()) return null;
     setLoading(true);
     try {
       const res = await axios.post(`${API_URL}/api/ai/suggest`, { text, context });
-      if (res.data.changed || res.data.alternatives?.length > 0) {
+      setOriginal(text);
+      if (res.data.changed || res.data.alternatives?.length > 0 || res.data.relevant === false) {
         setSuggestion(res.data);
-        setOriginal(text);
       } else {
         setSuggestion(null);
       }
+      return res.data;
     } catch (error) {
       setSuggestion(null);
+      return null;
     } finally {
       setLoading(false);
     }
@@ -39,6 +41,7 @@ const useSuggestChip = (context) => {
 
 const SuggestChip = ({ suggestion, onAccept, onAcceptAlternative, onDismiss }) => {
   if (!suggestion) return null;
+  if (!suggestion.changed && !suggestion.alternatives?.length) return null;
   return (
     <div className="mt-2 flex flex-wrap items-center gap-2 text-xs bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2" data-testid="ai-suggest-chip">
       <FiZap className="text-yellow-500 shrink-0" />

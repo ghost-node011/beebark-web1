@@ -54,10 +54,23 @@ const Onboarding = () => {
   const [industriesOther, setIndustriesOther] = useState(user?.industriesOther || '');
   const domainSuggest = useSuggestChip('professional industry/domain');
   const [profilePic, setProfilePic] = useState(user?.profilePic || '');
+  const [name, setName] = useState(user?.name || '');
   const [bio, setBio] = useState(user?.bio || '');
+  const [bioSuggestions, setBioSuggestions] = useState([]);
   const [location, setLocation] = useState(user?.location || '');
+  const [detectedLocation, setDetectedLocation] = useState('');
+  const [nameMismatch, setNameMismatch] = useState(null);
   const [skills, setSkills] = useState(user?.skills || []);
   const [skillInput, setSkillInput] = useState('');
+  const [checkingField, setCheckingField] = useState(false);
+
+  const selectIndustry = (value) => {
+    if (value === 'related') {
+      setIndustries((prev) => (prev.includes('related') ? [] : ['related']));
+    } else {
+      setIndustries((prev) => toggle(prev.filter((v) => v !== 'related'), value));
+    }
+  };
 
   const canContinue =
     (step === 0 && !!role) ||
@@ -65,8 +78,17 @@ const Onboarding = () => {
     (step === 2 && industries.length > 0) ||
     step === 3;
 
-  const next = () => {
+  const next = async () => {
     if (!canContinue) return;
+    if (step === 2 && industries.includes('related') && industriesOther.trim()) {
+      let result = domainSuggest.suggestion;
+      if (domainSuggest.original !== industriesOther) {
+        setCheckingField(true);
+        result = await domainSuggest.check(industriesOther);
+        setCheckingField(false);
+      }
+      if (result?.relevant === false) return;
+    }
     setStep((s) => s + 1);
   };
 
@@ -88,7 +110,7 @@ const Onboarding = () => {
   const finish = async () => {
     setSaving(true);
     try {
-      await updateOnboarding({ role, intent, industries, industriesOther, bio, location, skills, profilePic, complete: true });
+      await updateOnboarding({ role, intent, industries, industriesOther, bio, location, skills, profilePic, name, complete: true });
       toast.success("You're all set!");
       navigate('/dashboard');
     } catch (error) {
@@ -170,8 +192,9 @@ const Onboarding = () => {
                     <OptionCard
                       key={ind.value}
                       active={industries.includes(ind.value)}
-                      onClick={() => setIndustries(toggle(industries, ind.value))}
+                      onClick={() => selectIndustry(ind.value)}
                       title={ind.label}
+                      description={ind.value === 'related' ? "None of the above? Choose this instead" : undefined}
                       testId={`industry-${ind.value}`}
                     />
                   ))}
@@ -182,12 +205,17 @@ const Onboarding = () => {
                     <input
                       type="text"
                       value={industriesOther}
-                      onChange={(e) => setIndustriesOther(e.target.value)}
+                      onChange={(e) => { setIndustriesOther(e.target.value); if (domainSuggest.suggestion) domainSuggest.dismiss(); }}
                       onBlur={(e) => domainSuggest.check(e.target.value)}
                       placeholder="e.g. Product Design, Quantity Surveying, Facilities Management"
                       className="w-full rounded-xl border-2 border-gray-200 p-3 text-sm focus:border-yellow-400 focus:outline-none"
                       data-testid="industry-other-input"
                     />
+                    {domainSuggest.suggestion?.relevant === false && domainSuggest.original === industriesOther && (
+                      <div className="mt-2 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700" data-testid="industry-other-warning">
+                        {domainSuggest.suggestion.relevantReason || "This doesn't look like a real professional field. BeeBark is built for architecture, interiors, construction, real estate and closely adjacent fields — please enter one to continue."}
+                      </div>
+                    )}
                     <SuggestChip
                       suggestion={domainSuggest.suggestion}
                       onAccept={(corrected) => { setIndustriesOther(corrected); domainSuggest.dismiss(); }}
@@ -207,9 +235,44 @@ const Onboarding = () => {
                   <ResumeImport
                     onImported={(data) => {
                       if (Array.isArray(data?.skills)) setSkills(data.skills);
+                      if (Array.isArray(data?.bios) && data.bios.length > 0) {
+                        setBioSuggestions(data.bios);
+                        if (!bio.trim()) setBio(data.bios[0]);
+                      }
+                      if (data?.detectedLocation) {
+                        setDetectedLocation(data.detectedLocation);
+                        if (!location.trim()) setLocation(data.detectedLocation);
+                      }
+                      if (data?.nameMismatch && data?.detectedName) {
+                        setNameMismatch({ detectedName: data.detectedName, currentName: data.currentName || user?.name || '' });
+                      }
                     }}
                   />
                 </div>
+
+                {nameMismatch && (
+                  <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm" data-testid="resume-name-mismatch">
+                    <p className="text-black">
+                      Your résumé says <strong>{nameMismatch.detectedName}</strong>, but your account is registered as <strong>{nameMismatch.currentName}</strong>. Is this your résumé?
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => { setName(nameMismatch.detectedName); setNameMismatch(null); }}
+                        className="btn-black rounded-full px-3 py-1.5 text-xs font-medium"
+                      >
+                        Use "{nameMismatch.detectedName}"
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNameMismatch(null)}
+                        className="rounded-full border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:border-black"
+                      >
+                        Keep "{nameMismatch.currentName}"
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium text-black mb-2">Profile photo</label>
@@ -237,6 +300,26 @@ const Onboarding = () => {
                     data-testid="bio-input"
                   />
                   <p className="mt-1 text-xs text-gray-400 text-right">{bio.length}/500</p>
+                  {bioSuggestions.length > 0 && (
+                    <div className="mt-2 space-y-2" data-testid="bio-suggestions">
+                      <p className="text-xs font-medium text-gray-500">AI suggestions from your résumé — pick one, or keep editing yours</p>
+                      {bioSuggestions.map((s, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => setBio(s)}
+                          className={`block w-full text-left rounded-xl border-2 p-3 text-xs transition-colors ${bio === s ? 'border-yellow-400 bg-yellow-50' : 'border-gray-200 hover:border-yellow-300'}`}
+                        >
+                          {i === 0 && (
+                            <span className="mb-1 inline-block rounded-full bg-yellow-400 px-2 py-0.5 text-[10px] font-semibold text-black">
+                              Recommended
+                            </span>
+                          )}
+                          <span className="block text-gray-700">{s}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -249,6 +332,9 @@ const Onboarding = () => {
                     className="w-full rounded-xl border-2 border-gray-200 p-3 text-sm focus:border-yellow-400 focus:outline-none"
                     data-testid="location-input"
                   />
+                  {detectedLocation && location === detectedLocation && (
+                    <p className="mt-1 text-xs text-gray-400">Detected from your résumé — edit if this isn't right.</p>
+                  )}
                 </div>
 
                 <div>
@@ -307,11 +393,11 @@ const Onboarding = () => {
             <button
               type="button"
               onClick={next}
-              disabled={!canContinue}
+              disabled={!canContinue || checkingField}
               className="w-full max-w-xs rounded-full bg-yellow-400 py-3.5 font-semibold text-black transition-all hover:bg-yellow-500 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
               data-testid="onboarding-next"
             >
-              Continue
+              {checkingField ? 'Checking...' : 'Continue'}
             </button>
           ) : (
             <button
