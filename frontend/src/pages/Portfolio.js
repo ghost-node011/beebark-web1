@@ -17,7 +17,7 @@ import { TEMPLATES, THEME_META, FONT_META, ACCENT_PRESETS } from '../components/
 import { exportPortfolioPdf } from '../utils/exportPortfolioPdf';
 import { getCopy } from '../config/roleDomainCopy';
 
-const emptyForm = { title: '', description: '', images: [] };
+const emptyForm = { title: '', description: '', images: [], category: '' };
 
 const Portfolio = () => {
   const { user } = useAuth();
@@ -41,6 +41,7 @@ const Portfolio = () => {
   const [autoGenBusy, setAutoGenBusy] = useState(false);
   const [autoGenDrafts, setAutoGenDrafts] = useState([]); // { imageUrl, isWorkPhoto, title, description, tags, reason, included }
   const [autoGenSaving, setAutoGenSaving] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('All');
 
   useEffect(() => {
     fetchPortfolio();
@@ -119,7 +120,7 @@ const Portfolio = () => {
     setAutoGenSaving(true);
     try {
       await axios.post(`${API_URL}/api/portfolio/items/bulk`, {
-        items: toSave.map((d) => ({ title: d.title, description: d.description, images: [d.imageUrl], tags: d.tags }))
+        items: toSave.map((d) => ({ title: d.title, description: d.description, images: [d.imageUrl], tags: d.tags, category: d.category }))
       });
       toast.success(`Added ${toSave.length} to your ${copy.workNoun.toLowerCase()}`);
       setShowAutoGenDialog(false);
@@ -135,14 +136,14 @@ const Portfolio = () => {
   const openAddDialog = (prefill) => {
     setEditingItem(null);
     setLastFeedback(null);
-    setForm(prefill ? { title: prefill.title, description: prefill.description, images: [] } : emptyForm);
+    setForm(prefill ? { title: prefill.title, description: prefill.description, images: [], category: '' } : emptyForm);
     setShowAddDialog(true);
   };
 
   const openEditDialog = (item) => {
     setEditingItem(item);
     setLastFeedback(null);
-    setForm({ title: item.title, description: item.description || '', images: item.images || [] });
+    setForm({ title: item.title, description: item.description || '', images: item.images || [], category: item.category || '' });
     setShowAddDialog(true);
   };
 
@@ -224,6 +225,8 @@ const Portfolio = () => {
   };
 
   const Template = TEMPLATES[theme] || TEMPLATES.grid;
+  const existingCategories = [...new Set(items.map((i) => i.category).filter(Boolean))];
+  const visibleItems = activeCategory === 'All' ? items : items.filter((i) => i.category === activeCategory);
 
   const handleExport = async () => {
     setExporting(true);
@@ -344,6 +347,20 @@ const Portfolio = () => {
           </Card>
         )}
 
+        {existingCategories.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-6" data-pdf-ignore>
+            {['All', ...existingCategories].map((c) => (
+              <button
+                key={c}
+                onClick={() => setActiveCategory(c)}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${activeCategory === c ? 'bg-black text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        )}
+
         {loading && <p className="text-gray-500 pb-8">Loading...</p>}
         {!loading && items.length === 0 && starterSuggestions.length === 0 && (
           <div className="text-center py-16 pb-8" data-pdf-ignore>
@@ -356,7 +373,7 @@ const Portfolio = () => {
 
       {!loading && items.length > 0 && (
         <div ref={captureRef}>
-          <Template items={items} user={user} headline={user?.portfolio?.headline} editable onEdit={openEditDialog} onDelete={handleDelete} font={font} accentColor={accentColor} />
+          <Template items={visibleItems} user={user} headline={user?.portfolio?.headline} editable onEdit={openEditDialog} onDelete={handleDelete} font={font} accentColor={accentColor} />
         </div>
       )}
       </div>
@@ -371,6 +388,13 @@ const Portfolio = () => {
               <div>
                 <Label>Title</Label>
                 <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
+              </div>
+              <div>
+                <Label>Category <span className="text-gray-400 font-normal">(optional — for filtering, e.g. Residential, Commercial)</span></Label>
+                <Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} list="category-suggestions" placeholder="e.g. Residential" />
+                <datalist id="category-suggestions">
+                  {existingCategories.map((c) => <option key={c} value={c} />)}
+                </datalist>
               </div>
               <div>
                 <Label>Description</Label>
@@ -452,6 +476,7 @@ const Portfolio = () => {
                           </button>
                         </div>
                         <Textarea value={d.description} onChange={(e) => updateAutoGenDraft(i, { description: e.target.value })} className="min-h-16 text-sm" />
+                        <Input value={d.category || ''} onChange={(e) => updateAutoGenDraft(i, { category: e.target.value })} placeholder="Category (optional)" className="text-sm" />
                         <div className="flex flex-wrap gap-1.5">
                           {d.tags?.map((t, ti) => <Badge key={ti} className="bg-gray-100 text-black text-xs">{t}</Badge>)}
                         </div>

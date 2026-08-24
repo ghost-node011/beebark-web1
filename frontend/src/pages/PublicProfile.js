@@ -15,7 +15,7 @@ import { StatCard, InfoBlock } from '../components/profile/ProfileWidgets';
 import {
   FiMapPin, FiUserPlus, FiMessageCircle, FiEye, FiUsers,
   FiBriefcase, FiImage, FiZap, FiThumbsUp, FiThumbsDown, FiX,
-  FiTarget, FiLayers, FiGlobe
+  FiTarget, FiLayers, FiGlobe, FiBookOpen
 } from 'react-icons/fi';
 
 const ROLE_LABELS = { student: 'Student', professional: 'Professional', firm: 'Firm', recruiter: 'Recruiter', company: 'Firm' };
@@ -99,7 +99,7 @@ const PublicProfile = () => {
                 </Avatar>
                 <div className="flex-1 sm:pb-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h1 className="text-2xl font-bold text-black">{user.name}</h1>
+                    <h1 className="text-2xl font-bold text-black font-serif">{user.name}</h1>
                     <Badge className="bg-slate-900 text-yellow-400 capitalize">{ROLE_LABELS[user.role] || 'Professional'}</Badge>
                   </div>
                   <p className="text-sm text-gray-500">@{user.username}</p>
@@ -168,7 +168,7 @@ const PublicProfile = () => {
               {/* Professional Identity */}
               <Card>
                 <CardContent className="pt-6">
-                  <h3 className="text-lg font-bold text-black mb-2">Professional Identity</h3>
+                  <h3 className="text-lg font-bold text-black mb-2 font-serif">Professional Identity</h3>
                   {bio ? (
                     <>
                       <p className="text-gray-700 whitespace-pre-line">{bioIsLong && !bioExpanded ? `${bio.slice(0, 220)}…` : bio}</p>
@@ -195,18 +195,21 @@ const PublicProfile = () => {
                 <Card>
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-lg font-bold text-black flex items-center"><FiImage className="mr-2" />Work Gallery</h3>
+                      <h3 className="text-lg font-bold text-black flex items-center font-serif"><FiImage className="mr-2" />Work Gallery</h3>
                       <Link to={`/portfolio/${user.username}`} target="_blank" className="text-sm font-medium text-black hover:underline">
                         View full portfolio ({data.portfolioCount})
                       </Link>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {data.portfolioPreview.map((item) => (
-                        <div key={item._id} className="rounded-lg overflow-hidden bg-gray-100 aspect-square">
+                        <div key={item._id} className="relative rounded-lg overflow-hidden bg-gray-100 aspect-square">
                           {item.images?.[0] ? (
                             <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-xs text-gray-400 p-2 text-center">{item.title}</div>
+                          )}
+                          {item.category && (
+                            <span className="absolute top-1.5 left-1.5 text-[9px] font-bold uppercase tracking-wide bg-yellow-400 text-black px-1.5 py-0.5 rounded-full">{item.category}</span>
                           )}
                         </div>
                       ))}
@@ -218,7 +221,7 @@ const PublicProfile = () => {
               {/* Experience */}
               <Card>
                 <CardContent className="pt-6">
-                  <h3 className="text-lg font-bold text-black mb-3 flex items-center"><FiBriefcase className="mr-2" />Experience</h3>
+                  <h3 className="text-lg font-bold text-black mb-3 flex items-center font-serif"><FiBriefcase className="mr-2" />Experience</h3>
                   {user.experience?.length > 0 ? (
                     <div className="space-y-4">
                       {user.experience.map((exp, idx) => (
@@ -234,11 +237,30 @@ const PublicProfile = () => {
                 </CardContent>
               </Card>
 
+              {/* Education */}
+              {user.education?.length > 0 && (
+                <Card>
+                  <CardContent className="pt-6">
+                    <h3 className="text-lg font-bold text-black mb-3 flex items-center font-serif"><FiBookOpen className="mr-2" />Education</h3>
+                    <div className="space-y-4">
+                      {user.education.map((edu, idx) => (
+                        <div key={idx} className="border-l-4 border-yellow-400 pl-4">
+                          <h4 className="font-semibold text-black">{edu.degree}{edu.field ? ` — ${edu.field}` : ''}</h4>
+                          <p className="text-gray-700 text-sm">{edu.school}</p>
+                          <p className="text-xs text-gray-500">{edu.duration}</p>
+                          {edu.description && <p className="text-sm text-gray-600 mt-1">{edu.description}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Associated Professionals — real connections */}
               {data.associatedProfessionals?.length > 0 && (
                 <Card>
                   <CardContent className="pt-6">
-                    <h3 className="text-lg font-bold text-black mb-3">Associated Professionals</h3>
+                    <h3 className="text-lg font-bold text-black mb-3 font-serif">Associated Professionals</h3>
                     <div className="flex gap-4 overflow-x-auto pb-1">
                       {data.associatedProfessionals.map((p) => (
                         <Link key={p._id} to={`/profile/${p.username}`} className="flex flex-col items-center text-center w-20 shrink-0 hover:opacity-80">
@@ -261,7 +283,7 @@ const PublicProfile = () => {
               {industryLabels.length > 0 && (
                 <Card>
                   <CardContent className="pt-6">
-                    <h3 className="font-bold text-black mb-2">Industry</h3>
+                    <h3 className="font-bold text-black mb-2 font-serif">Industry</h3>
                     <div className="flex flex-wrap gap-2">
                       {industryLabels.map((l) => <Badge key={l} className="bg-slate-900 text-yellow-400">{l}</Badge>)}
                     </div>
@@ -271,7 +293,7 @@ const PublicProfile = () => {
 
               <Card>
                 <CardContent className="pt-6">
-                  <h3 className="font-bold text-black mb-2">Skills</h3>
+                  <h3 className="font-bold text-black mb-2 font-serif">Skills</h3>
                   {user.skills?.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
                       {user.skills.map((s, i) => <Badge key={i} className="bg-yellow-500 text-gray-900">{s}</Badge>)}

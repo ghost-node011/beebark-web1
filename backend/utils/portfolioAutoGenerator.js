@@ -8,7 +8,7 @@ professional work (a building, interior, site, listing, product, or similar) tha
 portfolio — as opposed to a selfie, meme, screenshot, random object, or generic stock/lifestyle photo?
 
 Answer immediately with ONLY this JSON object, no other text, no reasoning shown:
-- If it IS work: { "isWorkPhoto": true, "title": "short punchy title", "description": "1-2 sentence description of what's shown", "tags": ["up to 4 short tags"] }
+- If it IS work: { "isWorkPhoto": true, "title": "short punchy title", "description": "1-2 sentence description of what's shown", "category": "one short bucket like Residential, Commercial, Interior, Product, etc — whatever fits this profession", "tags": ["up to 4 short tags"] }
 - If it is NOT: { "isWorkPhoto": false, "reason": "one short sentence" }`;
 
 const downloadAsBase64 = async (imageUrl) => {
@@ -40,6 +40,7 @@ const draftPortfolioEntryFromImage = async (imageUrl, user) => {
       isWorkPhoto: true,
       title: typeof result.title === 'string' ? result.title : 'Untitled Project',
       description: typeof result.description === 'string' ? result.description : '',
+      category: typeof result.category === 'string' ? result.category : '',
       tags: Array.isArray(result.tags) ? result.tags.slice(0, 4) : []
     };
   } catch (error) {

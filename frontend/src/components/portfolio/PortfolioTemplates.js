@@ -133,20 +133,27 @@ const ExperienceSection = ({ experience }) => {
   );
 };
 
-// ---------- GRID / "Contemporary": strict numbered grid, monochrome, sharp edges ----------
+// ---------- GRID / "Contemporary": image-led cards, category + title overlaid on the photo ----------
 export const GridTemplate = ({ items, user, headline, editable, onEdit, onDelete, font = 'playfair', accentColor = '#D4F547' }) => (
   <div className="bg-white" style={{ fontFamily: fontStack(font) }}>
     <Cover user={user} headline={headline} heroImage={items[0]?.images?.[0]} count={items.length} accentColor={accentColor} />
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 border-t border-black/10">
       {items.map((item, i) => (
         <div key={item._id} className="border-b border-r border-black/10 sm:[&:nth-child(2n)]:border-r-0 lg:[&:nth-child(2n)]:border-r lg:[&:nth-child(3n)]:border-r-0">
-          <div className="aspect-[4/3] bg-gray-100 overflow-hidden">
-            {item.images?.[0] && <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500" />}
+          <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
+            {item.images?.[0] && <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" />}
+            {item.category && (
+              <span className="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full text-black" style={{ backgroundColor: accentColor }}>
+                {item.category}
+              </span>
+            )}
+            <div className="absolute inset-0 flex flex-col justify-end p-4" style={{ background: 'linear-gradient(180deg, transparent 55%, rgba(0,0,0,0.85) 100%)' }}>
+              <span className="text-[10px] tracking-widest text-white/60">{num(i)}</span>
+              <h3 className="text-lg font-black uppercase tracking-tight text-white leading-tight">{item.title}</h3>
+            </div>
           </div>
-          <div className="p-6">
-            <span className="text-xs tracking-widest" style={{ color: accentColor }}>{num(i)}</span>
-            <h3 className="text-xl font-black uppercase tracking-tight mt-1">{item.title}</h3>
-            {item.description && <p className="text-sm text-gray-600 mt-2 line-clamp-3">{item.description}</p>}
+          <div className="p-6 pt-4">
+            {item.description && <p className="text-sm text-gray-600 line-clamp-3">{item.description}</p>}
             <Tags tags={item.tags} />
             <Controls item={item} editable={editable} onEdit={onEdit} onDelete={onDelete} />
           </div>

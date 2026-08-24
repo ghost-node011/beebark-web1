@@ -110,7 +110,7 @@ router.get('/:username', async (req, res) => {
 
 router.post('/items', auth, async (req, res) => {
   try {
-    const { title, description, images, tags } = req.body;
+    const { title, description, images, tags, category } = req.body;
     if (!title?.trim()) {
       return res.status(400).json({ error: 'Title is required' });
     }
@@ -123,6 +123,7 @@ router.post('/items', auth, async (req, res) => {
       description: description || '',
       images: Array.isArray(images) ? images : [],
       tags: Array.isArray(tags) && tags.length > 0 ? tags : (review?.suggestedTags || []),
+      category: category || '',
       aiFeedback: review?.feedback || ''
     });
     await item.save();
@@ -149,7 +150,8 @@ router.post('/items/bulk', auth, async (req, res) => {
         title: i.title.trim(),
         description: i.description || '',
         images: Array.isArray(i.images) ? i.images : [],
-        tags: Array.isArray(i.tags) ? i.tags : []
+        tags: Array.isArray(i.tags) ? i.tags : [],
+        category: i.category || ''
       }));
     const saved = await PortfolioItem.insertMany(docs);
     res.status(201).json({ message: `Added ${saved.length} to your portfolio`, items: saved });
@@ -163,11 +165,12 @@ router.put('/items/:id', auth, async (req, res) => {
     const item = await PortfolioItem.findOne({ _id: req.params.id, user: req.userId });
     if (!item) return res.status(404).json({ error: 'Portfolio item not found' });
 
-    const { title, description, images, tags } = req.body;
+    const { title, description, images, tags, category } = req.body;
     if (title !== undefined) item.title = title;
     if (description !== undefined) item.description = description;
     if (images !== undefined) item.images = images;
     if (tags !== undefined) item.tags = tags;
+    if (category !== undefined) item.category = category;
     await item.save();
 
     res.json({ message: 'Updated', item });

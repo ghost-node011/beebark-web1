@@ -89,6 +89,13 @@ const userSchema = new mongoose.Schema({
     duration: String,
     description: String
   }],
+  education: [{
+    school: String,
+    degree: String,
+    field: String,
+    duration: String,
+    description: String
+  }],
   connections: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
