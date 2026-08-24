@@ -14,6 +14,7 @@ import { useAuth } from '../context/AuthContext';
 import { FiCamera, FiImage, FiPlus, FiZap, FiDownload, FiCheck, FiX } from 'react-icons/fi';
 import { API_URL } from '../config/api';
 import { TEMPLATES, THEME_META, FONT_META, ACCENT_PRESETS } from '../components/portfolio/PortfolioTemplates';
+import { PillFilter } from '../components/profile/ProfileShell';
 import { exportPortfolioPdf } from '../utils/exportPortfolioPdf';
 import { getCopy } from '../config/roleDomainCopy';
 
@@ -348,16 +349,8 @@ const Portfolio = () => {
         )}
 
         {existingCategories.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-6" data-pdf-ignore>
-            {['All', ...existingCategories].map((c) => (
-              <button
-                key={c}
-                onClick={() => setActiveCategory(c)}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${activeCategory === c ? 'bg-black text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-              >
-                {c}
-              </button>
-            ))}
+          <div className="mb-6" data-pdf-ignore>
+            <PillFilter options={['All', ...existingCategories]} active={activeCategory} onChange={setActiveCategory} />
           </div>
         )}
 

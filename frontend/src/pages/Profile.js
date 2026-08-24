@@ -13,7 +13,7 @@ import { Badge } from '../components/ui/badge';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 import {
-  FiEdit2, FiPlus, FiTrash2, FiBriefcase, FiMapPin, FiImage, FiZap,
+  FiEdit2, FiPlus, FiTrash2, FiBriefcase, FiImage, FiZap,
   FiEye, FiUsers, FiTarget, FiLayers, FiGlobe, FiCamera, FiHeart,
   FiMessageSquare, FiBookOpen, FiUpload
 } from 'react-icons/fi';
@@ -24,6 +24,7 @@ import ImageUpload from '../components/ImageUpload';
 import ResumeImport from '../components/ResumeImport';
 import { SuggestChip, useSuggestChip } from '../components/ai/SuggestChip';
 import { StatCard, InfoBlock } from '../components/profile/ProfileWidgets';
+import { ProfileHero, AnalyticsPrivacyPill, PillFilter, PAGE_BG } from '../components/profile/ProfileShell';
 
 const ROLE_LABELS = {
   student: 'Student',
@@ -105,6 +106,7 @@ const Profile = () => {
   const [activity, setActivity] = useState([]);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
+  const [activeTab, setActiveTab] = useState('Overview');
 
   useEffect(() => {
     if (user) setFormData(emptyFormFromUser(user));
@@ -295,404 +297,394 @@ const Profile = () => {
   const edit = (key) => setEditingSection(key);
 
   return (
-    <div className="min-h-screen bg-slate-50" data-testid="profile-page">
+    <div className={`min-h-screen ${PAGE_BG}`} data-testid="profile-page">
       <Sidebar />
       <TopBar />
       <div className="lg:ml-64 mt-16 p-4 sm:p-6 lg:p-8">
         <div className="max-w-4xl mx-auto space-y-6">
-          {/* Hero — always view-only content, with its own lightweight edit affordances */}
-          <Card className="overflow-hidden">
-            <div
-              className="h-40 sm:h-56 bg-gradient-to-br from-yellow-400 to-amber-500 relative"
-              style={formData.coverPhoto ? { backgroundImage: `url(${formData.coverPhoto})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
-            >
+          <ProfileHero
+            coverPhoto={formData.coverPhoto}
+            profilePic={formData.profilePic}
+            name={user?.name}
+            roleLabel={roleLabel}
+            subtitle={user?.email}
+            location={formData.location}
+            connectionCount={user?.connections?.length || 0}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            actions={
+              <Button onClick={() => edit('header')} variant="outline" data-testid="edit-header-button">
+                <FiEdit2 className="mr-2 w-4 h-4" /> Edit
+              </Button>
+            }
+            headerExtra={
               <label className="absolute bottom-3 right-3 cursor-pointer" data-testid="cover-photo-upload">
                 <input type="file" accept="image/*" onChange={(e) => e.target.files[0] && handleCoverPhotoFile(e.target.files[0])} className="hidden" disabled={uploadingCover} />
                 <span className="flex items-center gap-1.5 text-xs font-medium text-white bg-black/50 hover:bg-black/70 backdrop-blur-sm rounded-lg px-3 py-1.5 transition">
                   <FiCamera className="w-3.5 h-3.5" />{uploadingCover ? 'Uploading...' : 'Change cover'}
                 </span>
               </label>
-            </div>
-            <div className="px-6 pb-6">
-              <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-12 sm:-mt-14 justify-between">
-                <div className="flex flex-col sm:flex-row sm:items-end gap-4 min-w-0">
-                  <Avatar className="w-24 h-24 sm:w-28 sm:h-28 border-4 border-white shadow-lg shrink-0">
-                    <AvatarImage src={formData.profilePic} />
-                    <AvatarFallback className="bg-yellow-400 text-black text-2xl font-bold">
-                      {(formData.name || 'U').charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0 sm:pb-1">
-                    <h1 className="text-xl sm:text-2xl font-bold truncate text-black font-serif">{user?.name}</h1>
-                    <p className="text-gray-500 text-sm break-all">{user?.email}</p>
-                    <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      <Badge className="bg-gray-900 text-yellow-400 capitalize">{roleLabel}</Badge>
-                      {formData.location && <span className="flex items-center gap-1 text-xs text-gray-600"><FiMapPin className="w-3.5 h-3.5" />{formData.location}</span>}
-                      {user?.username && (
-                        <Link to={`/portfolio/${user.username}`} target="_blank" className="inline-flex items-center gap-1 text-xs font-medium text-gray-900 hover:underline">
-                          <FiImage className="w-3.5 h-3.5" />View my portfolio
-                        </Link>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <Button
-                  onClick={() => edit('header')}
-                  variant="outline"
-                  className="shrink-0"
-                  data-testid="edit-header-button"
-                >
-                  <FiEdit2 className="mr-2 w-4 h-4" /> Edit
-                </Button>
-              </div>
-
-              {editingSection === 'header' && (
-                <div className="mt-6 pt-6 border-t border-slate-100 space-y-4">
-                  <div className="space-y-2">
-                    <Label>Name</Label>
-                    <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} data-testid="name-input" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Location</Label>
-                    <Input value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} placeholder="City, Country" data-testid="location-input" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Profile photo</Label>
-                    {formData.profilePic ? (
-                      <div className="flex items-center gap-4">
-                        <img src={formData.profilePic} alt="Profile" className="h-20 w-20 rounded-full object-cover border" />
-                        <button type="button" onClick={() => setFormData({ ...formData, profilePic: '' })} className="text-sm text-gray-500 hover:text-black">Remove</button>
-                      </div>
-                    ) : (
-                      <ImageUpload onUploadComplete={(url) => setFormData((f) => ({ ...f, profilePic: url }))} endpoint="/api/upload/profile-photo" />
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button onClick={cancelSection} variant="outline">Cancel</Button>
-                    <Button onClick={saveSection} disabled={saving} className="bg-black text-white hover:bg-gray-800">{saving ? 'Saving...' : 'Save'}</Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </Card>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <StatCard icon={FiEye} value={user?.profileViews ?? 0} label="Profile Views" />
-            <StatCard icon={FiUsers} value={user?.connections?.length || 0} label="Connections" />
-            <StatCard icon={FiImage} value={galleryPreview.count} label="Work Gallery Entries" />
-          </div>
-
-          <SectionCard
-            title="About" sectionKey="about" editingSection={editingSection}
-            onEditClick={() => edit('about')} onCancel={cancelSection} onSave={saveSection} saving={saving}
-            editContent={
-              <Textarea value={formData.bio} onChange={(e) => setFormData({ ...formData, bio: e.target.value })} placeholder="Tell us about yourself..." className="min-h-24" data-testid="bio-input" />
             }
-          >
-            <p className="text-slate-700 whitespace-pre-line">{formData.bio || 'No bio yet'}</p>
-          </SectionCard>
+          />
 
-          <SectionCard
-            title="Professional Identity" sectionKey="identity" editingSection={editingSection}
-            onEditClick={() => edit('identity')} onCancel={cancelSection} onSave={saveSection} saving={saving}
-            editContent={
-              <div className="space-y-4">
-                {[
-                  { field: 'specialization', label: 'Specialization', placeholder: 'e.g. Sustainable Urban Design' },
-                  { field: 'projectTypeFocus', label: 'Project Type Focus', placeholder: 'e.g. Mixed-Use, High-Rise Residential' },
-                  { field: 'markets', label: 'Markets', placeholder: 'e.g. Mumbai, Pune' }
-                ].map(({ field, label, placeholder }) => (
-                  <div key={field} className="space-y-2">
-                    <Label>{label}</Label>
+          {editingSection === 'header' && (
+            <Card className="p-6 space-y-4">
+              <div className="space-y-2">
+                <Label>Name</Label>
+                <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} data-testid="name-input" />
+              </div>
+              <div className="space-y-2">
+                <Label>Location</Label>
+                <Input value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} placeholder="City, Country" data-testid="location-input" />
+              </div>
+              <div className="space-y-2">
+                <Label>Profile photo</Label>
+                {formData.profilePic ? (
+                  <div className="flex items-center gap-4">
+                    <img src={formData.profilePic} alt="Profile" className="h-20 w-20 rounded-full object-cover border" />
+                    <button type="button" onClick={() => setFormData({ ...formData, profilePic: '' })} className="text-sm text-gray-500 hover:text-black">Remove</button>
+                  </div>
+                ) : (
+                  <ImageUpload onUploadComplete={(url) => setFormData((f) => ({ ...f, profilePic: url }))} endpoint="/api/upload/profile-photo" />
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={cancelSection} variant="outline">Cancel</Button>
+                <Button onClick={saveSection} disabled={saving} className="bg-black text-white hover:bg-gray-800">{saving ? 'Saving...' : 'Save'}</Button>
+              </div>
+            </Card>
+          )}
+
+          {activeTab === 'Overview' && (
+            <>
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-slate-900 font-serif">Analytics</h3>
+                  <AnalyticsPrivacyPill isPublic={formData.analyticsPublic} editable onToggle={handleAnalyticsToggle} />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <StatCard icon={FiEye} value={user?.profileViews ?? 0} label="Profile Views" />
+                  <StatCard icon={FiUsers} value={user?.connections?.length || 0} label="Connections" />
+                  <StatCard icon={FiImage} value={galleryPreview.count} label="Work Gallery Entries" />
+                </div>
+                <p className="text-xs text-slate-400 mt-3">Private by default — only visible to you until you switch it to Public above.</p>
+              </Card>
+
+              <SectionCard
+                title="About" sectionKey="about" editingSection={editingSection}
+                onEditClick={() => edit('about')} onCancel={cancelSection} onSave={saveSection} saving={saving}
+                editContent={
+                  <Textarea value={formData.bio} onChange={(e) => setFormData({ ...formData, bio: e.target.value })} placeholder="Tell us about yourself..." className="min-h-24" data-testid="bio-input" />
+                }
+              >
+                <p className="text-slate-700 whitespace-pre-line">{formData.bio || 'No bio yet'}</p>
+              </SectionCard>
+
+              <SectionCard
+                title="Professional Identity" sectionKey="identity" editingSection={editingSection}
+                onEditClick={() => edit('identity')} onCancel={cancelSection} onSave={saveSection} saving={saving}
+                editContent={
+                  <div className="space-y-4">
+                    {[
+                      { field: 'specialization', label: 'Specialization', placeholder: 'e.g. Sustainable Urban Design' },
+                      { field: 'projectTypeFocus', label: 'Project Type Focus', placeholder: 'e.g. Mixed-Use, High-Rise Residential' },
+                      { field: 'markets', label: 'Markets', placeholder: 'e.g. Mumbai, Pune' }
+                    ].map(({ field, label, placeholder }) => (
+                      <div key={field} className="space-y-2">
+                        <Label>{label}</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            value={tagInputs[field]}
+                            onChange={(e) => setTagInputs((t) => ({ ...t, [field]: e.target.value }))}
+                            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag(field))}
+                            placeholder={placeholder}
+                          />
+                          <Button onClick={() => addTag(field)} type="button" className="bg-yellow-500 hover:bg-yellow-600 shrink-0">Add</Button>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {formData[field].map((v, idx) => (
+                            <Badge key={idx} className="bg-gray-100 text-gray-800 hover:bg-gray-200 cursor-pointer" onClick={() => removeTag(field, v)}>{v} ×</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                }
+              >
+                {(formData.specialization.length > 0 || formData.projectTypeFocus.length > 0 || formData.markets.length > 0) ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <InfoBlock icon={FiTarget} label="Specialization" values={formData.specialization} />
+                    <InfoBlock icon={FiLayers} label="Project Type Focus" values={formData.projectTypeFocus} />
+                    <InfoBlock icon={FiGlobe} label="Markets" values={formData.markets} />
+                  </div>
+                ) : <p className="text-slate-500">Nothing added yet</p>}
+              </SectionCard>
+
+              {industryLabels.length > 0 && (
+                <SectionCard title="Industry" sectionKey="industry-noop" editingSection={editingSection} editable={false}>
+                  <div className="flex flex-wrap gap-2">
+                    {industryLabels.map((l) => <Badge key={l} className="bg-slate-900 text-yellow-400">{l}</Badge>)}
+                  </div>
+                </SectionCard>
+              )}
+
+              {intentLabels.length > 0 && (
+                <SectionCard title="Goals" sectionKey="goals-noop" editingSection={editingSection} editable={false}>
+                  <div className="flex flex-wrap gap-2">
+                    {intentLabels.map((l) => <Badge key={l} variant="outline" className="border-slate-300 text-slate-700">{l}</Badge>)}
+                  </div>
+                </SectionCard>
+              )}
+
+              <SectionCard
+                title="Skills" sectionKey="skills" editingSection={editingSection}
+                onEditClick={() => edit('skills')} onCancel={cancelSection} onSave={saveSection} saving={saving}
+                editContent={
+                  <div className="space-y-3">
+                    <ResumeImport onImported={handleResumeImported} />
                     <div className="flex gap-2">
                       <Input
-                        value={tagInputs[field]}
-                        onChange={(e) => setTagInputs((t) => ({ ...t, [field]: e.target.value }))}
-                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag(field))}
-                        placeholder={placeholder}
+                        value={newSkill}
+                        onChange={(e) => setNewSkill(e.target.value)}
+                        onBlur={(e) => skillSuggest.check(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSkill())}
+                        placeholder="Add a skill"
+                        data-testid="skill-input"
                       />
-                      <Button onClick={() => addTag(field)} type="button" className="bg-yellow-500 hover:bg-yellow-600 shrink-0">Add</Button>
+                      <Button onClick={handleAddSkill} type="button" className="bg-yellow-500 hover:bg-yellow-600 shrink-0" data-testid="add-skill-button">Add</Button>
                     </div>
+                    <SuggestChip
+                      suggestion={skillSuggest.suggestion}
+                      onAccept={(corrected) => { setNewSkill(corrected); skillSuggest.dismiss(); }}
+                      onAcceptAlternative={(alt) => { if (!formData.skills.includes(alt)) setFormData((f) => ({ ...f, skills: [...f.skills, alt] })); }}
+                      onDismiss={skillSuggest.dismiss}
+                    />
                     <div className="flex flex-wrap gap-2">
-                      {formData[field].map((v, idx) => (
-                        <Badge key={idx} className="bg-gray-100 text-gray-800 hover:bg-gray-200 cursor-pointer" onClick={() => removeTag(field, v)}>{v} ×</Badge>
+                      {formData.skills.map((skill, idx) => (
+                        <Badge key={idx} className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 cursor-pointer" onClick={() => handleRemoveSkill(skill)}>{skill} ×</Badge>
                       ))}
                     </div>
                   </div>
-                ))}
-              </div>
-            }
-          >
-            {(formData.specialization.length > 0 || formData.projectTypeFocus.length > 0 || formData.markets.length > 0) ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <InfoBlock icon={FiTarget} label="Specialization" values={formData.specialization} />
-                <InfoBlock icon={FiLayers} label="Project Type Focus" values={formData.projectTypeFocus} />
-                <InfoBlock icon={FiGlobe} label="Markets" values={formData.markets} />
-              </div>
-            ) : <p className="text-slate-500">Nothing added yet</p>}
-          </SectionCard>
-
-          {industryLabels.length > 0 && (
-            <SectionCard title="Industry" sectionKey="industry-noop" editingSection={editingSection} editable={false}>
-              <div className="flex flex-wrap gap-2">
-                {industryLabels.map((l) => <Badge key={l} className="bg-slate-900 text-yellow-400">{l}</Badge>)}
-              </div>
-            </SectionCard>
-          )}
-
-          {intentLabels.length > 0 && (
-            <SectionCard title="Goals" sectionKey="goals-noop" editingSection={editingSection} editable={false}>
-              <div className="flex flex-wrap gap-2">
-                {intentLabels.map((l) => <Badge key={l} variant="outline" className="border-slate-300 text-slate-700">{l}</Badge>)}
-              </div>
-            </SectionCard>
-          )}
-
-          <SectionCard
-            title="Skills" sectionKey="skills" editingSection={editingSection}
-            onEditClick={() => edit('skills')} onCancel={cancelSection} onSave={saveSection} saving={saving}
-            editContent={
-              <div className="space-y-3">
-                <ResumeImport onImported={handleResumeImported} />
-                <div className="flex gap-2">
-                  <Input
-                    value={newSkill}
-                    onChange={(e) => setNewSkill(e.target.value)}
-                    onBlur={(e) => skillSuggest.check(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSkill())}
-                    placeholder="Add a skill"
-                    data-testid="skill-input"
-                  />
-                  <Button onClick={handleAddSkill} type="button" className="bg-yellow-500 hover:bg-yellow-600 shrink-0" data-testid="add-skill-button">Add</Button>
-                </div>
-                <SuggestChip
-                  suggestion={skillSuggest.suggestion}
-                  onAccept={(corrected) => { setNewSkill(corrected); skillSuggest.dismiss(); }}
-                  onAcceptAlternative={(alt) => { if (!formData.skills.includes(alt)) setFormData((f) => ({ ...f, skills: [...f.skills, alt] })); }}
-                  onDismiss={skillSuggest.dismiss}
-                />
+                }
+              >
                 <div className="flex flex-wrap gap-2">
-                  {formData.skills.map((skill, idx) => (
-                    <Badge key={idx} className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 cursor-pointer" onClick={() => handleRemoveSkill(skill)}>{skill} ×</Badge>
-                  ))}
+                  {formData.skills.length > 0 ? (
+                    formData.skills.map((skill, idx) => <Badge key={idx} className="bg-yellow-500 text-gray-900">{skill}</Badge>)
+                  ) : <p className="text-slate-500">No skills added yet</p>}
                 </div>
-              </div>
-            }
-          >
-            <div className="flex flex-wrap gap-2">
-              {formData.skills.length > 0 ? (
-                formData.skills.map((skill, idx) => <Badge key={idx} className="bg-yellow-500 text-gray-900">{skill}</Badge>)
-              ) : <p className="text-slate-500">No skills added yet</p>}
-            </div>
-          </SectionCard>
+              </SectionCard>
 
-          {/* Work Gallery — add photos directly here (AI drafts title/tags/category);
-              full descriptions and layout live in Portfolio, but nothing has to be filled in to add a photo */}
-          <SectionCard
-            title="Work Gallery" sectionKey="gallery-noop" editingSection={editingSection} editable={false}
-            action={
-              <>
-                <Link to="/portfolio" className="text-sm font-medium text-black hover:underline hidden sm:inline">Full Portfolio →</Link>
-                <label className="cursor-pointer">
-                  <input type="file" accept="image/*" multiple onChange={(e) => handleGalleryFiles(e.target.files)} className="hidden" disabled={uploadingGallery} />
-                  <span className="flex items-center gap-1.5 text-sm font-medium bg-yellow-400 hover:bg-yellow-500 text-black rounded-lg px-3 py-1.5 transition">
-                    <FiUpload className="w-3.5 h-3.5" />{uploadingGallery ? 'Adding...' : 'Add Photos'}
+              <SectionCard title="Privacy" sectionKey="privacy-noop" editingSection={editingSection} editable={false}>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.analyticsPublic}
+                    onChange={(e) => handleAnalyticsToggle(e.target.checked)}
+                    className="mt-1 h-4 w-4 rounded border-gray-300"
+                    data-testid="analytics-public-toggle"
+                  />
+                  <span className="text-sm text-slate-700">
+                    Show my analytics (profile views, gallery entries) on my public profile
+                    <span className="block text-xs text-slate-400">Off by default — only you can see them until you turn this on</span>
                   </span>
                 </label>
-              </>
-            }
-          >
-            {galleryCategories.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-3">
-                {['All', ...galleryCategories].map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => setGalleryCategory(c)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition ${galleryCategory === c ? 'bg-black text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                  >
-                    {c}
-                  </button>
-                ))}
-              </div>
-            )}
-            {visibleGalleryItems.length > 0 ? (
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                {visibleGalleryItems.map((item) => (
-                  <Link key={item._id} to="/portfolio" className="relative rounded-lg overflow-hidden bg-gray-100 aspect-square group">
-                    {item.images?.[0] ? (
-                      <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-xs text-gray-400 p-2 text-center">{item.title}</div>
-                    )}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition flex items-end p-2 opacity-0 group-hover:opacity-100">
-                      <p className="text-white text-xs font-medium truncate">{item.title}</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <p className="text-slate-500">Nothing here yet — add your first work photo above</p>
-            )}
-          </SectionCard>
+              </SectionCard>
+            </>
+          )}
 
-          <SectionCard
-            title="Education" sectionKey="education" editingSection={editingSection} icon={FiBookOpen}
-            onEditClick={() => edit('education')} onCancel={cancelSection} onSave={saveSection} saving={saving}
-            editContent={
-              <div className="space-y-3">
-                <Button onClick={() => setShowAddEducation(!showAddEducation)} className="bg-yellow-500 hover:bg-yellow-600" size="sm" type="button">
-                  <FiPlus className="mr-1" /> Add
-                </Button>
-                {showAddEducation && (
-                  <Card className="p-4 bg-slate-50">
-                    <div className="space-y-3">
-                      <Input placeholder="School / Institution" value={newEducation.school} onChange={(e) => setNewEducation({ ...newEducation, school: e.target.value })} />
-                      <Input placeholder="Degree (e.g. B.Arch)" value={newEducation.degree} onChange={(e) => setNewEducation({ ...newEducation, degree: e.target.value })} />
-                      <Input placeholder="Field of Study" value={newEducation.field} onChange={(e) => setNewEducation({ ...newEducation, field: e.target.value })} />
-                      <Input placeholder="Duration (e.g. 2016 - 2020)" value={newEducation.duration} onChange={(e) => setNewEducation({ ...newEducation, duration: e.target.value })} />
-                      <Textarea placeholder="Description (optional)" value={newEducation.description} onChange={(e) => setNewEducation({ ...newEducation, description: e.target.value })} rows={2} />
-                      <div className="flex gap-2">
-                        <Button onClick={handleAddEducation} type="button" className="bg-yellow-500 hover:bg-yellow-600">Save</Button>
-                        <Button onClick={() => setShowAddEducation(false)} type="button" variant="outline">Cancel</Button>
+          {activeTab === 'Portfolio' && (
+            <SectionCard
+              title="Work Gallery" sectionKey="gallery-noop" editingSection={editingSection} editable={false}
+              action={
+                <>
+                  <Link to="/portfolio" className="text-sm font-medium text-black hover:underline hidden sm:inline">Full Portfolio →</Link>
+                  <label className="cursor-pointer">
+                    <input type="file" accept="image/*" multiple onChange={(e) => handleGalleryFiles(e.target.files)} className="hidden" disabled={uploadingGallery} />
+                    <span className="flex items-center gap-1.5 text-sm font-medium bg-yellow-400 hover:bg-yellow-500 text-black rounded-lg px-3 py-1.5 transition">
+                      <FiUpload className="w-3.5 h-3.5" />{uploadingGallery ? 'Adding...' : 'Add Photos'}
+                    </span>
+                  </label>
+                </>
+              }
+            >
+              {galleryCategories.length > 0 && (
+                <div className="mb-3">
+                  <PillFilter options={['All', ...galleryCategories]} active={galleryCategory} onChange={setGalleryCategory} />
+                </div>
+              )}
+              {visibleGalleryItems.length > 0 ? (
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                  {visibleGalleryItems.map((item) => (
+                    <Link key={item._id} to="/portfolio" className="relative rounded-lg overflow-hidden bg-gray-100 aspect-square group">
+                      {item.images?.[0] ? (
+                        <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-xs text-gray-400 p-2 text-center">{item.title}</div>
+                      )}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition flex items-end p-2 opacity-0 group-hover:opacity-100">
+                        <p className="text-white text-xs font-medium truncate">{item.title}</p>
                       </div>
-                    </div>
-                  </Card>
-                )}
-                <div className="space-y-3">
-                  {formData.education.map((edu, idx) => (
-                    <Card key={idx} className="p-4 relative">
-                      <Button onClick={() => handleRemoveEducation(idx)} type="button" variant="ghost" size="sm" className="absolute top-2 right-2 text-red-600 hover:text-red-700 hover:bg-red-50">
-                        <FiTrash2 />
-                      </Button>
-                      <div className="pr-10">
-                        <h4 className="font-semibold text-gray-900">{edu.degree}{edu.field ? ` — ${edu.field}` : ''}</h4>
-                        <p className="text-gray-700">{edu.school}</p>
-                        <p className="text-sm text-gray-500">{edu.duration}</p>
-                        {edu.description && <p className="text-sm text-gray-600 mt-2">{edu.description}</p>}
-                      </div>
-                    </Card>
+                    </Link>
                   ))}
                 </div>
-              </div>
-            }
-          >
-            {formData.education.length > 0 ? (
-              <div className="space-y-4">
-                {formData.education.map((edu, idx) => (
-                  <Card key={idx} className="p-4 border-l-4 border-yellow-500">
-                    <h4 className="font-semibold text-gray-900">{edu.degree}{edu.field ? ` — ${edu.field}` : ''}</h4>
-                    <p className="text-gray-700 font-medium">{edu.school}</p>
-                    <p className="text-sm text-gray-500">{edu.duration}</p>
-                    {edu.description && <p className="text-sm text-gray-600 mt-2">{edu.description}</p>}
-                  </Card>
-                ))}
-              </div>
-            ) : <p className="text-slate-500">No education added yet</p>}
-          </SectionCard>
+              ) : (
+                <p className="text-slate-500">Nothing here yet — add your first work photo above</p>
+              )}
+            </SectionCard>
+          )}
 
-          <SectionCard
-            title="Experience" sectionKey="experience" editingSection={editingSection} icon={FiBriefcase}
-            onEditClick={() => edit('experience')} onCancel={cancelSection} onSave={saveSection} saving={saving}
-            editContent={
-              <div className="space-y-3">
-                <Button onClick={() => setShowAddExperience(!showAddExperience)} className="bg-yellow-500 hover:bg-yellow-600" size="sm" type="button">
-                  <FiPlus className="mr-1" /> Add
-                </Button>
-                {showAddExperience && (
-                  <Card className="p-4 bg-slate-50">
+          {activeTab === 'Experience' && (
+            <>
+              <SectionCard
+                title="Experience" sectionKey="experience" editingSection={editingSection} icon={FiBriefcase}
+                onEditClick={() => edit('experience')} onCancel={cancelSection} onSave={saveSection} saving={saving}
+                editContent={
+                  <div className="space-y-3">
+                    <Button onClick={() => setShowAddExperience(!showAddExperience)} className="bg-yellow-500 hover:bg-yellow-600" size="sm" type="button">
+                      <FiPlus className="mr-1" /> Add
+                    </Button>
+                    {showAddExperience && (
+                      <Card className="p-4 bg-slate-50">
+                        <div className="space-y-3">
+                          <Input placeholder="Job Title" value={newExperience.title} onChange={(e) => setNewExperience({ ...newExperience, title: e.target.value })} />
+                          <Input placeholder="Company" value={newExperience.company} onChange={(e) => setNewExperience({ ...newExperience, company: e.target.value })} />
+                          <Input placeholder="Duration (e.g., Jan 2020 - Present)" value={newExperience.duration} onChange={(e) => setNewExperience({ ...newExperience, duration: e.target.value })} />
+                          <Textarea placeholder="Description" value={newExperience.description} onChange={(e) => setNewExperience({ ...newExperience, description: e.target.value })} rows={3} />
+                          <div className="flex gap-2">
+                            <Button onClick={handleAddExperience} type="button" className="bg-yellow-500 hover:bg-yellow-600">Save Experience</Button>
+                            <Button onClick={() => setShowAddExperience(false)} type="button" variant="outline">Cancel</Button>
+                          </div>
+                        </div>
+                      </Card>
+                    )}
                     <div className="space-y-3">
-                      <Input placeholder="Job Title" value={newExperience.title} onChange={(e) => setNewExperience({ ...newExperience, title: e.target.value })} />
-                      <Input placeholder="Company" value={newExperience.company} onChange={(e) => setNewExperience({ ...newExperience, company: e.target.value })} />
-                      <Input placeholder="Duration (e.g., Jan 2020 - Present)" value={newExperience.duration} onChange={(e) => setNewExperience({ ...newExperience, duration: e.target.value })} />
-                      <Textarea placeholder="Description" value={newExperience.description} onChange={(e) => setNewExperience({ ...newExperience, description: e.target.value })} rows={3} />
-                      <div className="flex gap-2">
-                        <Button onClick={handleAddExperience} type="button" className="bg-yellow-500 hover:bg-yellow-600">Save Experience</Button>
-                        <Button onClick={() => setShowAddExperience(false)} type="button" variant="outline">Cancel</Button>
-                      </div>
+                      {formData.experience.map((exp, idx) => (
+                        <Card key={idx} className="p-4 relative">
+                          <Button onClick={() => handleRemoveExperience(idx)} type="button" variant="ghost" size="sm" className="absolute top-2 right-2 text-red-600 hover:text-red-700 hover:bg-red-50">
+                            <FiTrash2 />
+                          </Button>
+                          <div className="pr-10">
+                            <h4 className="font-semibold text-gray-900">{exp.title}</h4>
+                            <p className="text-gray-700">{exp.company}</p>
+                            <p className="text-sm text-gray-500">{exp.duration}</p>
+                            {exp.description && <p className="text-sm text-gray-600 mt-2">{exp.description}</p>}
+                          </div>
+                        </Card>
+                      ))}
                     </div>
-                  </Card>
-                )}
-                <div className="space-y-3">
-                  {formData.experience.map((exp, idx) => (
-                    <Card key={idx} className="p-4 relative">
-                      <Button onClick={() => handleRemoveExperience(idx)} type="button" variant="ghost" size="sm" className="absolute top-2 right-2 text-red-600 hover:text-red-700 hover:bg-red-50">
-                        <FiTrash2 />
-                      </Button>
-                      <div className="pr-10">
+                  </div>
+                }
+              >
+                {formData.experience.length > 0 ? (
+                  <div className="space-y-4">
+                    {formData.experience.map((exp, idx) => (
+                      <Card key={idx} className="p-4 border-l-4 border-yellow-500">
                         <h4 className="font-semibold text-gray-900">{exp.title}</h4>
-                        <p className="text-gray-700">{exp.company}</p>
+                        <p className="text-gray-700 font-medium">{exp.company}</p>
                         <p className="text-sm text-gray-500">{exp.duration}</p>
                         {exp.description && <p className="text-sm text-gray-600 mt-2">{exp.description}</p>}
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            }
-          >
-            {formData.experience.length > 0 ? (
-              <div className="space-y-4">
-                {formData.experience.map((exp, idx) => (
-                  <Card key={idx} className="p-4 border-l-4 border-yellow-500">
-                    <h4 className="font-semibold text-gray-900">{exp.title}</h4>
-                    <p className="text-gray-700 font-medium">{exp.company}</p>
-                    <p className="text-sm text-gray-500">{exp.duration}</p>
-                    {exp.description && <p className="text-sm text-gray-600 mt-2">{exp.description}</p>}
-                  </Card>
-                ))}
-              </div>
-            ) : <p className="text-slate-500">No experience added yet</p>}
-          </SectionCard>
+                      </Card>
+                    ))}
+                  </div>
+                ) : <p className="text-slate-500">No experience added yet</p>}
+              </SectionCard>
 
-          {galleryPreview.associatedProfessionals.length > 0 && (
-            <SectionCard title="Associated Professionals" sectionKey="assoc-noop" editingSection={editingSection} editable={false}>
-              <div className="flex gap-4 overflow-x-auto pb-1">
-                {galleryPreview.associatedProfessionals.map((p) => (
-                  <Link key={p._id} to={`/profile/${p.username}`} className="flex flex-col items-center text-center w-20 shrink-0 hover:opacity-80">
-                    <Avatar className="w-14 h-14">
-                      <AvatarImage src={p.profilePic} />
-                      <AvatarFallback className="bg-gray-200 text-black font-semibold">{p.name?.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <p className="text-xs font-medium text-black mt-1 truncate w-full">{p.name}</p>
-                  </Link>
-                ))}
-              </div>
-            </SectionCard>
-          )}
-
-          {activity.length > 0 && (
-            <SectionCard title="Recent Activity" sectionKey="activity-noop" editingSection={editingSection} editable={false}>
-              <div className="space-y-3">
-                {activity.map((post) => (
-                  <Card key={post._id} className="p-4">
-                    <p className="text-gray-800 text-sm">{post.content}</p>
-                    {post.mediaUrl && <img src={post.mediaUrl} alt="" className="mt-2 rounded-lg max-h-48 object-cover" />}
-                    <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
-                      <span className="flex items-center gap-1"><FiHeart className="w-3.5 h-3.5" />{post.likeCount}</span>
-                      <span className="flex items-center gap-1"><FiMessageSquare className="w-3.5 h-3.5" />{post.commentCount}</span>
-                      <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+              <SectionCard
+                title="Education" sectionKey="education" editingSection={editingSection} icon={FiBookOpen}
+                onEditClick={() => edit('education')} onCancel={cancelSection} onSave={saveSection} saving={saving}
+                editContent={
+                  <div className="space-y-3">
+                    <Button onClick={() => setShowAddEducation(!showAddEducation)} className="bg-yellow-500 hover:bg-yellow-600" size="sm" type="button">
+                      <FiPlus className="mr-1" /> Add
+                    </Button>
+                    {showAddEducation && (
+                      <Card className="p-4 bg-slate-50">
+                        <div className="space-y-3">
+                          <Input placeholder="School / Institution" value={newEducation.school} onChange={(e) => setNewEducation({ ...newEducation, school: e.target.value })} />
+                          <Input placeholder="Degree (e.g. B.Arch)" value={newEducation.degree} onChange={(e) => setNewEducation({ ...newEducation, degree: e.target.value })} />
+                          <Input placeholder="Field of Study" value={newEducation.field} onChange={(e) => setNewEducation({ ...newEducation, field: e.target.value })} />
+                          <Input placeholder="Duration (e.g. 2016 - 2020)" value={newEducation.duration} onChange={(e) => setNewEducation({ ...newEducation, duration: e.target.value })} />
+                          <Textarea placeholder="Description (optional)" value={newEducation.description} onChange={(e) => setNewEducation({ ...newEducation, description: e.target.value })} rows={2} />
+                          <div className="flex gap-2">
+                            <Button onClick={handleAddEducation} type="button" className="bg-yellow-500 hover:bg-yellow-600">Save</Button>
+                            <Button onClick={() => setShowAddEducation(false)} type="button" variant="outline">Cancel</Button>
+                          </div>
+                        </div>
+                      </Card>
+                    )}
+                    <div className="space-y-3">
+                      {formData.education.map((edu, idx) => (
+                        <Card key={idx} className="p-4 relative">
+                          <Button onClick={() => handleRemoveEducation(idx)} type="button" variant="ghost" size="sm" className="absolute top-2 right-2 text-red-600 hover:text-red-700 hover:bg-red-50">
+                            <FiTrash2 />
+                          </Button>
+                          <div className="pr-10">
+                            <h4 className="font-semibold text-gray-900">{edu.degree}{edu.field ? ` — ${edu.field}` : ''}</h4>
+                            <p className="text-gray-700">{edu.school}</p>
+                            <p className="text-sm text-gray-500">{edu.duration}</p>
+                            {edu.description && <p className="text-sm text-gray-600 mt-2">{edu.description}</p>}
+                          </div>
+                        </Card>
+                      ))}
                     </div>
-                  </Card>
-                ))}
-              </div>
-            </SectionCard>
+                  </div>
+                }
+              >
+                {formData.education.length > 0 ? (
+                  <div className="space-y-4">
+                    {formData.education.map((edu, idx) => (
+                      <Card key={idx} className="p-4 border-l-4 border-yellow-500">
+                        <h4 className="font-semibold text-gray-900">{edu.degree}{edu.field ? ` — ${edu.field}` : ''}</h4>
+                        <p className="text-gray-700 font-medium">{edu.school}</p>
+                        <p className="text-sm text-gray-500">{edu.duration}</p>
+                        {edu.description && <p className="text-sm text-gray-600 mt-2">{edu.description}</p>}
+                      </Card>
+                    ))}
+                  </div>
+                ) : <p className="text-slate-500">No education added yet</p>}
+              </SectionCard>
+            </>
           )}
 
-          <SectionCard title="Privacy" sectionKey="privacy-noop" editingSection={editingSection} editable={false}>
-            <label className="flex items-start gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.analyticsPublic}
-                onChange={(e) => handleAnalyticsToggle(e.target.checked)}
-                className="mt-1 h-4 w-4 rounded border-gray-300"
-                data-testid="analytics-public-toggle"
-              />
-              <span className="text-sm text-slate-700">
-                Show my analytics (profile views, gallery entries) on my public profile
-                <span className="block text-xs text-slate-400">Off by default — only you can see them until you turn this on</span>
-              </span>
-            </label>
-          </SectionCard>
+          {activeTab === 'Activity' && (
+            <>
+              {activity.length > 0 ? (
+                <SectionCard title="Recent Activity" sectionKey="activity-noop" editingSection={editingSection} editable={false}>
+                  <div className="space-y-3">
+                    {activity.map((post) => (
+                      <Card key={post._id} className="p-4">
+                        <p className="text-gray-800 text-sm">{post.content}</p>
+                        {post.mediaUrl && <img src={post.mediaUrl} alt="" className="mt-2 rounded-lg max-h-48 object-cover" />}
+                        <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
+                          <span className="flex items-center gap-1"><FiHeart className="w-3.5 h-3.5" />{post.likeCount}</span>
+                          <span className="flex items-center gap-1"><FiMessageSquare className="w-3.5 h-3.5" />{post.commentCount}</span>
+                          <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </SectionCard>
+              ) : (
+                <Card className="p-6"><p className="text-slate-500">No activity yet.</p></Card>
+              )}
+
+              {galleryPreview.associatedProfessionals.length > 0 && (
+                <SectionCard title="Associated Professionals" sectionKey="assoc-noop" editingSection={editingSection} editable={false}>
+                  <div className="flex gap-4 overflow-x-auto pb-1">
+                    {galleryPreview.associatedProfessionals.map((p) => (
+                      <Link key={p._id} to={`/profile/${p.username}`} className="flex flex-col items-center text-center w-20 shrink-0 hover:opacity-80">
+                        <Avatar className="w-14 h-14">
+                          <AvatarImage src={p.profilePic} />
+                          <AvatarFallback className="bg-gray-200 text-black font-semibold">{p.name?.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <p className="text-xs font-medium text-black mt-1 truncate w-full">{p.name}</p>
+                      </Link>
+                    ))}
+                  </div>
+                </SectionCard>
+              )}
+            </>
+          )}
         </div>
       </div>
 
