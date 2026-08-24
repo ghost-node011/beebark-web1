@@ -284,26 +284,26 @@ const Connections = () => {
             {searchResults.length > 0 ? (
               <div className="space-y-4">
                 {searchResults.map((user) => (
-                  <div key={user._id} className="connection-card flex items-center justify-between animate-fadeIn" data-testid={`search-result-${user._id}`}>
-                    <Link to={`/profile/${user.username}`} className="flex items-center space-x-4 hover:opacity-80 transition-opacity">
-                      <Avatar className="w-16 h-16 border-2 border-gray-200">
+                  <div key={user._id} className="connection-card flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-fadeIn" data-testid={`search-result-${user._id}`}>
+                    <Link to={`/profile/${user.username}`} className="flex items-center space-x-4 hover:opacity-80 transition-opacity min-w-0">
+                      <Avatar className="w-16 h-16 border-2 border-gray-200 shrink-0">
                         <AvatarImage src={user.profilePic} />
                         <AvatarFallback className="bg-yellow-400 text-black text-xl font-bold">
                           {user.name?.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
-                      <div>
-                        <h3 className="text-lg font-bold text-black hover:underline">{user.name}</h3>
+                      <div className="min-w-0">
+                        <h3 className="text-lg font-bold text-black hover:underline truncate">{user.name}</h3>
                         {user.username && (
-                          <p className="text-sm text-gray-600">@{user.username}</p>
+                          <p className="text-sm text-gray-600 truncate">@{user.username}</p>
                         )}
-                        <p className="text-sm text-gray-500">{user.email}</p>
+                        <p className="text-sm text-gray-500 truncate">{user.email}</p>
                         {user.bio && (
                           <p className="text-sm text-gray-600 mt-1 line-clamp-1">{user.bio}</p>
                         )}
                       </div>
                     </Link>
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-3 shrink-0">
                       {user.isConnected ? (
                         <span className="flex items-center text-green-600 font-medium">
                           <FiUserCheck className="w-5 h-5 mr-1" />
@@ -314,7 +314,7 @@ const Connections = () => {
                       ) : (
                         <Button
                           onClick={() => handleConnect(user._id)}
-                          className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold"
+                          className="w-full sm:w-auto bg-yellow-400 hover:bg-yellow-500 text-black font-semibold"
                           data-testid={`connect-search-btn-${user._id}`}
                         >
                           <FiUserPlus className="w-5 h-5 mr-2" />
@@ -388,23 +388,23 @@ const Connections = () => {
             {pendingRequests.length > 0 ? (
               <div className="space-y-4">
                 {pendingRequests.map((request) => (
-                  <div key={request._id} className="connection-card flex items-center justify-between animate-fadeIn" data-testid={`pending-${request._id}`}>
-                    <div className="flex items-center space-x-4">
-                      <Avatar className="w-14 h-14 border-2 border-gray-200">
+                  <div key={request._id} className="connection-card flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-fadeIn" data-testid={`pending-${request._id}`}>
+                    <div className="flex items-center space-x-4 min-w-0">
+                      <Avatar className="w-14 h-14 border-2 border-gray-200 shrink-0">
                         <AvatarImage src={request.profilePic} />
                         <AvatarFallback className="bg-gray-200 text-black font-bold">
                           {request.name?.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
-                      <div>
-                        <h3 className="font-bold text-black">{request.name}</h3>
+                      <div className="min-w-0">
+                        <h3 className="font-bold text-black truncate">{request.name}</h3>
                         {request.username && (
-                          <p className="text-sm text-gray-600">@{request.username}</p>
+                          <p className="text-sm text-gray-600 truncate">@{request.username}</p>
                         )}
-                        <p className="text-sm text-gray-500">{request.email}</p>
+                        <p className="text-sm text-gray-500 truncate">{request.email}</p>
                       </div>
                     </div>
-                    <div className="flex space-x-2">
+                    <div className="flex space-x-2 shrink-0">
                       <Button
                         onClick={() => handleAccept(request._id)}
                         className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold"
