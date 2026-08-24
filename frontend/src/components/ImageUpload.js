@@ -54,7 +54,7 @@ const ImageUpload = ({ onUploadComplete, multiple = false, endpoint }) => {
       'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp']
     },
     multiple,
-    maxSize: 5242880
+    maxSize: 18 * 1024 * 1024
   });
 
   const clearPreview = () => {
@@ -75,7 +75,7 @@ const ImageUpload = ({ onUploadComplete, multiple = false, endpoint }) => {
         <p className="text-sm text-slate-600">
           {isDragActive ? 'Drop the image here' : 'Drag & drop or click to upload'}
         </p>
-        <p className="text-xs text-slate-500 mt-1">Max 5MB • JPG, PNG, GIF, WebP</p>
+        <p className="text-xs text-slate-500 mt-1">Max 18MB • JPG, PNG, GIF, WebP</p>
         {uploading && (
           <div className="mt-3">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-yellow-500 mx-auto"></div>

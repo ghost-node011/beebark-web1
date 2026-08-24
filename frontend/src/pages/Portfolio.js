@@ -71,7 +71,8 @@ const Portfolio = () => {
       const urls = (response.data.images || []).map((img) => img.url);
       setForm((f) => ({ ...f, images: [...f.images, ...urls] }));
     } catch (error) {
-      toast.error('Failed to upload image(s)');
+      const message = error.response?.data?.message;
+      toast.error(message === 'File too large' ? 'Image too large — each photo must be under 18MB' : (message || 'Failed to upload image(s)'));
     } finally {
       setUploadingImages(false);
     }
@@ -334,6 +335,7 @@ const Portfolio = () => {
                     </div>
                   </label>
                 </div>
+                <p className="text-xs text-gray-400 mt-2">Max 18MB per photo • JPG, PNG, GIF, WebP</p>
                 {uploadingImages && <p className="text-xs text-gray-500 mt-2">Uploading...</p>}
                 {form.images.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-3">
