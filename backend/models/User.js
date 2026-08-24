@@ -156,7 +156,7 @@ const userSchema = new mongoose.Schema({
       rawText: String
     },
     uploadedAt: Date,
-    // AI resume score (Gemini) — recomputed on every new upload
+    // AI resume score — recomputed on every new upload
     score: Number,
     scoreBreakdown: mongoose.Schema.Types.Mixed,
     strengths: [String],
@@ -181,6 +181,11 @@ const userSchema = new mongoose.Schema({
       default: 'playfair'
     },
     accentColor: { type: String, default: '#D4F547' }
+  },
+  settings: {
+    // Owner-controlled: whether the Analytics stat row (profile views etc.)
+    // shows on the public-facing profile, or stays visible to the owner only.
+    analyticsPublic: { type: Boolean, default: false }
   },
   resetPasswordToken: String,
   resetPasswordExpires: Date

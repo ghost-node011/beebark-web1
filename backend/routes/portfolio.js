@@ -4,6 +4,7 @@ const User = require('../models/User');
 const PortfolioItem = require('../models/PortfolioItem');
 const auth = require('../middleware/auth');
 const { analyzePortfolioItem, suggestPortfolioStyle } = require('../utils/portfolioAdvisor');
+const { draftPortfolioFromImages } = require('../utils/portfolioAutoGenerator');
 
 // Build one-time "starter" suggestions from resume/experience data, without
 // saving anything — used only when the user's portfolio is still empty.
@@ -55,6 +56,23 @@ router.get('/style-suggestion', auth, async (req, res) => {
     res.json(suggestion);
   } catch (error) {
     res.status(500).json({ error: 'Failed to generate style suggestion', message: error.message });
+  }
+});
+
+// AI-drafted portfolio entries from freshly-uploaded work photos (already
+// uploaded via /api/upload/multiple) — the user reviews/edits each draft
+// before anything is saved. IMPORTANT: must be registered BEFORE /:username.
+router.post('/auto-generate', auth, async (req, res) => {
+  try {
+    const { images } = req.body;
+    if (!Array.isArray(images) || images.length === 0) {
+      return res.status(400).json({ error: 'At least one image URL is required' });
+    }
+    const user = await User.findById(req.userId);
+    const drafts = await draftPortfolioFromImages(images.slice(0, 10), user);
+    res.json({ drafts });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to generate portfolio drafts', message: error.message });
   }
 });
 
@@ -112,6 +130,31 @@ router.post('/items', auth, async (req, res) => {
     res.status(201).json({ message: 'Added to portfolio', item });
   } catch (error) {
     res.status(500).json({ error: 'Failed to add portfolio item', message: error.message });
+  }
+});
+
+// Save several accepted auto-generate drafts in one call — skips the
+// per-item AI feedback pass since the drafts already came from AI.
+router.post('/items/bulk', auth, async (req, res) => {
+  try {
+    const { items } = req.body;
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: 'At least one item is required' });
+    }
+    const docs = items
+      .filter((i) => i?.title?.trim())
+      .slice(0, 10)
+      .map((i) => ({
+        user: req.userId,
+        title: i.title.trim(),
+        description: i.description || '',
+        images: Array.isArray(i.images) ? i.images : [],
+        tags: Array.isArray(i.tags) ? i.tags : []
+      }));
+    const saved = await PortfolioItem.insertMany(docs);
+    res.status(201).json({ message: `Added ${saved.length} to your portfolio`, items: saved });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to save portfolio items', message: error.message });
   }
 });
 

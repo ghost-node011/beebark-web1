@@ -40,6 +40,8 @@ router.get('/me', auth, async (req, res) => {
       connections: user.connections,
       pendingRequests: user.pendingRequests,
       sentRequests: user.sentRequests,
+      analyticsPublic: user.settings?.analyticsPublic || false,
+      profileViews: user.profileViews || 0,
       resume: user.resume ? {
         url: user.resume.url,
         fileName: user.resume.fileName,
@@ -90,7 +92,7 @@ router.get('/completion', auth, async (req, res) => {
 router.get('/public/:username', auth, async (req, res) => {
   try {
     const user = await User.findOne({ username: req.params.username })
-      .select('name username profilePic coverPhoto bio role location industries skills specialization projectTypeFocus markets experience connections createdAt')
+      .select('name username profilePic coverPhoto bio role location industries skills specialization projectTypeFocus markets experience connections createdAt settings')
       .populate('connections', 'name username profilePic role');
     if (!user) return res.status(404).json({ error: 'Profile not found' });
 
@@ -104,6 +106,9 @@ router.get('/public/:username', auth, async (req, res) => {
       PortfolioItem.find({ user: user._id }).sort({ createdAt: -1 }).limit(6),
       PortfolioItem.countDocuments({ user: user._id })
     ]);
+
+    const analyticsPublic = user.settings?.analyticsPublic || false;
+    const showAnalytics = isOwnProfile || analyticsPublic;
 
     res.json({
       user: {
@@ -122,7 +127,10 @@ router.get('/public/:username', auth, async (req, res) => {
         experience: user.experience || [],
         connectionCount: user.connections?.length || 0,
         memberSince: user.createdAt,
-        profileViews: fresh.profileViews
+        analyticsPublic,
+        // Omitted entirely (not just hidden client-side) unless the owner
+        // has opted in, or the viewer is the owner.
+        profileViews: showAnalytics ? fresh.profileViews : undefined
       },
       // Real connections, not fabricated "associated professionals"
       associatedProfessionals: (user.connections || []).slice(0, 8).map((c) => ({
@@ -158,6 +166,30 @@ router.get('/public/:username/rating', auth, async (req, res) => {
   }
 });
 
+// Own recent activity (posts) — shown only on the owner's own profile view,
+// never on the public-facing profile of another user.
+router.get('/activity', auth, async (req, res) => {
+  try {
+    const Post = require('../models/Post');
+    const posts = await Post.find({ author: req.userId })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .select('content mediaUrl likes comments createdAt');
+    res.json({
+      posts: posts.map((p) => ({
+        _id: p._id,
+        content: p.content,
+        mediaUrl: p.mediaUrl,
+        likeCount: p.likes?.length || 0,
+        commentCount: p.comments?.length || 0,
+        createdAt: p.createdAt
+      }))
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to load activity', message: error.message });
+  }
+});
+
 router.get('/:userId', auth, async (req, res) => {
   try {
     const user = await User.findById(req.params.userId)
@@ -176,7 +208,7 @@ router.get('/:userId', auth, async (req, res) => {
 
 router.put('/update', auth, async (req, res) => {
   try {
-    const { name, bio, profilePic, coverPhoto, skills, experience, location, intent, industries, specialization, projectTypeFocus, markets } = req.body;
+    const { name, bio, profilePic, coverPhoto, skills, experience, location, intent, industries, specialization, projectTypeFocus, markets, analyticsPublic } = req.body;
     const VALID_INTENT = ['learn', 'network', 'hire', 'get_hired'];
     const VALID_INDUSTRY = ['architecture', 'interiors', 'construction', 'real_estate', 'related'];
     const asTagList = (arr) => arr.map((s) => String(s).trim()).filter(Boolean).slice(0, 20);
@@ -194,6 +226,7 @@ router.put('/update', auth, async (req, res) => {
     if (Array.isArray(specialization)) updateData.specialization = asTagList(specialization);
     if (Array.isArray(projectTypeFocus)) updateData.projectTypeFocus = asTagList(projectTypeFocus);
     if (Array.isArray(markets)) updateData.markets = asTagList(markets);
+    if (typeof analyticsPublic === 'boolean') updateData['settings.analyticsPublic'] = analyticsPublic;
 
     const user = await User.findByIdAndUpdate(
       req.userId,

@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/
 import { Badge } from '../components/ui/badge';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
-import { FiCamera, FiImage, FiPlus, FiZap, FiDownload } from 'react-icons/fi';
+import { FiCamera, FiImage, FiPlus, FiZap, FiDownload, FiCheck, FiX } from 'react-icons/fi';
 import { API_URL } from '../config/api';
 import { TEMPLATES, THEME_META, FONT_META, ACCENT_PRESETS } from '../components/portfolio/PortfolioTemplates';
 import { exportPortfolioPdf } from '../utils/exportPortfolioPdf';
@@ -37,6 +37,10 @@ const Portfolio = () => {
   const [editingItem, setEditingItem] = useState(null);
   const [exporting, setExporting] = useState(false);
   const captureRef = useRef(null);
+  const [showAutoGenDialog, setShowAutoGenDialog] = useState(false);
+  const [autoGenBusy, setAutoGenBusy] = useState(false);
+  const [autoGenDrafts, setAutoGenDrafts] = useState([]); // { imageUrl, isWorkPhoto, title, description, tags, reason, included }
+  const [autoGenSaving, setAutoGenSaving] = useState(false);
 
   useEffect(() => {
     fetchPortfolio();
@@ -75,6 +79,56 @@ const Portfolio = () => {
       toast.error(message === 'File too large' ? 'Image too large — each photo must be under 18MB' : (message || 'Failed to upload image(s)'));
     } finally {
       setUploadingImages(false);
+    }
+  };
+
+  const handleAutoGenFiles = async (fileList) => {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+
+    setAutoGenBusy(true);
+    setAutoGenDrafts([]);
+    try {
+      const formData = new FormData();
+      files.forEach((f) => formData.append('images', f));
+      const uploadRes = await axios.post(`${API_URL}/api/upload/multiple`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      const urls = (uploadRes.data.images || []).map((img) => img.url);
+      const draftRes = await axios.post(`${API_URL}/api/portfolio/auto-generate`, { images: urls });
+      const drafts = (draftRes.data.drafts || []).map((d) => ({ ...d, included: d.isWorkPhoto }));
+      setAutoGenDrafts(drafts);
+      if (drafts.every((d) => !d.isWorkPhoto)) {
+        toast.error("Couldn't recognize work photos in those images");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Failed to analyze photos');
+    } finally {
+      setAutoGenBusy(false);
+    }
+  };
+
+  const updateAutoGenDraft = (index, patch) => {
+    setAutoGenDrafts((drafts) => drafts.map((d, i) => (i === index ? { ...d, ...patch } : d)));
+  };
+
+  const handleSaveAutoGenDrafts = async () => {
+    const toSave = autoGenDrafts.filter((d) => d.isWorkPhoto && d.included);
+    if (!toSave.length) return toast.error('Select at least one to save');
+
+    setAutoGenSaving(true);
+    try {
+      await axios.post(`${API_URL}/api/portfolio/items/bulk`, {
+        items: toSave.map((d) => ({ title: d.title, description: d.description, images: [d.imageUrl], tags: d.tags }))
+      });
+      toast.success(`Added ${toSave.length} to your ${copy.workNoun.toLowerCase()}`);
+      setShowAutoGenDialog(false);
+      setAutoGenDrafts([]);
+      fetchPortfolio();
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Failed to save');
+    } finally {
+      setAutoGenSaving(false);
     }
   };
 
@@ -196,6 +250,9 @@ const Portfolio = () => {
           <div className="flex gap-3">
             <Button onClick={handleExport} disabled={exporting || items.length === 0} variant="outline" className="flex items-center gap-2">
               <FiDownload />{exporting ? 'Exporting...' : 'Export as PDF'}
+            </Button>
+            <Button onClick={() => setShowAutoGenDialog(true)} variant="outline" className="flex items-center gap-2 border-black">
+              <FiZap />Auto-generate from photos
             </Button>
             <Button onClick={() => openAddDialog()} className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold flex items-center gap-2">
               <FiPlus />{copy.portfolioAddLabel}
@@ -349,6 +406,69 @@ const Portfolio = () => {
                 {saving ? 'Saving...' : editingItem ? 'Save changes' : `Add ${copy.workNoun}`}
               </Button>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showAutoGenDialog} onOpenChange={(open) => { setShowAutoGenDialog(open); if (!open) setAutoGenDrafts([]); }}>
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2"><FiZap className="text-yellow-500" />Auto-generate from photos</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-gray-500 -mt-2">Upload photos of your work — AI drafts a title, description, and tags for each. Review and edit before saving.</p>
+
+            {autoGenDrafts.length === 0 && (
+              <label className="cursor-pointer block mt-2">
+                <input type="file" accept="image/*" multiple onChange={(e) => handleAutoGenFiles(e.target.files)} className="hidden" disabled={autoGenBusy} />
+                <div className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-300 hover:border-yellow-400 rounded-lg px-4 py-10 text-sm text-gray-600">
+                  {autoGenBusy ? (
+                    <p>Analyzing photos...</p>
+                  ) : (
+                    <>
+                      <FiImage className="w-6 h-6" />
+                      <p>Upload work photos</p>
+                      <p className="text-xs text-gray-400">Max 5 at once • JPG, PNG, WebP</p>
+                    </>
+                  )}
+                </div>
+              </label>
+            )}
+
+            {autoGenDrafts.length > 0 && (
+              <div className="space-y-3 mt-2">
+                {autoGenDrafts.map((d, i) => (
+                  <div key={i} className={`border rounded-lg p-3 flex gap-3 ${d.isWorkPhoto ? 'border-gray-200' : 'border-gray-100 opacity-60'}`}>
+                    <img src={d.imageUrl} alt="" className="w-20 h-20 object-cover rounded-md shrink-0" />
+                    {d.isWorkPhoto ? (
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <Input value={d.title} onChange={(e) => updateAutoGenDraft(i, { title: e.target.value })} className="font-medium" />
+                          <button
+                            type="button"
+                            onClick={() => updateAutoGenDraft(i, { included: !d.included })}
+                            className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center border-2 ${d.included ? 'bg-yellow-400 border-yellow-400 text-black' : 'border-gray-300 text-gray-300'}`}
+                            aria-label={d.included ? 'Included' : 'Excluded'}
+                          >
+                            {d.included ? <FiCheck /> : <FiX />}
+                          </button>
+                        </div>
+                        <Textarea value={d.description} onChange={(e) => updateAutoGenDraft(i, { description: e.target.value })} className="min-h-16 text-sm" />
+                        <div className="flex flex-wrap gap-1.5">
+                          {d.tags?.map((t, ti) => <Badge key={ti} className="bg-gray-100 text-black text-xs">{t}</Badge>)}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex-1 flex items-center text-sm text-gray-500">{d.reason || "Doesn't look like a work photo — skipped"}</div>
+                    )}
+                  </div>
+                ))}
+                <div className="flex gap-2 pt-1">
+                  <Button onClick={handleSaveAutoGenDrafts} disabled={autoGenSaving} className="flex-1 bg-black text-white">
+                    {autoGenSaving ? 'Saving...' : `Save ${autoGenDrafts.filter((d) => d.isWorkPhoto && d.included).length} to your portfolio`}
+                  </Button>
+                  <Button onClick={() => setAutoGenDrafts([])} variant="outline">Start over</Button>
+                </div>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
 

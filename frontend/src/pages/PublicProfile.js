@@ -11,6 +11,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config/api';
 import { INTENTS, INDUSTRIES } from '../config/onboarding';
+import { StatCard, InfoBlock } from '../components/profile/ProfileWidgets';
 import {
   FiMapPin, FiUserPlus, FiMessageCircle, FiEye, FiUsers,
   FiBriefcase, FiImage, FiZap, FiThumbsUp, FiThumbsDown, FiX,
@@ -19,26 +20,6 @@ import {
 
 const ROLE_LABELS = { student: 'Student', professional: 'Professional', firm: 'Firm', recruiter: 'Recruiter', company: 'Firm' };
 const labelsFrom = (values, options) => (values || []).map((v) => options.find((o) => o.value === v)?.label || v);
-
-const StatCard = ({ icon: Icon, value, label }) => (
-  <div className="bg-white rounded-xl border border-gray-100 p-4 text-center">
-    <Icon className="w-5 h-5 mx-auto text-yellow-500 mb-1" />
-    <p className="text-xl font-bold text-black">{value}</p>
-    <p className="text-xs text-gray-500">{label}</p>
-  </div>
-);
-
-const InfoBlock = ({ icon: Icon, label, values }) => {
-  if (!values?.length) return null;
-  return (
-    <div className="bg-gray-50 rounded-lg p-4">
-      <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">
-        <Icon className="w-4 h-4" />{label}
-      </p>
-      <p className="text-sm text-black">{values.join(', ')}</p>
-    </div>
-  );
-};
 
 const PublicProfile = () => {
   const { username } = useParams();
@@ -173,12 +154,14 @@ const PublicProfile = () => {
             </Card>
           )}
 
-          {/* Analytics — real numbers only */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6">
-            <StatCard icon={FiEye} value={user.profileViews} label="Profile Views" />
-            <StatCard icon={FiUsers} value={user.connectionCount} label="Connections" />
-            <StatCard icon={FiImage} value={data.portfolioCount} label="Portfolio Entries" />
-          </div>
+          {/* Analytics — owner-controlled visibility; omitted by the API entirely for other viewers unless the owner opted in */}
+          {(data.isOwnProfile || user.analyticsPublic) && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6">
+              <StatCard icon={FiEye} value={user.profileViews ?? 0} label="Profile Views" />
+              <StatCard icon={FiUsers} value={user.connectionCount} label="Connections" />
+              <StatCard icon={FiImage} value={data.portfolioCount} label="Work Gallery Entries" />
+            </div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
             <div className="lg:col-span-2 space-y-6">
@@ -212,9 +195,9 @@ const PublicProfile = () => {
                 <Card>
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-lg font-bold text-black flex items-center"><FiImage className="mr-2" />Portfolio</h3>
+                      <h3 className="text-lg font-bold text-black flex items-center"><FiImage className="mr-2" />Work Gallery</h3>
                       <Link to={`/portfolio/${user.username}`} target="_blank" className="text-sm font-medium text-black hover:underline">
-                        View all ({data.portfolioCount})
+                        View full portfolio ({data.portfolioCount})
                       </Link>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

@@ -22,7 +22,7 @@ const portfolioItemSchema = new mongoose.Schema({
   tags: [{
     type: String
   }],
-  // Short AI-generated take on the item (Gemini) — informational, never blocks saving
+  // Short AI-generated take on the item — informational, never blocks saving
   aiFeedback: {
     type: String,
     default: ''

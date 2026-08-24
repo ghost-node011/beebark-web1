@@ -12,13 +12,17 @@ import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Badge } from '../components/ui/badge';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
-import { FiEdit2, FiSave, FiPlus, FiTrash2, FiBriefcase, FiMapPin, FiImage, FiZap } from 'react-icons/fi';
+import {
+  FiEdit2, FiSave, FiPlus, FiTrash2, FiBriefcase, FiMapPin, FiImage, FiZap,
+  FiEye, FiUsers, FiTarget, FiLayers, FiGlobe, FiCamera, FiHeart, FiMessageSquare
+} from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import { API_URL } from '../config/api';
 import { INTENTS, INDUSTRIES } from '../config/onboarding';
 import ImageUpload from '../components/ImageUpload';
 import ResumeImport from '../components/ResumeImport';
 import { SuggestChip, useSuggestChip } from '../components/ai/SuggestChip';
+import { StatCard, InfoBlock } from '../components/profile/ProfileWidgets';
 
 const ROLE_LABELS = {
   student: 'Student',
@@ -44,7 +48,8 @@ const Profile = () => {
     specialization: [],
     projectTypeFocus: [],
     markets: [],
-    experience: []
+    experience: [],
+    analyticsPublic: false
   });
   const [newSkill, setNewSkill] = useState('');
   const [tagInputs, setTagInputs] = useState({ specialization: '', projectTypeFocus: '', markets: '' });
@@ -54,6 +59,9 @@ const Profile = () => {
   const [nameMismatch, setNameMismatch] = useState(null); // { detectedName, currentName }
   const [bioSuggestions, setBioSuggestions] = useState(null); // string[]
   const skillSuggest = useSuggestChip('skill');
+  const [galleryPreview, setGalleryPreview] = useState({ items: [], count: 0, associatedProfessionals: [] });
+  const [activity, setActivity] = useState([]);
+  const [uploadingCover, setUploadingCover] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -67,10 +75,25 @@ const Profile = () => {
         specialization: user.specialization || [],
         projectTypeFocus: user.projectTypeFocus || [],
         markets: user.markets || [],
-        experience: user.experience || []
+        experience: user.experience || [],
+        analyticsPublic: user.analyticsPublic || false
       });
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!user?.username) return;
+    axios.get(`${API_URL}/api/profile/public/${user.username}`)
+      .then((res) => setGalleryPreview({
+        items: res.data.portfolioPreview || [],
+        count: res.data.portfolioCount || 0,
+        associatedProfessionals: res.data.associatedProfessionals || []
+      }))
+      .catch(() => {});
+    axios.get(`${API_URL}/api/profile/activity`)
+      .then((res) => setActivity(res.data.posts || []))
+      .catch(() => {});
+  }, [user?.username]);
 
   const handleSave = async () => {
     setLoading(true);
@@ -83,6 +106,21 @@ const Profile = () => {
       toast.error('Failed to update profile');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCoverPhotoFile = async (file) => {
+    setUploadingCover(true);
+    const body = new FormData();
+    body.append('image', file);
+    try {
+      const response = await axios.post(`${API_URL}/api/upload/image`, body, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setFormData((f) => ({ ...f, coverPhoto: response.data.url }));
+      toast.success('Cover photo updated — Save to keep it');
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Failed to upload cover photo');
+    } finally {
+      setUploadingCover(false);
     }
   };
 
@@ -172,9 +210,12 @@ const Profile = () => {
               style={formData.coverPhoto ? { backgroundImage: `url(${formData.coverPhoto})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
             >
               {editing && (
-                <div className="absolute bottom-3 right-3" data-testid="cover-photo-upload">
-                  <ImageUpload onUploadComplete={(url) => setFormData((f) => ({ ...f, coverPhoto: url }))} />
-                </div>
+                <label className="absolute bottom-3 right-3 cursor-pointer" data-testid="cover-photo-upload">
+                  <input type="file" accept="image/*" onChange={(e) => e.target.files[0] && handleCoverPhotoFile(e.target.files[0])} className="hidden" disabled={uploadingCover} />
+                  <span className="flex items-center gap-1.5 text-xs font-medium text-white bg-black/50 hover:bg-black/70 backdrop-blur-sm rounded-lg px-3 py-1.5 transition">
+                    <FiCamera className="w-3.5 h-3.5" />{uploadingCover ? 'Uploading...' : 'Change cover'}
+                  </span>
+                </label>
               )}
             </div>
             <div className="px-6 pb-2">
@@ -337,13 +378,47 @@ const Profile = () => {
                       ))}
                     </div>
                   </div>
+
+                  <div className="space-y-2 border-t border-slate-100 pt-5">
+                    <Label className="text-lg font-semibold">Privacy</Label>
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.analyticsPublic}
+                        onChange={(e) => setFormData({ ...formData, analyticsPublic: e.target.checked })}
+                        className="mt-1 h-4 w-4 rounded border-gray-300"
+                        data-testid="analytics-public-toggle"
+                      />
+                      <span className="text-sm text-slate-700">
+                        Show my analytics (profile views, gallery entries) on my public profile
+                        <span className="block text-xs text-slate-400">Off by default — only you can see them until you turn this on</span>
+                      </span>
+                    </label>
+                  </div>
                 </>
               ) : (
                 <>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <StatCard icon={FiEye} value={user?.profileViews ?? 0} label="Profile Views" />
+                    <StatCard icon={FiUsers} value={user?.connections?.length || 0} label="Connections" />
+                    <StatCard icon={FiImage} value={galleryPreview.count} label="Work Gallery Entries" />
+                  </div>
+
                   <div>
                     <h3 className="text-lg font-semibold text-slate-900 mb-2">About</h3>
                     <p className="text-slate-700">{formData.bio || 'No bio yet'}</p>
                   </div>
+
+                  {(formData.specialization.length > 0 || formData.projectTypeFocus.length > 0 || formData.markets.length > 0) && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-slate-900 mb-2">Professional Identity</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <InfoBlock icon={FiTarget} label="Specialization" values={formData.specialization} />
+                        <InfoBlock icon={FiLayers} label="Project Type Focus" values={formData.projectTypeFocus} />
+                        <InfoBlock icon={FiGlobe} label="Markets" values={formData.markets} />
+                      </div>
+                    </div>
+                  )}
 
                   {user?.location && (
                     <div>
@@ -390,6 +465,28 @@ const Profile = () => {
                   </div>
 
                   <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-lg font-semibold text-slate-900 flex items-center"><FiImage className="mr-2" />Work Gallery</h3>
+                      <Link to="/portfolio" className="text-sm font-medium text-black hover:underline">Manage in Portfolio →</Link>
+                    </div>
+                    {galleryPreview.items.length > 0 ? (
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                        {galleryPreview.items.map((item) => (
+                          <div key={item._id} className="rounded-lg overflow-hidden bg-gray-100 aspect-square">
+                            {item.images?.[0] ? (
+                              <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-xs text-gray-400 p-2 text-center">{item.title}</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-slate-500">Nothing here yet — add work photos or let AI draft entries for you in Portfolio</p>
+                    )}
+                  </div>
+
+                  <div>
                     <h3 className="text-lg font-semibold text-slate-900 mb-3 flex items-center">
                       <FiBriefcase className="mr-2" /> Experience
                     </h3>
@@ -409,10 +506,41 @@ const Profile = () => {
                     )}
                   </div>
 
-                  <div>
-                    <h3 className="text-lg font-semibold text-slate-900 mb-2">Connections</h3>
-                    <p className="text-slate-700">{user?.connections?.length || 0} connections</p>
-                  </div>
+                  {galleryPreview.associatedProfessionals.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-slate-900 mb-3">Associated Professionals</h3>
+                      <div className="flex gap-4 overflow-x-auto pb-1">
+                        {galleryPreview.associatedProfessionals.map((p) => (
+                          <Link key={p._id} to={`/profile/${p.username}`} className="flex flex-col items-center text-center w-20 shrink-0 hover:opacity-80">
+                            <Avatar className="w-14 h-14">
+                              <AvatarImage src={p.profilePic} />
+                              <AvatarFallback className="bg-gray-200 text-black font-semibold">{p.name?.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <p className="text-xs font-medium text-black mt-1 truncate w-full">{p.name}</p>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {activity.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-slate-900 mb-3">Recent Activity</h3>
+                      <div className="space-y-3">
+                        {activity.map((post) => (
+                          <Card key={post._id} className="p-4">
+                            <p className="text-gray-800 text-sm">{post.content}</p>
+                            {post.mediaUrl && <img src={post.mediaUrl} alt="" className="mt-2 rounded-lg max-h-48 object-cover" />}
+                            <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
+                              <span className="flex items-center gap-1"><FiHeart className="w-3.5 h-3.5" />{post.likeCount}</span>
+                              <span className="flex items-center gap-1"><FiMessageSquare className="w-3.5 h-3.5" />{post.commentCount}</span>
+                              <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </CardContent>
