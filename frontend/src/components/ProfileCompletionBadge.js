@@ -13,6 +13,8 @@ import { API_URL } from '../config/api';
 /**
  * Persistent "profile X% complete" indicator — rendered once in TopBar, so
  * it's visible on every authenticated page, not just the profile itself.
+ * Desktop only (sm+) — on mobile the top bar has no room for it, and
+ * Dashboard shows a proper completion section instead.
  */
 const ProfileCompletionBadge = () => {
   const navigate = useNavigate();
@@ -31,8 +33,7 @@ const ProfileCompletionBadge = () => {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="flex items-center gap-2 rounded-full border border-yellow-300 bg-yellow-50 px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-black hover:bg-yellow-100 transition"
-          aria-label={`Profile ${completion.percent}% complete`}
+          className="hidden sm:flex items-center gap-2 rounded-full border border-yellow-300 bg-yellow-50 px-3 py-1.5 text-xs font-semibold text-black hover:bg-yellow-100 transition"
           data-testid="profile-completion-badge"
         >
           <span className="relative w-4 h-4 shrink-0">
@@ -45,7 +46,7 @@ const ProfileCompletionBadge = () => {
               />
             </svg>
           </span>
-          <span className="hidden sm:inline">Profile {completion.percent}% complete</span>
+          Profile {completion.percent}% complete
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">

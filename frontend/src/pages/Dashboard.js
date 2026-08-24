@@ -5,7 +5,7 @@ import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar';
 import { useAuth } from '../context/AuthContext';
 import { Card, CardContent } from '../components/ui/card';
-import { FiCheckCircle, FiTrendingUp, FiArrowRight, FiZap } from 'react-icons/fi';
+import { FiCheckCircle, FiTrendingUp, FiArrowRight, FiZap, FiCircle } from 'react-icons/fi';
 import { API_URL } from '../config/api';
 import { getCopy } from '../config/roleDomainCopy';
 
@@ -29,6 +29,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const [insights, setInsights] = useState(null);
   const [loadingInsights, setLoadingInsights] = useState(true);
+  const [completion, setCompletion] = useState(null);
   const copy = getCopy(user);
 
   useEffect(() => {
@@ -36,6 +37,10 @@ const Dashboard = () => {
       .then((res) => setInsights(res.data))
       .catch(() => setInsights(null))
       .finally(() => setLoadingInsights(false));
+
+    axios.get(`${API_URL}/api/profile/completion`)
+      .then((res) => setCompletion(res.data))
+      .catch(() => setCompletion(null));
   }, []);
 
   const connectionCount = insights?.metrics?.connectionCount ?? (user?.connections?.length || 0);
@@ -48,6 +53,36 @@ const Dashboard = () => {
       <TopBar />
 
       <div className="lg:ml-64 mt-16 p-4 sm:p-6 lg:p-8">
+        {completion && completion.percent < 100 && (
+          <Link
+            to="/profile"
+            className="mb-6 block rounded-xl border border-yellow-200 bg-yellow-50 p-4 hover:bg-yellow-100 transition-colors"
+            data-testid="dashboard-profile-completion"
+          >
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <p className="text-sm font-semibold text-black">Profile {completion.percent}% complete</p>
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-yellow-700 shrink-0">
+                Complete now<FiArrowRight />
+              </span>
+            </div>
+            <div className="h-2 w-full rounded-full bg-yellow-100 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-yellow-400 transition-all"
+                style={{ width: `${completion.percent}%` }}
+              />
+            </div>
+            {completion.missing?.length > 0 && (
+              <ul className="mt-3 space-y-1">
+                {completion.missing.map((item, i) => (
+                  <li key={i} className="flex items-center gap-2 text-xs text-slate-600">
+                    <FiCircle className="text-slate-300 shrink-0" />{item}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Link>
+        )}
+
         <div className="mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-black mb-2">{timeGreeting()}, {user?.name}.</h1>
           <p className="text-slate-600">{insights?.greeting || copy.dashboardSubtitle}</p>
