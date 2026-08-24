@@ -389,8 +389,8 @@ const Onboarding = () => {
         {industryOtherUnresolved && (
           <p className="mx-auto max-w-3xl mb-2 text-xs font-medium text-red-600" data-testid="onboarding-blocked-reason">
             {domainSuggest.suggestion?.relevant === false
-              ? "That field doesn't match BeeBark's domain — fix it above to continue."
-              : 'Confirm or dismiss the suggestion above to continue.'}
+              ? "Not matching with our domain. If you're looking for this industry to connect with people, you can join as a customer instead."
+              : "Not matching with our domain — confirm or dismiss the suggestion above to continue."}
           </p>
         )}
         <div className="mx-auto max-w-3xl flex items-center gap-4">
