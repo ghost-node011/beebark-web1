@@ -31,10 +31,11 @@ const ProfileCompletionBadge = () => {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="hidden sm:flex items-center gap-2 rounded-full border border-yellow-300 bg-yellow-50 px-3 py-1.5 text-xs font-semibold text-black hover:bg-yellow-100 transition"
+          className="flex items-center gap-2 rounded-full border border-yellow-300 bg-yellow-50 px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-black hover:bg-yellow-100 transition"
+          aria-label={`Profile ${completion.percent}% complete`}
           data-testid="profile-completion-badge"
         >
-          <span className="relative w-4 h-4">
+          <span className="relative w-4 h-4 shrink-0">
             <svg viewBox="0 0 24 24" className="w-4 h-4 -rotate-90">
               <circle cx="12" cy="12" r="10" fill="none" stroke="#e5e7eb" strokeWidth="4" />
               <circle
@@ -44,7 +45,7 @@ const ProfileCompletionBadge = () => {
               />
             </svg>
           </span>
-          Profile {completion.percent}% complete
+          <span className="hidden sm:inline">Profile {completion.percent}% complete</span>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
