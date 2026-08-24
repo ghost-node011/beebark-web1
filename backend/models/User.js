@@ -190,9 +190,13 @@ const userSchema = new mongoose.Schema({
     accentColor: { type: String, default: '#D4F547' }
   },
   settings: {
-    // Owner-controlled: whether the Analytics stat row (profile views etc.)
-    // shows on the public-facing profile, or stays visible to the owner only.
-    analyticsPublic: { type: Boolean, default: false }
+    // Owner-controlled, per-section visibility on the public-facing profile.
+    // Analytics/Activity default to owner-only since they're personal by
+    // nature; Gallery defaults to public since portfolio work is meant to be
+    // shown off and was always visible before this setting existed.
+    analyticsPublic: { type: Boolean, default: false },
+    galleryPublic: { type: Boolean, default: true },
+    activityPublic: { type: Boolean, default: false }
   },
   resetPasswordToken: String,
   resetPasswordExpires: Date

@@ -91,7 +91,11 @@ export const ProfileHero = ({ coverPhoto, profilePic, name, roleLabel, subtitle,
   );
 };
 
-export const AnalyticsPrivacyPill = ({ isPublic, editable, onToggle }) => (
+// Per-section Public/Private badge — clickable to toggle when the owner is
+// viewing their own profile, read-only elsewhere. Used identically for
+// Analytics, Work Gallery, and Activity so all three sections get the same
+// visibility control.
+export const VisibilityPill = ({ isPublic, editable, onToggle }) => (
   editable ? (
     <button
       onClick={() => onToggle(!isPublic)}
@@ -101,6 +105,8 @@ export const AnalyticsPrivacyPill = ({ isPublic, editable, onToggle }) => (
       {isPublic ? 'Public' : 'Private'}
     </button>
   ) : (
-    <span className="text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-700">Private</span>
+    <span className={`text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full ${isPublic ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+      {isPublic ? 'Public' : 'Private'}
+    </span>
   )
 );

@@ -12,11 +12,11 @@ import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config/api';
 import { INDUSTRIES } from '../config/onboarding';
 import { StatCard, InfoBlock } from '../components/profile/ProfileWidgets';
-import { ProfileHero, AnalyticsPrivacyPill, PillFilter, PAGE_BG } from '../components/profile/ProfileShell';
+import { ProfileHero, VisibilityPill, PillFilter, PAGE_BG } from '../components/profile/ProfileShell';
 import {
   FiUserPlus, FiMessageCircle, FiEye, FiUsers,
   FiBriefcase, FiImage, FiZap, FiThumbsUp, FiThumbsDown, FiX,
-  FiTarget, FiLayers, FiGlobe, FiBookOpen
+  FiTarget, FiLayers, FiGlobe, FiBookOpen, FiHeart, FiMessageSquare
 } from 'react-icons/fi';
 
 const ROLE_LABELS = { student: 'Student', professional: 'Professional', firm: 'Firm', recruiter: 'Recruiter', company: 'Firm' };
@@ -81,6 +81,8 @@ const PublicProfile = () => {
   const bio = user.bio || '';
   const bioIsLong = bio.length > 220;
   const showAnalytics = data.isOwnProfile || user.analyticsPublic;
+  const showGallery = data.isOwnProfile || user.galleryPublic;
+  const showActivity = data.isOwnProfile || user.activityPublic;
   const galleryCategories = [...new Set((data.portfolioPreview || []).map((i) => i.category).filter(Boolean))];
   const visibleGalleryItems = galleryCategory === 'All' ? data.portfolioPreview : (data.portfolioPreview || []).filter((i) => i.category === galleryCategory);
 
@@ -144,7 +146,7 @@ const PublicProfile = () => {
                 <Card className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-slate-900 font-serif">Analytics</h3>
-                    <AnalyticsPrivacyPill isPublic={user.analyticsPublic} editable={false} />
+                    <VisibilityPill isPublic={user.analyticsPublic} editable={false} />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <StatCard icon={FiEye} value={user.profileViews ?? 0} label="Profile Views" />
@@ -197,33 +199,42 @@ const PublicProfile = () => {
 
           <div id="section-portfolio" className="space-y-6 scroll-mt-24">
             <Card className="p-6">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-3 gap-2">
                 <h3 className="text-lg font-bold text-black flex items-center font-serif"><FiImage className="mr-2" />Work Gallery</h3>
-                <Link to={`/portfolio/${user.username}`} target="_blank" className="text-sm font-medium text-black hover:underline">
-                  View full portfolio ({data.portfolioCount})
-                </Link>
+                <div className="flex items-center gap-3 shrink-0">
+                  <VisibilityPill isPublic={user.galleryPublic} editable={false} />
+                  {showGallery && (
+                    <Link to={`/portfolio/${user.username}`} target="_blank" className="text-sm font-medium text-black hover:underline whitespace-nowrap">
+                      View full portfolio ({data.portfolioCount})
+                    </Link>
+                  )}
+                </div>
               </div>
-              {galleryCategories.length > 0 && (
-                <div className="mb-3">
-                  <PillFilter options={['All', ...galleryCategories]} active={galleryCategory} onChange={setGalleryCategory} />
-                </div>
-              )}
-              {visibleGalleryItems?.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {visibleGalleryItems.map((item) => (
-                    <div key={item._id} className="relative rounded-lg overflow-hidden bg-gray-100 aspect-square">
-                      {item.images?.[0] ? (
-                        <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xs text-gray-400 p-2 text-center">{item.title}</div>
-                      )}
-                      {item.category && (
-                        <span className="absolute top-1.5 left-1.5 text-[9px] font-bold uppercase tracking-wide bg-yellow-400 text-black px-1.5 py-0.5 rounded-full">{item.category}</span>
-                      )}
+              {showGallery ? (
+                <>
+                  {galleryCategories.length > 0 && (
+                    <div className="mb-3">
+                      <PillFilter options={['All', ...galleryCategories]} active={galleryCategory} onChange={setGalleryCategory} />
                     </div>
-                  ))}
-                </div>
-              ) : <p className="text-gray-400">Nothing here yet</p>}
+                  )}
+                  {visibleGalleryItems?.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {visibleGalleryItems.map((item) => (
+                        <div key={item._id} className="relative rounded-lg overflow-hidden bg-gray-100 aspect-square">
+                          {item.images?.[0] ? (
+                            <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-xs text-gray-400 p-2 text-center">{item.title}</div>
+                          )}
+                          {item.category && (
+                            <span className="absolute top-1.5 left-1.5 text-[9px] font-bold uppercase tracking-wide bg-yellow-400 text-black px-1.5 py-0.5 rounded-full">{item.category}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : <p className="text-gray-400">Nothing here yet</p>}
+                </>
+              ) : <p className="text-gray-400">This member's Work Gallery is private.</p>}
             </Card>
           </div>
 
@@ -262,11 +273,33 @@ const PublicProfile = () => {
           </div>
 
           <div id="section-activity" className="space-y-6 scroll-mt-24">
-              {data.isOwnProfile ? (
-                <Card className="p-6"><p className="text-gray-400">Visit your own profile page to see your activity.</p></Card>
-              ) : (
-                <Card className="p-6"><p className="text-gray-400">This member's activity is private.</p></Card>
-              )}
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-3 gap-2">
+                  <h3 className="text-lg font-bold text-black font-serif">Recent Activity</h3>
+                  <VisibilityPill isPublic={user.activityPublic} editable={false} />
+                </div>
+                {data.isOwnProfile ? (
+                  <p className="text-gray-400">Visit your own profile page to see your activity.</p>
+                ) : showActivity ? (
+                  data.recentActivity?.length > 0 ? (
+                    <div className="space-y-3">
+                      {data.recentActivity.map((post) => (
+                        <div key={post._id} className="border border-gray-100 rounded-lg p-4">
+                          <p className="text-gray-800 text-sm">{post.content}</p>
+                          {post.mediaUrl && <img src={post.mediaUrl} alt="" className="mt-2 rounded-lg max-h-48 object-cover" />}
+                          <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
+                            <span className="flex items-center gap-1"><FiHeart className="w-3.5 h-3.5" />{post.likeCount}</span>
+                            <span className="flex items-center gap-1"><FiMessageSquare className="w-3.5 h-3.5" />{post.commentCount}</span>
+                            <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : <p className="text-gray-400">No activity yet.</p>
+                ) : (
+                  <p className="text-gray-400">This member's activity is private.</p>
+                )}
+              </Card>
 
               {data.associatedProfessionals?.length > 0 && (
                 <Card className="p-6">

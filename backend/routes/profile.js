@@ -9,6 +9,7 @@ const { getDashboardInsights, computeProfileCompletion } = require('../utils/das
 const { analyzeResumeForProfile } = require('../utils/resumeVerifier');
 const { rateProfile } = require('../utils/profileRating');
 const PortfolioItem = require('../models/PortfolioItem');
+const Post = require('../models/Post');
 
 router.get('/me', auth, async (req, res) => {
   try {
@@ -42,6 +43,8 @@ router.get('/me', auth, async (req, res) => {
       pendingRequests: user.pendingRequests,
       sentRequests: user.sentRequests,
       analyticsPublic: user.settings?.analyticsPublic || false,
+      galleryPublic: user.settings?.galleryPublic ?? true,
+      activityPublic: user.settings?.activityPublic || false,
       profileViews: user.profileViews || 0,
       resume: user.resume ? {
         url: user.resume.url,
@@ -103,13 +106,18 @@ router.get('/public/:username', auth, async (req, res) => {
     }
     const fresh = await User.findById(user._id).select('profileViews');
 
-    const [portfolioItems, portfolioCount] = await Promise.all([
-      PortfolioItem.find({ user: user._id }).sort({ createdAt: -1 }).limit(24),
-      PortfolioItem.countDocuments({ user: user._id })
-    ]);
-
     const analyticsPublic = user.settings?.analyticsPublic || false;
+    const galleryPublic = user.settings?.galleryPublic ?? true;
+    const activityPublic = user.settings?.activityPublic || false;
     const showAnalytics = isOwnProfile || analyticsPublic;
+    const showGallery = isOwnProfile || galleryPublic;
+    const showActivity = isOwnProfile || activityPublic;
+
+    const [portfolioItems, portfolioCount, recentPosts] = await Promise.all([
+      showGallery ? PortfolioItem.find({ user: user._id }).sort({ createdAt: -1 }).limit(24) : Promise.resolve([]),
+      showGallery ? PortfolioItem.countDocuments({ user: user._id }) : Promise.resolve(0),
+      showActivity ? Post.find({ author: user._id }).sort({ createdAt: -1 }).limit(5).select('content mediaUrl likes comments createdAt') : Promise.resolve([])
+    ]);
 
     res.json({
       user: {
@@ -130,6 +138,8 @@ router.get('/public/:username', auth, async (req, res) => {
         connectionCount: user.connections?.length || 0,
         memberSince: user.createdAt,
         analyticsPublic,
+        galleryPublic,
+        activityPublic,
         // Omitted entirely (not just hidden client-side) unless the owner
         // has opted in, or the viewer is the owner.
         profileViews: showAnalytics ? fresh.profileViews : undefined
@@ -140,6 +150,14 @@ router.get('/public/:username', auth, async (req, res) => {
       })),
       portfolioPreview: portfolioItems,
       portfolioCount,
+      recentActivity: recentPosts.map((p) => ({
+        _id: p._id,
+        content: p.content,
+        mediaUrl: p.mediaUrl,
+        likeCount: p.likes?.length || 0,
+        commentCount: p.comments?.length || 0,
+        createdAt: p.createdAt
+      })),
       isOwnProfile
     });
   } catch (error) {
@@ -168,11 +186,11 @@ router.get('/public/:username/rating', auth, async (req, res) => {
   }
 });
 
-// Own recent activity (posts) — shown only on the owner's own profile view,
-// never on the public-facing profile of another user.
+// Own recent activity (posts) — always available for the owner's own
+// profile view regardless of the activityPublic setting, which only
+// controls whether OTHER viewers see it (via /public/:username below).
 router.get('/activity', auth, async (req, res) => {
   try {
-    const Post = require('../models/Post');
     const posts = await Post.find({ author: req.userId })
       .sort({ createdAt: -1 })
       .limit(5)
@@ -210,7 +228,7 @@ router.get('/:userId', auth, async (req, res) => {
 
 router.put('/update', auth, async (req, res) => {
   try {
-    const { name, bio, profilePic, coverPhoto, skills, experience, education, location, intent, industries, specialization, projectTypeFocus, markets, analyticsPublic } = req.body;
+    const { name, bio, profilePic, coverPhoto, skills, experience, education, location, intent, industries, specialization, projectTypeFocus, markets, analyticsPublic, galleryPublic, activityPublic } = req.body;
     const VALID_INTENT = ['learn', 'network', 'hire', 'get_hired'];
     const VALID_INDUSTRY = ['architecture', 'interiors', 'construction', 'real_estate', 'related'];
     const asTagList = (arr) => arr.map((s) => String(s).trim()).filter(Boolean).slice(0, 20);
@@ -230,6 +248,8 @@ router.put('/update', auth, async (req, res) => {
     if (Array.isArray(projectTypeFocus)) updateData.projectTypeFocus = asTagList(projectTypeFocus);
     if (Array.isArray(markets)) updateData.markets = asTagList(markets);
     if (typeof analyticsPublic === 'boolean') updateData['settings.analyticsPublic'] = analyticsPublic;
+    if (typeof galleryPublic === 'boolean') updateData['settings.galleryPublic'] = galleryPublic;
+    if (typeof activityPublic === 'boolean') updateData['settings.activityPublic'] = activityPublic;
 
     const user = await User.findByIdAndUpdate(
       req.userId,

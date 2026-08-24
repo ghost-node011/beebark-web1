@@ -24,7 +24,7 @@ import ImageUpload from '../components/ImageUpload';
 import ResumeImport from '../components/ResumeImport';
 import { SuggestChip, useSuggestChip } from '../components/ai/SuggestChip';
 import { StatCard, InfoBlock } from '../components/profile/ProfileWidgets';
-import { ProfileHero, AnalyticsPrivacyPill, PillFilter, PAGE_BG } from '../components/profile/ProfileShell';
+import { ProfileHero, VisibilityPill, PillFilter, PAGE_BG } from '../components/profile/ProfileShell';
 
 const ROLE_LABELS = {
   student: 'Student',
@@ -49,7 +49,9 @@ const emptyFormFromUser = (user) => ({
   markets: user?.markets || [],
   experience: user?.experience || [],
   education: user?.education || [],
-  analyticsPublic: user?.analyticsPublic || false
+  analyticsPublic: user?.analyticsPublic || false,
+  galleryPublic: user?.galleryPublic ?? true,
+  activityPublic: user?.activityPublic || false
 });
 
 // Every profile section renders its view content by default; clicking the
@@ -172,10 +174,12 @@ const Profile = () => {
     }
   };
 
-  const handleAnalyticsToggle = async (checked) => {
-    setFormData((f) => ({ ...f, analyticsPublic: checked }));
+  // Shared by the Analytics / Work Gallery / Activity visibility pills —
+  // `field` is one of analyticsPublic / galleryPublic / activityPublic.
+  const handleVisibilityToggle = async (field, checked) => {
+    setFormData((f) => ({ ...f, [field]: checked }));
     try {
-      const response = await axios.put(`${API_URL}/api/profile/update`, { analyticsPublic: checked });
+      const response = await axios.put(`${API_URL}/api/profile/update`, { [field]: checked });
       setUser(response.data.user);
     } catch (error) {
       toast.error('Failed to update privacy setting');
@@ -362,7 +366,7 @@ const Profile = () => {
               <Card className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-slate-900 font-serif">Analytics</h3>
-                  <AnalyticsPrivacyPill isPublic={formData.analyticsPublic} editable onToggle={handleAnalyticsToggle} />
+                  <VisibilityPill isPublic={formData.analyticsPublic} editable onToggle={(v) => handleVisibilityToggle('analyticsPublic', v)} />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <StatCard icon={FiEye} value={user?.profileViews ?? 0} label="Profile Views" />
@@ -482,22 +486,6 @@ const Profile = () => {
                   ) : <p className="text-slate-500">No skills added yet</p>}
                 </div>
               </SectionCard>
-
-              <SectionCard title="Privacy" sectionKey="privacy-noop" editingSection={editingSection} editable={false}>
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.analyticsPublic}
-                    onChange={(e) => handleAnalyticsToggle(e.target.checked)}
-                    className="mt-1 h-4 w-4 rounded border-gray-300"
-                    data-testid="analytics-public-toggle"
-                  />
-                  <span className="text-sm text-slate-700">
-                    Show my analytics (profile views, gallery entries) on my public profile
-                    <span className="block text-xs text-slate-400">Off by default — only you can see them until you turn this on</span>
-                  </span>
-                </label>
-              </SectionCard>
           </div>
 
           <div id="section-portfolio" className="space-y-6 scroll-mt-24">
@@ -505,6 +493,7 @@ const Profile = () => {
               title="Work Gallery" sectionKey="gallery-noop" editingSection={editingSection} editable={false}
               action={
                 <>
+                  <VisibilityPill isPublic={formData.galleryPublic} editable onToggle={(v) => handleVisibilityToggle('galleryPublic', v)} />
                   <Link to="/portfolio" className="text-sm font-medium text-black hover:underline hidden sm:inline">Full Portfolio →</Link>
                   <label className="cursor-pointer">
                     <input type="file" accept="image/*" multiple onChange={(e) => handleGalleryFiles(e.target.files)} className="hidden" disabled={uploadingGallery} />
@@ -675,8 +664,11 @@ const Profile = () => {
           </div>
 
           <div id="section-activity" className="space-y-6 scroll-mt-24">
-              {activity.length > 0 ? (
-                <SectionCard title="Recent Activity" sectionKey="activity-noop" editingSection={editingSection} editable={false}>
+              <SectionCard
+                title="Recent Activity" sectionKey="activity-noop" editingSection={editingSection} editable={false}
+                action={<VisibilityPill isPublic={formData.activityPublic} editable onToggle={(v) => handleVisibilityToggle('activityPublic', v)} />}
+              >
+                {activity.length > 0 ? (
                   <div className="space-y-3">
                     {activity.map((post) => (
                       <Card key={post._id} className="p-4">
@@ -690,10 +682,8 @@ const Profile = () => {
                       </Card>
                     ))}
                   </div>
-                </SectionCard>
-              ) : (
-                <Card className="p-6"><p className="text-slate-500">No activity yet.</p></Card>
-              )}
+                ) : <p className="text-slate-500">No activity yet.</p>}
+              </SectionCard>
 
               {galleryPreview.associatedProfessionals.length > 0 && (
                 <SectionCard title="Associated Professionals" sectionKey="assoc-noop" editingSection={editingSection} editable={false}>
