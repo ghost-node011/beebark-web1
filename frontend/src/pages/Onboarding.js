@@ -72,11 +72,22 @@ const Onboarding = () => {
     }
   };
 
+  // True while the "What field?" suggestion chip is showing something the
+  // user hasn't acted on yet (accept, accept an alternative, or dismiss).
+  const industryOtherUnresolved =
+    step === 2 &&
+    industries.includes('related') &&
+    !!industriesOther.trim() &&
+    domainSuggest.original === industriesOther &&
+    !!domainSuggest.suggestion &&
+    (domainSuggest.suggestion.relevant === false || domainSuggest.suggestion.changed || domainSuggest.suggestion.alternatives?.length > 0);
+
   const canContinue =
-    (step === 0 && !!role) ||
-    (step === 1 && intent.length > 0) ||
-    (step === 2 && industries.length > 0) ||
-    step === 3;
+    ((step === 0 && !!role) ||
+      (step === 1 && intent.length > 0) ||
+      (step === 2 && industries.length > 0) ||
+      step === 3) &&
+    !industryOtherUnresolved;
 
   const next = async () => {
     if (!canContinue) return;
@@ -87,7 +98,10 @@ const Onboarding = () => {
         result = await domainSuggest.check(industriesOther);
         setCheckingField(false);
       }
-      if (result?.relevant === false) return;
+      // Block Continue until the user acts on a pending suggestion — either
+      // accept it (which clears it) or dismiss it to keep their own text.
+      const unresolved = !!result && (result.relevant === false || result.changed || result.alternatives?.length > 0);
+      if (unresolved) return;
     }
     setStep((s) => s + 1);
   };
@@ -219,7 +233,7 @@ const Onboarding = () => {
                     <SuggestChip
                       suggestion={domainSuggest.suggestion}
                       onAccept={(corrected) => { setIndustriesOther(corrected); domainSuggest.dismiss(); }}
-                      onAcceptAlternative={(alt) => setIndustriesOther(alt)}
+                      onAcceptAlternative={(alt) => { setIndustriesOther(alt); domainSuggest.dismiss(); }}
                       onDismiss={domainSuggest.dismiss}
                     />
                   </div>
