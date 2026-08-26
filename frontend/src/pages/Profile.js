@@ -332,6 +332,7 @@ const Profile = () => {
             coverPhoto={formData.coverPhoto}
             profilePic={formData.profilePic}
             name={user?.name}
+            username={user?.username}
             roleLabel={roleLabel}
             subtitle={user?.email}
             pronouns={formData.pronouns}

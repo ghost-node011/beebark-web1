@@ -96,6 +96,7 @@ const PublicProfile = () => {
             coverPhoto={user.coverPhoto}
             profilePic={user.profilePic}
             name={user.name}
+            username={user.username}
             roleLabel={ROLE_LABELS[user.role] || 'Professional'}
             subtitle={`@${user.username}${industryLabels.length > 0 ? ' · ' + industryLabels.join(', ') : ''}`}
             pronouns={user.pronouns}

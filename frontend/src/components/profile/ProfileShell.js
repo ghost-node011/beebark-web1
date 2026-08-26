@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Badge } from '../ui/badge';
-import { FiCamera, FiX } from 'react-icons/fi';
+import { FiCamera, FiX, FiShare2 } from 'react-icons/fi';
 
 export const TABS = ['Overview', 'Portfolio', 'Experience', 'Activity'];
 
@@ -40,10 +41,23 @@ export const TAB_TO_SECTION_ID = {
 // The tab bar is a scroll-to-section nav, not a content gate — every section
 // always renders on the page; clicking a tab just scrolls to it, so nothing
 // can ever go missing behind an unclicked tab.
-export const ProfileHero = ({ coverPhoto, profilePic, name, roleLabel, subtitle, pronouns, location, connectionCount, actions, headerExtra, onPhotoEdit }) => {
+export const ProfileHero = ({ coverPhoto, profilePic, name, username, roleLabel, subtitle, pronouns, location, connectionCount, actions, headerExtra, onPhotoEdit }) => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const scrollToSection = (tab) => {
     document.getElementById(TAB_TO_SECTION_ID[tab])?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+  const handleShare = async () => {
+    const url = `${window.location.origin}/profile/${username}`;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        throw new Error('Clipboard API unavailable');
+      }
+      toast.success('Profile link copied!');
+    } catch {
+      toast.error(url); // surfaces the raw link so it can still be copied manually
+    }
   };
   return (
     <div className="rounded-2xl overflow-hidden bg-white shadow-sm border border-black/5">
@@ -108,7 +122,19 @@ export const ProfileHero = ({ coverPhoto, profilePic, name, roleLabel, subtitle,
               <span>{connectionCount} connection{connectionCount === 1 ? '' : 's'}</span>
             </div>
           </div>
-          {actions && <div className="flex gap-2 shrink-0">{actions}</div>}
+          <div className="flex gap-2 shrink-0 flex-wrap justify-end">
+            {username && (
+              <button
+                type="button"
+                onClick={handleShare}
+                className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-black hover:bg-gray-50 transition"
+                title="Copy link to this profile"
+              >
+                <FiShare2 className="w-4 h-4" />Share
+              </button>
+            )}
+            {actions}
+          </div>
         </div>
       </div>
       <div className="border-t border-black/5 px-6">
