@@ -850,9 +850,7 @@ const Chat = () => {
                   </Avatar>
                 </Link>
                 <div className="flex-1 min-w-0">
-                  <Link to={`/profile/${conn.username}`} onClick={(e) => e.stopPropagation()} className="font-semibold text-black hover:underline truncate block w-fit">
-                    {conn.name}
-                  </Link>
+                  <p className="font-semibold text-black truncate">{conn.name}</p>
                   <p className="text-sm text-green-500">Online</p>
                 </div>
               </div>
@@ -881,7 +879,7 @@ const Chat = () => {
                     </Avatar>
                   </Link>
                   <div>
-                    <Link to={`/profile/${selectedConnection.username}`} className="font-bold text-black hover:underline">{selectedConnection.name}</Link>
+                    <h3 className="font-bold text-black">{selectedConnection.name}</h3>
                     <p className="text-sm text-green-500">Online</p>
                   </div>
                 </div>
