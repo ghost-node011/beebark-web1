@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Badge } from '../ui/badge';
+import { FiCamera, FiX } from 'react-icons/fi';
 
 export const TABS = ['Overview', 'Portfolio', 'Experience', 'Activity'];
 
@@ -39,7 +40,8 @@ export const TAB_TO_SECTION_ID = {
 // The tab bar is a scroll-to-section nav, not a content gate — every section
 // always renders on the page; clicking a tab just scrolls to it, so nothing
 // can ever go missing behind an unclicked tab.
-export const ProfileHero = ({ coverPhoto, profilePic, name, roleLabel, subtitle, location, connectionCount, actions, headerExtra }) => {
+export const ProfileHero = ({ coverPhoto, profilePic, name, roleLabel, subtitle, pronouns, location, connectionCount, actions, headerExtra, onPhotoEdit }) => {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const scrollToSection = (tab) => {
     document.getElementById(TAB_TO_SECTION_ID[tab])?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -54,16 +56,51 @@ export const ProfileHero = ({ coverPhoto, profilePic, name, roleLabel, subtitle,
         <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.05) 40%, rgba(0,0,0,0.55) 100%)' }} />
         {headerExtra}
         <div className="absolute -bottom-12 sm:-bottom-14 left-6">
-          <Avatar className="w-24 h-24 sm:w-28 sm:h-28 border-4 border-white shadow-lg">
-            <AvatarImage src={profilePic} />
-            <AvatarFallback className="bg-yellow-400 text-black text-3xl font-bold">{name?.charAt(0)}</AvatarFallback>
-          </Avatar>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => profilePic && setLightboxOpen(true)}
+              className={`block rounded-full ${profilePic ? 'cursor-zoom-in' : 'cursor-default'}`}
+              aria-label={profilePic ? 'View profile photo' : undefined}
+            >
+              <Avatar className="w-24 h-24 sm:w-28 sm:h-28 border-4 border-white shadow-lg">
+                <AvatarImage src={profilePic} />
+                <AvatarFallback className="bg-yellow-400 text-black text-3xl font-bold">{name?.charAt(0)}</AvatarFallback>
+              </Avatar>
+            </button>
+            {onPhotoEdit && (
+              <label className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-black text-white border-2 border-white cursor-pointer hover:bg-yellow-500 hover:text-black transition" aria-label="Change profile photo">
+                <FiCamera className="w-3.5 h-3.5" />
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && onPhotoEdit(e.target.files[0])} />
+              </label>
+            )}
+          </div>
         </div>
       </div>
+
+      {lightboxOpen && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/85 flex items-center justify-center p-6"
+          onClick={() => setLightboxOpen(false)}
+        >
+          <button
+            onClick={() => setLightboxOpen(false)}
+            className="absolute top-5 right-5 text-white/80 hover:text-white p-2"
+            aria-label="Close"
+          >
+            <FiX className="w-7 h-7" />
+          </button>
+          <img src={profilePic} alt={name} className="max-w-full max-h-full rounded-lg object-contain" onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
+
       <div className="px-6 pt-16 sm:pt-[4.5rem] pb-4">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-black font-serif truncate">{name}</h1>
+            <h1 className="text-2xl font-bold text-black font-serif truncate">
+              {name}
+              {pronouns && <span className="text-base font-normal text-gray-500 ml-2">({pronouns})</span>}
+            </h1>
             {subtitle && <p className="text-base text-gray-700 mt-1 break-words">{subtitle}</p>}
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-gray-600">
               <Badge className="bg-slate-900 text-yellow-400 capitalize">{roleLabel}</Badge>

@@ -98,6 +98,7 @@ const PublicProfile = () => {
             name={user.name}
             roleLabel={ROLE_LABELS[user.role] || 'Professional'}
             subtitle={`@${user.username}${industryLabels.length > 0 ? ' · ' + industryLabels.join(', ') : ''}`}
+            pronouns={user.pronouns}
             location={user.location}
             connectionCount={user.connectionCount}
             actions={

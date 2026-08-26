@@ -52,9 +52,7 @@ const Sidebar = () => {
         <div className="p-6 shrink-0">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-lg flex items-center justify-center">
-                <span className="text-black font-bold text-xl">B</span>
-              </div>
+              <img src="/image.png" alt="BeeBark" className="w-9 h-9 object-contain" />
               <span className="text-2xl font-bold text-black">BeeBark</span>
             </div>
             <button onClick={close} className="lg:hidden p-1 text-slate-500 hover:text-black" aria-label="Close menu">

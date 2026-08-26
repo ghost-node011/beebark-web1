@@ -20,7 +20,6 @@ import {
 import { Link } from 'react-router-dom';
 import { API_URL } from '../config/api';
 import { INTENTS, INDUSTRIES } from '../config/onboarding';
-import ImageUpload from '../components/ImageUpload';
 import ResumeImport from '../components/ResumeImport';
 import { SuggestChip, useSuggestChip } from '../components/ai/SuggestChip';
 import { StatCard, InfoBlock } from '../components/profile/ProfileWidgets';
@@ -40,6 +39,7 @@ const labelsFrom = (values, options) =>
 const emptyFormFromUser = (user) => ({
   name: user?.name || '',
   bio: user?.bio || '',
+  pronouns: user?.pronouns || '',
   location: user?.location || '',
   profilePic: user?.profilePic || '',
   coverPhoto: user?.coverPhoto || '',
@@ -113,6 +113,7 @@ const Profile = () => {
   const [galleryCategory, setGalleryCategory] = useState('All');
   const [activity, setActivity] = useState([]);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
 
   useEffect(() => {
@@ -156,6 +157,22 @@ const Profile = () => {
   const cancelSection = () => {
     setFormData(emptyFormFromUser(user));
     setEditingSection(null);
+  };
+
+  const handleAvatarFile = async (file) => {
+    setUploadingAvatar(true);
+    const body = new FormData();
+    body.append('image', file);
+    try {
+      const uploadRes = await axios.post(`${API_URL}/api/upload/profile-photo`, body, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const response = await axios.put(`${API_URL}/api/profile/update`, { profilePic: uploadRes.data.url });
+      setUser(response.data.user);
+      toast.success('Profile photo updated');
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Failed to upload profile photo');
+    } finally {
+      setUploadingAvatar(false);
+    }
   };
 
   const handleCoverPhotoFile = async (file) => {
@@ -317,8 +334,10 @@ const Profile = () => {
             name={user?.name}
             roleLabel={roleLabel}
             subtitle={user?.email}
+            pronouns={formData.pronouns}
             location={formData.location}
             connectionCount={user?.connections?.length || 0}
+            onPhotoEdit={uploadingAvatar ? undefined : handleAvatarFile}
             actions={
               <Button onClick={() => edit('header')} variant="outline" data-testid="edit-header-button">
                 <FiEdit2 className="mr-2 w-4 h-4" /> Edit
@@ -345,16 +364,22 @@ const Profile = () => {
                 <Input value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} placeholder="City, Country" data-testid="location-input" />
               </div>
               <div className="space-y-2">
-                <Label>Profile photo</Label>
-                {formData.profilePic ? (
-                  <div className="flex items-center gap-4">
-                    <img src={formData.profilePic} alt="Profile" className="h-20 w-20 rounded-full object-cover border" />
-                    <button type="button" onClick={() => setFormData({ ...formData, profilePic: '' })} className="text-sm text-gray-500 hover:text-black">Remove</button>
-                  </div>
-                ) : (
-                  <ImageUpload onUploadComplete={(url) => setFormData((f) => ({ ...f, profilePic: url }))} endpoint="/api/upload/profile-photo" />
-                )}
+                <Label>Pronouns</Label>
+                <Input
+                  value={formData.pronouns}
+                  onChange={(e) => setFormData({ ...formData, pronouns: e.target.value })}
+                  placeholder="e.g. he/him"
+                  list="pronoun-suggestions"
+                  data-testid="pronouns-input"
+                />
+                <datalist id="pronoun-suggestions">
+                  <option value="he/him" />
+                  <option value="she/her" />
+                  <option value="they/them" />
+                </datalist>
+                <p className="text-xs text-gray-400">Shown next to your name — leave blank to hide it.</p>
               </div>
+              <p className="text-xs text-gray-400 -mt-2">Use the camera icon on your profile photo to change it.</p>
               <div className="flex gap-2">
                 <Button onClick={cancelSection} variant="outline">Cancel</Button>
                 <Button onClick={saveSection} disabled={saving} className="bg-black text-white hover:bg-gray-800">{saving ? 'Saving...' : 'Save'}</Button>

@@ -251,14 +251,14 @@ const Portfolio = () => {
             <h1 className="text-2xl sm:text-3xl font-bold text-black mb-2">{copy.domain === 'real_estate' ? 'Listings' : 'Portfolio'}</h1>
             <p className="text-gray-600">{copy.portfolioSubtitle}</p>
           </div>
-          <div className="flex gap-3">
-            <Button onClick={handleExport} disabled={exporting || items.length === 0} variant="outline" className="flex items-center gap-2">
+          <div className="flex flex-wrap gap-3">
+            <Button onClick={handleExport} disabled={exporting || items.length === 0} variant="outline" className="flex items-center gap-2 grow sm:grow-0 justify-center">
               <FiDownload />{exporting ? 'Exporting...' : 'Export as PDF'}
             </Button>
-            <Button onClick={() => setShowAutoGenDialog(true)} variant="outline" className="flex items-center gap-2 border-black">
+            <Button onClick={() => setShowAutoGenDialog(true)} variant="outline" className="flex items-center gap-2 border-black grow sm:grow-0 justify-center">
               <FiZap />Auto-generate from photos
             </Button>
-            <Button onClick={() => openAddDialog()} className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold flex items-center gap-2">
+            <Button onClick={() => openAddDialog()} className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold flex items-center gap-2 grow sm:grow-0 justify-center">
               <FiPlus />{copy.portfolioAddLabel}
             </Button>
           </div>

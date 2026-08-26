@@ -33,6 +33,7 @@ router.get('/me', auth, async (req, res) => {
       profilePic: user.profilePic,
       coverPhoto: user.coverPhoto,
       bio: user.bio,
+      pronouns: user.pronouns || '',
       skills: user.skills,
       specialization: user.specialization || [],
       projectTypeFocus: user.projectTypeFocus || [],
@@ -96,7 +97,7 @@ router.get('/completion', auth, async (req, res) => {
 router.get('/public/:username', auth, async (req, res) => {
   try {
     const user = await User.findOne({ username: req.params.username })
-      .select('name username profilePic coverPhoto bio role location industries skills specialization projectTypeFocus markets experience education connections createdAt settings')
+      .select('name username profilePic coverPhoto bio pronouns role location industries skills specialization projectTypeFocus markets experience education connections createdAt settings')
       .populate('connections', 'name username profilePic role');
     if (!user) return res.status(404).json({ error: 'Profile not found' });
 
@@ -126,6 +127,7 @@ router.get('/public/:username', auth, async (req, res) => {
         profilePic: user.profilePic,
         coverPhoto: user.coverPhoto,
         bio: user.bio,
+        pronouns: user.pronouns || '',
         role: user.role,
         location: user.location,
         industries: user.industries || [],
@@ -228,7 +230,7 @@ router.get('/:userId', auth, async (req, res) => {
 
 router.put('/update', auth, async (req, res) => {
   try {
-    const { name, bio, profilePic, coverPhoto, skills, experience, education, location, intent, industries, specialization, projectTypeFocus, markets, analyticsPublic, galleryPublic, activityPublic } = req.body;
+    const { name, bio, pronouns, profilePic, coverPhoto, skills, experience, education, location, intent, industries, specialization, projectTypeFocus, markets, analyticsPublic, galleryPublic, activityPublic } = req.body;
     const VALID_INTENT = ['learn', 'network', 'hire', 'get_hired'];
     const VALID_INDUSTRY = ['architecture', 'interiors', 'construction', 'real_estate', 'related'];
     const asTagList = (arr) => arr.map((s) => String(s).trim()).filter(Boolean).slice(0, 20);
@@ -236,6 +238,7 @@ router.put('/update', auth, async (req, res) => {
     const updateData = {};
     if (name) updateData.name = name;
     if (bio !== undefined) updateData.bio = bio;
+    if (pronouns !== undefined) updateData.pronouns = String(pronouns).slice(0, 30);
     if (coverPhoto !== undefined) updateData.coverPhoto = coverPhoto;
     if (location !== undefined) updateData.location = String(location).slice(0, 120);
     if (profilePic !== undefined) updateData.profilePic = profilePic;

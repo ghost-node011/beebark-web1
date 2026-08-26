@@ -16,9 +16,7 @@ const VALUE_POINTS = [
 
 const BrandMark = ({ className = '' }) => (
   <div className={`flex items-center gap-2 ${className}`}>
-    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-black text-yellow-400 text-base font-extrabold">
-      B
-    </span>
+    <img src="/image.png" alt="BeeBark" className="h-8 w-8 object-contain" />
     <span className="text-xl font-extrabold tracking-tight text-black">BeeBark</span>
   </div>
 );

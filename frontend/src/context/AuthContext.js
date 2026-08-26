@@ -163,7 +163,12 @@ export const AuthProvider = ({ children }) => {
     updateOnboarding,
     logout,
     logoutAll,
-    setUser
+    setUser,
+    // Re-fetch /api/profile/me and refresh the shared user object — use this
+    // after any action that changes something on `user` from outside the
+    // profile pages themselves (e.g. accepting a connection request changes
+    // user.connections, but that happens on the Connections page).
+    refreshUser: fetchCurrentUser
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

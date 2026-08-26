@@ -15,7 +15,7 @@ import { useAuth } from '../context/AuthContext';
 
 const Connections = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const copy = getCopy(user);
   const [suggestions, setSuggestions] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
@@ -98,6 +98,7 @@ const Connections = () => {
       toast.success('Request accepted!');
       fetchConnections();
       fetchPendingRequests();
+      refreshUser(); // user.connections is stale in context until this refetches it
     } catch (error) {
       toast.error('Failed to accept request');
     }
@@ -118,6 +119,7 @@ const Connections = () => {
       await axios.delete(`${API_URL}/api/connections/remove/${connectionId}`);
       toast.success('Connection removed');
       fetchConnections();
+      refreshUser();
     } catch (error) {
       toast.error('Failed to remove connection');
     }
