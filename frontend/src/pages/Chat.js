@@ -534,7 +534,7 @@
 // export default Chat;
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import Peer from 'simple-peer';
 import Sidebar from '../components/Sidebar';
@@ -843,12 +843,16 @@ const Chat = () => {
                 onClick={() => handleSelectConnection(conn)}
                 className={`flex items-center space-x-3 p-4 cursor-pointer ${selectedConnection?._id === conn._id ? 'bg-white' : 'hover:bg-gray-100'}`}
               >
-                <Avatar className="w-12 h-12">
-                  <AvatarImage src={conn.profilePic} />
-                  <AvatarFallback className="bg-gray-300">{conn.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <p className="font-semibold text-black">{conn.name}</p>
+                <Link to={`/profile/${conn.username}`} onClick={(e) => e.stopPropagation()} className="shrink-0">
+                  <Avatar className="w-12 h-12 hover:opacity-80 transition">
+                    <AvatarImage src={conn.profilePic} />
+                    <AvatarFallback className="bg-gray-300">{conn.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                </Link>
+                <div className="flex-1 min-w-0">
+                  <Link to={`/profile/${conn.username}`} onClick={(e) => e.stopPropagation()} className="font-semibold text-black hover:underline truncate block w-fit">
+                    {conn.name}
+                  </Link>
                   <p className="text-sm text-green-500">Online</p>
                 </div>
               </div>
@@ -870,12 +874,14 @@ const Chat = () => {
                   >
                     <FiArrowLeft className="w-5 h-5" />
                   </button>
-                  <Avatar className="w-10 h-10">
-                    <AvatarImage src={selectedConnection.profilePic} />
-                    <AvatarFallback>{selectedConnection.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
+                  <Link to={`/profile/${selectedConnection.username}`}>
+                    <Avatar className="w-10 h-10 hover:opacity-80 transition">
+                      <AvatarImage src={selectedConnection.profilePic} />
+                      <AvatarFallback>{selectedConnection.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                  </Link>
                   <div>
-                    <h3 className="font-bold text-black">{selectedConnection.name}</h3>
+                    <Link to={`/profile/${selectedConnection.username}`} className="font-bold text-black hover:underline">{selectedConnection.name}</Link>
                     <p className="text-sm text-green-500">Online</p>
                   </div>
                 </div>
