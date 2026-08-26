@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { FaCheckCircle } from 'react-icons/fa';
 
 /**
@@ -15,10 +16,10 @@ const VALUE_POINTS = [
 ];
 
 const BrandMark = ({ className = '' }) => (
-  <div className={`flex items-center gap-2 ${className}`}>
+  <Link to="/" className={`flex items-center gap-2 ${className}`}>
     <img src="/image.png" alt="BeeBark" className="h-8 w-8 object-contain" />
     <span className="text-xl font-extrabold tracking-tight text-black">BeeBark</span>
-  </div>
+  </Link>
 );
 
 const AuthShell = ({ children, headline, subline }) => {

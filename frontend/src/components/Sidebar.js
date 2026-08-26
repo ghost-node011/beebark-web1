@@ -51,10 +51,10 @@ const Sidebar = () => {
       >
         <div className="p-6 shrink-0">
           <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-3">
+            <NavLink to="/dashboard" onClick={close} className="flex items-center space-x-3">
               <img src="/image.png" alt="BeeBark" className="w-9 h-9 object-contain" />
               <span className="text-2xl font-bold text-black">BeeBark</span>
-            </div>
+            </NavLink>
             <button onClick={close} className="lg:hidden p-1 text-slate-500 hover:text-black" aria-label="Close menu">
               <FiX className="w-6 h-6" />
             </button>
