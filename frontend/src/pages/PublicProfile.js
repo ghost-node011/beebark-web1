@@ -25,13 +25,14 @@ const labelsFrom = (values, options) => (values || []).map((v) => options.find((
 const PublicProfile = () => {
   const { username } = useParams();
   const navigate = useNavigate();
-  const { user: viewer } = useAuth();
+  const { user: viewer, refreshUser } = useAuth();
   const [data, setData] = useState(null);
   const [notFound, setNotFound] = useState(false);
   const [bioExpanded, setBioExpanded] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [rating, setRating] = useState(null);
   const [ratingDismissed, setRatingDismissed] = useState(false);
+  const [ratingFeedback, setRatingFeedback] = useState(null); // 'agree' | 'disagree' | null
   const [galleryCategory, setGalleryCategory] = useState('All');
 
   useEffect(() => {
@@ -48,12 +49,17 @@ const PublicProfile = () => {
   }, [data, username]);
 
   const isConnected = viewer?.connections?.some((c) => (c._id || c) === data?.user?._id) || false;
+  const requestAlreadySent = viewer?.sentRequests?.some((id) => (id._id || id) === data?.user?._id) || false;
+  const [justRequested, setJustRequested] = useState(false);
+  const requestPending = requestAlreadySent || justRequested;
 
   const handleConnect = async () => {
     setConnecting(true);
     try {
       await axios.post(`${API_URL}/api/connections/send-request/${data.user._id}`);
       toast.success('Connection request sent');
+      setJustRequested(true);
+      refreshUser(); // keeps viewer.sentRequests current if they navigate away and back
     } catch (error) {
       toast.error(error.response?.data?.error || 'Could not send request');
     } finally {
@@ -109,6 +115,10 @@ const PublicProfile = () => {
                     <Button onClick={() => navigate(`/chat?with=${user._id}`)} className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold">
                       <FiMessageCircle className="mr-2" />Message
                     </Button>
+                  ) : requestPending ? (
+                    <Button disabled className="bg-gray-200 text-gray-500 cursor-default">
+                      <FiUserPlus className="mr-2" />Requested
+                    </Button>
                   ) : (
                     <Button onClick={handleConnect} disabled={connecting} className="bg-black hover:bg-gray-800 text-white">
                       <FiUserPlus className="mr-2" />{connecting ? 'Sending...' : 'Connect'}
@@ -129,11 +139,31 @@ const PublicProfile = () => {
                 <FiZap className="text-yellow-500 mt-1 shrink-0" />
                 <div className="flex-1">
                   <p className="text-sm text-black">{rating.message}</p>
-                  <div className="flex items-center gap-3 mt-3">
-                    <button className="flex items-center gap-1 text-xs text-gray-600 hover:text-black" onClick={() => toast.success('Thanks for the feedback!')}>
+                  <div className="flex items-center gap-2 mt-3">
+                    <button
+                      disabled={!!ratingFeedback}
+                      onClick={() => { setRatingFeedback('agree'); toast.success('Thanks for the feedback!'); }}
+                      className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full transition ${
+                        ratingFeedback === 'agree'
+                          ? 'bg-yellow-400 text-black font-semibold'
+                          : ratingFeedback
+                            ? 'text-gray-300 cursor-default'
+                            : 'text-gray-600 hover:bg-yellow-100 hover:text-black'
+                      }`}
+                    >
                       <FiThumbsUp className="w-3.5 h-3.5" />Agree
                     </button>
-                    <button className="flex items-center gap-1 text-xs text-gray-600 hover:text-black" onClick={() => toast.success('Thanks for the feedback!')}>
+                    <button
+                      disabled={!!ratingFeedback}
+                      onClick={() => { setRatingFeedback('disagree'); toast.success('Thanks for the feedback!'); }}
+                      className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full transition ${
+                        ratingFeedback === 'disagree'
+                          ? 'bg-yellow-400 text-black font-semibold'
+                          : ratingFeedback
+                            ? 'text-gray-300 cursor-default'
+                            : 'text-gray-600 hover:bg-yellow-100 hover:text-black'
+                      }`}
+                    >
                       <FiThumbsDown className="w-3.5 h-3.5" />Disagree
                     </button>
                   </div>
