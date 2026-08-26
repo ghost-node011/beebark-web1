@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const Notification = require('../models/Notification');
 const auth = require('../middleware/auth');
 
 // Get connection suggestions
@@ -84,6 +85,7 @@ router.post('/send-request/:targetUserId', auth, async (req, res) => {
 
     await targetUser.save();
     await currentUser.save();
+    await Notification.create({ recipient: targetUserId, actor: req.userId, type: 'connection_request' });
 
     res.json({ message: 'Connection request sent' });
   } catch (error) {
@@ -119,6 +121,7 @@ router.post('/accept-request/:requesterId', auth, async (req, res) => {
 
     await currentUser.save();
     await requester.save();
+    await Notification.create({ recipient: requesterId, actor: req.userId, type: 'connection_accepted' });
 
     res.json({ message: 'Connection request accepted' });
   } catch (error) {

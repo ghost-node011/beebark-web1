@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { FiSearch, FiBell, FiLogOut, FiMenu } from 'react-icons/fi';
+import { FiSearch, FiLogOut, FiMenu } from 'react-icons/fi';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -14,6 +14,7 @@ import {
   DropdownMenuSeparator
 } from './ui/dropdown-menu';
 import ProfileCompletionBadge from './ProfileCompletionBadge';
+import NotificationBell from './NotificationBell';
 
 const ROLE_LABELS = {
   student: 'Student',
@@ -63,10 +64,7 @@ const TopBar = () => {
 
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         <ProfileCompletionBadge />
-        <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors relative" aria-label="Notifications">
-          <FiBell className="w-5 h-5 text-slate-600" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-yellow-400 rounded-full"></span>
-        </button>
+        <NotificationBell />
 
         <div className="flex items-center gap-3 sm:border-l sm:border-slate-200 sm:pl-3">
           <div className="text-right hidden md:block">
