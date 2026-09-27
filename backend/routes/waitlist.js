@@ -2,7 +2,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 
 const Waitlist = require('../models/Waitlist');
-const { INTERESTS } = require('../models/Waitlist');
+const { INTERESTS, ROLES, CAREER_STAGES, PRIMARY_INTERESTS } = require('../models/Waitlist');
 const rateLimit = require('../middleware/rateLimit');
 const { sendWaitlistEmail } = require('../utils/email');
 
@@ -23,6 +23,11 @@ router.post(
     body('email').trim().isEmail().withMessage('Enter a valid email address.').normalizeEmail({ gmail_remove_dots: false }),
     body('interests').optional().isArray({ max: INTERESTS.length }).withMessage('Choose from the listed options.'),
     body('interests.*').isIn(INTERESTS).withMessage('Choose from the listed options.'),
+    // Optional profile questions (sent by the /join-waitlist page)
+    body('role').optional({ values: 'falsy' }).isIn(ROLES).withMessage('Choose from the listed options.'),
+    body('roleOther').optional({ values: 'falsy' }).trim().isLength({ max: 100 }),
+    body('careerStage').optional({ values: 'falsy' }).isIn(CAREER_STAGES).withMessage('Choose from the listed options.'),
+    body('interest').optional({ values: 'falsy' }).isIn(PRIMARY_INTERESTS).withMessage('Choose from the listed options.'),
     body('source').optional().trim().isLength({ max: 100 })
   ],
   async (req, res) => {
@@ -31,10 +36,19 @@ router.post(
       return res.status(400).json({ error: errors.array()[0].msg, errors: errors.array() });
     }
 
-    const { name, email, interests = [], source } = req.body;
+    const { name, email, interests = [], role, roleOther, careerStage, interest, source } = req.body;
 
     try {
-      const entry = await Waitlist.create({ name, email, interests: [...new Set(interests)], source });
+      const entry = await Waitlist.create({
+        name,
+        email,
+        interests: [...new Set(interests)],
+        role: role || undefined,
+        roleOther: role === 'Other' ? roleOther : undefined,
+        careerStage: careerStage || undefined,
+        interest: interest || undefined,
+        source
+      });
       res.status(201).json({ message: "You're on the waitlist." });
 
       // Confirmation email is sent after responding so a slow mail server never

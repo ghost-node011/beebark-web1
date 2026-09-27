@@ -10,7 +10,28 @@ const INTERESTS = [
   'Showcase my profile and work',
   'Find a job or internship',
   'Hire for my team',
-  'Build industry connections'
+  'Build industry connections',
+  'Explore projects'
+];
+
+// Questions on the /join-waitlist page (single choice each)
+const ROLES = [
+  'Architect',
+  'Architecture Student',
+  'Interior Designer',
+  'Developer',
+  'Builder / Contractor',
+  'Real Estate Professional',
+  'Other'
+];
+const CAREER_STAGES = ['Student', 'Fresher', '0–3 Years Experience', '3+ Years Experience', 'Business / Studio Owner'];
+const PRIMARY_INTERESTS = [
+  'Showcase my work',
+  'Find jobs / opportunities',
+  'Connect with professionals',
+  'Get discovered',
+  'Find collaborators',
+  'Explore projects'
 ];
 
 const waitlistSchema = new mongoose.Schema(
@@ -20,11 +41,11 @@ const waitlistSchema = new mongoose.Schema(
     interests: { type: [{ type: String, enum: INTERESTS }], default: [] },
     source: { type: String, trim: true, maxlength: 100 },
     confirmationSentAt: { type: Date },
-    // Fields collected by the earlier version of the form; kept so existing entries stay readable
-    role: { type: String, trim: true },
-    roleOther: { type: String, trim: true },
-    careerStage: { type: String, trim: true },
-    interest: { type: String, trim: true }
+    // From the /join-waitlist page form
+    role: { type: String, trim: true, enum: ROLES },
+    roleOther: { type: String, trim: true, maxlength: 100 },
+    careerStage: { type: String, trim: true, enum: CAREER_STAGES },
+    interest: { type: String, trim: true, enum: PRIMARY_INTERESTS }
   },
   { timestamps: true }
 );
@@ -33,3 +54,6 @@ const Waitlist = waitlistDb.model('Waitlist', waitlistSchema);
 
 module.exports = Waitlist;
 module.exports.INTERESTS = INTERESTS;
+module.exports.ROLES = ROLES;
+module.exports.CAREER_STAGES = CAREER_STAGES;
+module.exports.PRIMARY_INTERESTS = PRIMARY_INTERESTS;
