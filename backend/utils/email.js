@@ -18,13 +18,10 @@ const APP_URL = () => process.env.APP_URL || 'http://localhost:3000';
 // Hosted on the public website so email clients can load it
 const LOGO_URL = 'https://www.thebeebark.com/bbark.png';
 
-// Mail is sent through the Vercel relay (whose network allows outbound SMTP).
-// Defaults to the deployed relay; override with MAIL_SERVICE_URL, or set it to
-// an empty string to force direct SMTP.
-const MAIL_SERVICE_URL =
-  process.env.MAIL_SERVICE_URL !== undefined
-    ? process.env.MAIL_SERVICE_URL
-    : 'https://beebark-mail-service.vercel.app';
+// Mail is sent directly over SMTP (EMAIL_HOST / EMAIL_USER / EMAIL_PASSWORD).
+// Set MAIL_SERVICE_URL (and MAIL_SHARED_SECRET) only to route mail through the
+// Vercel relay instead, e.g. when the host blocks outbound SMTP.
+const MAIL_SERVICE_URL = (process.env.MAIL_SERVICE_URL || '').trim();
 
 let cachedTransporter = null;
 const getTransporter = () => {
