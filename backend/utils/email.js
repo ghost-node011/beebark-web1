@@ -100,7 +100,7 @@ const layout = ({
               </td>
             </tr>
           </table>
-          <p style="max-width:560px;margin:16px auto 0;font-size:11px;color:#9AA0A6;text-align:center;">Professional identity, hiring and connections across the built environment.</p>
+          <p style="max-width:560px;margin:16px auto 0;font-size:11px;color:#9AA0A6;text-align:center;">Clients, connections and careers across the built environment.</p>
         </td>
       </tr>
     </table>
@@ -277,9 +277,9 @@ const sendWaitlistEmail = async (toEmail, name) => {
     ${p(`Thanks for joining the <strong>BeeBark</strong> waitlist. We'll email you when BeeBark launches on <strong>${LAUNCH_DATE}</strong>.`)}
     ${p(`BeeBark is the professional network for the built environment: architecture, interior design, real estate and construction. At launch you'll be able to:`)}
     <ul style="margin:0 0 16px 0;padding-left:20px;font-size:15px;color:${BRAND.ink};line-height:1.8;">
-      <li><strong>Build your professional identity</strong> with your skills, experience and projects</li>
+      <li><strong>Showcase your work</strong> in a profile and portfolio so clients can find you</li>
       <li><strong>Explore jobs and internships</strong>, or post openings for your team</li>
-      <li><strong>Connect across the industry</strong> with peers and people in related fields</li>
+      <li><strong>Build your network</strong> with clients, peers and collaborators across the industry</li>
     </ul>
     ${button('Visit BeeBark', WAITLIST_SITE_URL)}
     ${p(`Know someone in the industry who should be here? Forward this email to them.`)}
