@@ -5,43 +5,26 @@ const mongoose = require('mongoose');
 const waitlistDbName = (process.env.WAITLIST_DB_NAME || 'beebark_prelaunch').trim();
 const waitlistDb = mongoose.connection.useDb(waitlistDbName, { useCache: true });
 
-const ROLES = [
-  'Architect',
-  'Architecture Student',
-  'Interior Designer',
-  'Developer',
-  'Builder / Contractor',
-  'Real Estate Professional',
-  'Other'
-];
-
-const CAREER_STAGES = [
-  'Student',
-  'Fresher',
-  '0–3 Years Experience',
-  '3+ Years Experience',
-  'Business / Studio Owner'
-];
-
+// "What brings you to BeeBark?" — optional, multiple choice
 const INTERESTS = [
-  'Showcase my work',
-  'Find jobs / opportunities',
-  'Connect with professionals',
-  'Get discovered',
-  'Find collaborators',
-  'Explore projects'
+  'Showcase my profile and work',
+  'Find a job or internship',
+  'Hire for my team',
+  'Build industry connections'
 ];
 
 const waitlistSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true, maxlength: 100 },
     email: { type: String, required: true, trim: true, lowercase: true, unique: true, maxlength: 254 },
-    role: { type: String, required: true, enum: ROLES },
-    roleOther: { type: String, trim: true, maxlength: 100 },
-    careerStage: { type: String, required: true, enum: CAREER_STAGES },
-    interest: { type: String, required: true, enum: INTERESTS },
+    interests: { type: [{ type: String, enum: INTERESTS }], default: [] },
     source: { type: String, trim: true, maxlength: 100 },
-    confirmationSentAt: { type: Date }
+    confirmationSentAt: { type: Date },
+    // Fields collected by the earlier version of the form; kept so existing entries stay readable
+    role: { type: String, trim: true },
+    roleOther: { type: String, trim: true },
+    careerStage: { type: String, trim: true },
+    interest: { type: String, trim: true }
   },
   { timestamps: true }
 );
@@ -49,6 +32,4 @@ const waitlistSchema = new mongoose.Schema(
 const Waitlist = waitlistDb.model('Waitlist', waitlistSchema);
 
 module.exports = Waitlist;
-module.exports.ROLES = ROLES;
-module.exports.CAREER_STAGES = CAREER_STAGES;
 module.exports.INTERESTS = INTERESTS;

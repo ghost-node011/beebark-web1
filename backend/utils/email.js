@@ -100,7 +100,7 @@ const layout = ({
               </td>
             </tr>
           </table>
-          <p style="max-width:560px;margin:16px auto 0;font-size:11px;color:#9AA0A6;text-align:center;">The professional network for architects, designers and builders.</p>
+          <p style="max-width:560px;margin:16px auto 0;font-size:11px;color:#9AA0A6;text-align:center;">Professional identity, hiring and connections across the built environment.</p>
         </td>
       </tr>
     </table>
@@ -264,47 +264,33 @@ const sendPasswordResetOtpEmail = async (toEmail, name, otp) => {
 
 // --- Pre-launch waitlist confirmation ---
 const WAITLIST_SITE_URL = 'https://www.thebeebark.com';
+const LAUNCH_DATE = '11 October 2026';
 
 const escapeHtml = (str = '') =>
   String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
-const sendWaitlistEmail = async (toEmail, name, { position } = {}) => {
+const sendWaitlistEmail = async (toEmail, name) => {
   const firstName = escapeHtml((name || '').trim().split(/\s+/)[0] || 'there');
   const p = (text) => `<p style="margin:0 0 16px 0;font-size:15px;color:${BRAND.ink};line-height:1.6;">${text}</p>`;
   const body = `
     ${p(`Hi ${firstName},`)}
-    ${p(`Thanks for joining the <strong>BeeBark</strong> waitlist. You're officially on the list!`)}
-    ${position ? `
-    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 24px 0;">
-      <tr>
-        <td style="background:#FFF8E1;border:1px solid ${BRAND.yellowSoft};border-radius:14px;padding:16px 26px;">
-          <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:${BRAND.muted};font-weight:700;">Your spot</div>
-          <div style="font-size:30px;font-weight:800;color:${BRAND.black};margin-top:2px;">#${Number(position).toLocaleString('en-IN')}</div>
-        </td>
-      </tr>
-    </table>` : ''}
-    ${p(`BeeBark is a professional network for architects, designers and builders, a place where architects, interior designers, builders, developers, students and real estate professionals can:`)}
+    ${p(`Thanks for joining the <strong>BeeBark</strong> waitlist. We'll email you when BeeBark launches on <strong>${LAUNCH_DATE}</strong>.`)}
+    ${p(`BeeBark is the professional network for the built environment: architecture, interior design, real estate and construction. At launch you'll be able to:`)}
     <ul style="margin:0 0 16px 0;padding-left:20px;font-size:15px;color:${BRAND.ink};line-height:1.8;">
-      <li><strong>Showcase their work</strong> with a portfolio built for spaces and projects</li>
-      <li><strong>Find jobs and opportunities</strong> matched to their skills</li>
-      <li><strong>Connect and chat</strong> with professionals across the industry</li>
+      <li><strong>Build your professional identity</strong> with your skills, experience and projects</li>
+      <li><strong>Explore jobs and internships</strong>, or post openings for your team</li>
+      <li><strong>Connect across the industry</strong> with peers and people in related fields</li>
     </ul>
-    <p style="margin:0 0 4px 0;font-size:15px;color:${BRAND.black};font-weight:700;">What happens next?</p>
-    <ul style="margin:0 0 8px 0;padding-left:20px;font-size:15px;color:${BRAND.ink};line-height:1.8;">
-      <li>When BeeBark launches, waitlist members get access first</li>
-      <li>Your invite will arrive at this email address, so keep an eye on your inbox</li>
-      <li>Until then, we'll only send you important launch updates, never spam</li>
-    </ul>
-    ${button('Discover BeeBark', WAITLIST_SITE_URL)}
-    ${p(`Know someone who should be here? Forward this email and invite them to join BeeBark.`)}
+    ${button('Visit BeeBark', WAITLIST_SITE_URL)}
+    ${p(`Know someone in the industry who should be here? Forward this email to them.`)}
   `;
 
   await send({
     to: toEmail,
     subject: "You're on the BeeBark waitlist",
     html: layout({
-      preheader: "You're in! We'll invite you as soon as early access opens.",
-      heading: "You're on the list!",
+      preheader: `We'll email you when BeeBark launches on ${LAUNCH_DATE}.`,
+      heading: "You're on the waitlist.",
       body,
       footerNote: 'Questions? Just reply to this email or write to info@thebeebark.com.',
       reason: `You're receiving this email because you joined the waitlist on
