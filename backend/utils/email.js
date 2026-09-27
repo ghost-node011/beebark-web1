@@ -15,6 +15,9 @@ const BRAND = {
 
 const APP_URL = () => process.env.APP_URL || 'http://localhost:3000';
 
+// Hosted on the public website so email clients can load it
+const LOGO_URL = 'https://www.thebeebark.com/bbark.png';
+
 // Mail is sent through the Vercel relay (whose network allows outbound SMTP).
 // Defaults to the deployed relay; override with MAIL_SERVICE_URL, or set it to
 // an empty string to force direct SMTP.
@@ -45,7 +48,14 @@ const getTransporter = () => {
 };
 
 // Shared, email-client-safe shell (inline styles, table-based, mobile friendly)
-const layout = ({ preheader = '', heading, body, footerNote }) => `
+const layout = ({
+  preheader = '',
+  heading,
+  body,
+  footerNote,
+  reason = `You're receiving this email because an account was created on
+                    <a href="${APP_URL()}" style="color:${BRAND.ink};text-decoration:underline;">BeeBark</a>.`
+}) => `
 <!doctype html>
 <html lang="en">
   <head>
@@ -66,7 +76,7 @@ const layout = ({ preheader = '', heading, body, footerNote }) => `
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                   <tr>
                     <td style="font-size:24px;font-weight:800;color:${BRAND.black};letter-spacing:-0.5px;">
-                      <span style="display:inline-block;width:34px;height:34px;line-height:34px;text-align:center;background:${BRAND.black};color:${BRAND.yellow};border-radius:9px;font-size:18px;margin-right:10px;vertical-align:middle;">B</span>
+                      <img src="${LOGO_URL}" alt="BeeBark" width="30" height="40" style="display:inline-block;width:30px;height:40px;border:0;margin-right:10px;vertical-align:middle;" />
                       <span style="vertical-align:middle;">BeeBark</span>
                     </td>
                   </tr>
@@ -86,15 +96,14 @@ const layout = ({ preheader = '', heading, body, footerNote }) => `
                 <div style="border-top:1px solid ${BRAND.border};padding-top:20px;">
                   ${footerNote ? `<p style="margin:0 0 12px 0;font-size:13px;color:${BRAND.muted};line-height:1.6;">${footerNote}</p>` : ''}
                   <p style="margin:0;font-size:12px;color:${BRAND.muted};line-height:1.6;">
-                    You're receiving this email because an account was created on
-                    <a href="${APP_URL()}" style="color:${BRAND.ink};text-decoration:underline;">BeeBark</a>.
+                    ${reason}
                   </p>
                   <p style="margin:8px 0 0 0;font-size:12px;color:${BRAND.muted};">&copy; ${new Date().getFullYear()} BeeBark. All rights reserved.</p>
                 </div>
               </td>
             </tr>
           </table>
-          <p style="max-width:560px;margin:16px auto 0;font-size:11px;color:#9AA0A6;text-align:center;">Connecting people, ideas, and possibilities in the built environment.</p>
+          <p style="max-width:560px;margin:16px auto 0;font-size:11px;color:#9AA0A6;text-align:center;">The professional network for architects, designers and builders.</p>
         </td>
       </tr>
     </table>
@@ -195,7 +204,7 @@ const sendWelcomeEmail = async (toEmail, name) => {
 
   await send({
     to: toEmail,
-    subject: 'Welcome to BeeBark 🐝',
+    subject: 'Welcome to BeeBark',
     html: layout({
       preheader: "You're in! Here's how to get started on BeeBark.",
       heading: 'Welcome aboard!',
@@ -256,4 +265,55 @@ const sendPasswordResetOtpEmail = async (toEmail, name, otp) => {
   });
 };
 
-module.exports = { sendOtpEmail, sendWelcomeEmail, sendPasswordResetEmail, sendPasswordResetOtpEmail };
+// --- Pre-launch waitlist confirmation ---
+const WAITLIST_SITE_URL = 'https://www.thebeebark.com';
+
+const escapeHtml = (str = '') =>
+  String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
+const sendWaitlistEmail = async (toEmail, name, { position } = {}) => {
+  const firstName = escapeHtml((name || '').trim().split(/\s+/)[0] || 'there');
+  const p = (text) => `<p style="margin:0 0 16px 0;font-size:15px;color:${BRAND.ink};line-height:1.6;">${text}</p>`;
+  const body = `
+    ${p(`Hi ${firstName},`)}
+    ${p(`Thanks for joining the <strong>BeeBark</strong> waitlist. You're officially on the list!`)}
+    ${position ? `
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 24px 0;">
+      <tr>
+        <td style="background:#FFF8E1;border:1px solid ${BRAND.yellowSoft};border-radius:14px;padding:16px 26px;">
+          <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:${BRAND.muted};font-weight:700;">Your spot</div>
+          <div style="font-size:30px;font-weight:800;color:${BRAND.black};margin-top:2px;">#${Number(position).toLocaleString('en-IN')}</div>
+        </td>
+      </tr>
+    </table>` : ''}
+    ${p(`BeeBark is a professional network for architects, designers and builders, a place where architects, interior designers, builders, developers, students and real estate professionals can:`)}
+    <ul style="margin:0 0 16px 0;padding-left:20px;font-size:15px;color:${BRAND.ink};line-height:1.8;">
+      <li><strong>Showcase their work</strong> with a portfolio built for spaces and projects</li>
+      <li><strong>Find jobs and opportunities</strong> matched to their skills</li>
+      <li><strong>Connect and chat</strong> with professionals across the industry</li>
+    </ul>
+    <p style="margin:0 0 4px 0;font-size:15px;color:${BRAND.black};font-weight:700;">What happens next?</p>
+    <ul style="margin:0 0 8px 0;padding-left:20px;font-size:15px;color:${BRAND.ink};line-height:1.8;">
+      <li>When BeeBark launches, waitlist members get access first</li>
+      <li>Your invite will arrive at this email address, so keep an eye on your inbox</li>
+      <li>Until then, we'll only send you important launch updates, never spam</li>
+    </ul>
+    ${button('Discover BeeBark', WAITLIST_SITE_URL)}
+    ${p(`Know someone who should be here? Forward this email and invite them to join BeeBark.`)}
+  `;
+
+  await send({
+    to: toEmail,
+    subject: "You're on the BeeBark waitlist",
+    html: layout({
+      preheader: "You're in! We'll invite you as soon as early access opens.",
+      heading: "You're on the list!",
+      body,
+      footerNote: 'Questions? Just reply to this email or write to info@thebeebark.com.',
+      reason: `You're receiving this email because you joined the waitlist on
+                    <a href="${WAITLIST_SITE_URL}" style="color:${BRAND.ink};text-decoration:underline;">thebeebark.com</a>.`
+    })
+  });
+};
+
+module.exports = { sendOtpEmail, sendWelcomeEmail, sendPasswordResetEmail, sendPasswordResetOtpEmail, sendWaitlistEmail };

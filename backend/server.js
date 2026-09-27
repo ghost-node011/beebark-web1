@@ -34,8 +34,24 @@ const io = new Server(server, {
 
 const { sanitizeRequest, securityHeaders } = require('./middleware/security');
 
+// Pre-launch waitlist is called from the marketing site, so it has its own
+// fixed CORS allowlist (independent of CORS_ORIGINS in .env).
+const waitlistCorsOptions = {
+  origin: [
+    'https://www.thebeebark.com',
+    'https://thebeebark.com',
+    'http://localhost:5173',
+    'http://localhost:3000'
+  ],
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type']
+};
+const isWaitlistPath = (req) => req.path === '/api/waitlist' || req.path.startsWith('/api/waitlist/');
+const appCors = cors(corsOptions);
+
 app.use(securityHeaders);
-app.use(cors(corsOptions));
+app.use('/api/waitlist', cors(waitlistCorsOptions));
+app.use((req, res, next) => (isWaitlistPath(req) ? next() : appCors(req, res, next)));
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(sanitizeRequest);
@@ -85,6 +101,7 @@ const meetingRoutes = require('./routes/meeting');
 const storyRoutes = require('./routes/story');
 const portfolioRoutes = require('./routes/portfolio');
 const aiRoutes = require('./routes/ai');
+const waitlistRoutes = require('./routes/waitlist');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
@@ -98,6 +115,7 @@ app.use('/api/meetings', meetingRoutes);
 app.use('/api/stories', storyRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/waitlist', waitlistRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
