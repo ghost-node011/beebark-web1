@@ -69,7 +69,7 @@ router.post(
 
       // Confirmation email is sent after responding so a slow mail server never
       // delays the sign-up; failures are logged and recorded on the entry.
-      sendWaitlistEmail(entry.email, entry.name)
+      sendWaitlistEmail(entry.email, entry.name, { role: entry.role, careerStage: entry.careerStage })
         .then(() => Waitlist.updateOne({ _id: entry._id }, { confirmationSentAt: new Date() }))
         .catch((err) => console.error('Waitlist email error:', err.message));
     } catch (error) {

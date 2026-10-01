@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 const axios = require('axios');
+const { pickTemplate, renderWaitlistEmail } = require('./waitlistEmails');
 
 // Brand palette
 const BRAND = {
@@ -263,40 +264,10 @@ const sendPasswordResetOtpEmail = async (toEmail, name, otp) => {
 };
 
 // --- Pre-launch waitlist confirmation ---
-const WAITLIST_SITE_URL = 'https://www.thebeebark.com';
-const LAUNCH_DATE = '11 October 2026';
-
-const escapeHtml = (str = '') =>
-  String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-
-const sendWaitlistEmail = async (toEmail, name) => {
-  const firstName = escapeHtml((name || '').trim().split(/\s+/)[0] || 'there');
-  const p = (text) => `<p style="margin:0 0 16px 0;font-size:15px;color:${BRAND.ink};line-height:1.6;">${text}</p>`;
-  const body = `
-    ${p(`Hi ${firstName},`)}
-    ${p(`Thanks for joining the <strong>BeeBark</strong> waitlist. We'll email you when BeeBark launches on <strong>${LAUNCH_DATE}</strong>.`)}
-    ${p(`BeeBark is the professional network for the built environment: architecture, interior design, real estate and construction. At launch you'll be able to:`)}
-    <ul style="margin:0 0 16px 0;padding-left:20px;font-size:15px;color:${BRAND.ink};line-height:1.8;">
-      <li><strong>Showcase your work</strong> in a profile and portfolio so clients can find you</li>
-      <li><strong>Explore jobs and internships</strong>, or post openings for your team</li>
-      <li><strong>Build your network</strong> with clients, peers and collaborators across the industry</li>
-    </ul>
-    ${button('Visit BeeBark', WAITLIST_SITE_URL)}
-    ${p(`Know someone in the industry who should be here? Forward this email to them.`)}
-  `;
-
-  await send({
-    to: toEmail,
-    subject: "You're on the BeeBark waitlist",
-    html: layout({
-      preheader: `We'll email you when BeeBark launches on ${LAUNCH_DATE}.`,
-      heading: "You're on the waitlist.",
-      body,
-      footerNote: 'Questions? Just reply to this email or write to info@thebeebark.com.',
-      reason: `You're receiving this email because you joined the waitlist on
-                    <a href="${WAITLIST_SITE_URL}" style="color:${BRAND.ink};text-decoration:underline;">thebeebark.com</a>.`
-    })
-  });
+// Picks one of six audience-specific welcome emails (utils/waitlistEmails.js)
+const sendWaitlistEmail = async (toEmail, name, profile = {}) => {
+  const { subject, html } = renderWaitlistEmail(pickTemplate(profile), name);
+  await send({ to: toEmail, subject, html });
 };
 
-module.exports = { sendOtpEmail, sendWelcomeEmail, sendPasswordResetEmail, sendPasswordResetOtpEmail, sendWaitlistEmail };
+module.exports = { sendOtpEmail, sendWelcomeEmail, sendPasswordResetEmail, sendPasswordResetOtpEmail, sendWaitlistEmail, send };
