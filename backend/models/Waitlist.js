@@ -8,6 +8,7 @@ const waitlistDb = mongoose.connection.useDb(waitlistDbName, { useCache: true })
 // "What brings you to BeeBark?" — optional, multiple choice
 const INTERESTS = [
   'Showcase my profile and work',
+  'Find new clients (lead generation)',
   'Find a job or internship',
   'Hire for my team',
   'Build industry connections',
@@ -22,6 +23,9 @@ const ROLES = [
   'Developer',
   'Builder / Contractor',
   'Real Estate Professional',
+  'Engineer',
+  'Consultant',
+  'Supplier / Manufacturer',
   'Other'
 ];
 const CAREER_STAGES = ['Student', 'Fresher', '0–3 Years Experience', '3+ Years Experience', 'Business / Studio Owner'];

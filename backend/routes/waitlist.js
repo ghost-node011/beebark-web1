@@ -15,6 +15,22 @@ const joinLimiter = rateLimit({
   message: 'Too many attempts. Please try again in a few minutes.'
 });
 
+// Public sign-up count for the marketing site's social proof line. Cached
+// briefly so page views don't each hit the database.
+let countCache = { value: null, at: 0 };
+router.get('/count', async (req, res) => {
+  try {
+    if (countCache.value === null || Date.now() - countCache.at > 60 * 1000) {
+      countCache = { value: await Waitlist.estimatedDocumentCount(), at: Date.now() };
+    }
+    res.set('Cache-Control', 'public, max-age=60');
+    res.json({ count: countCache.value });
+  } catch (error) {
+    console.error('Waitlist count error:', error.message);
+    res.status(500).json({ error: "Couldn't load the waitlist count." });
+  }
+});
+
 router.post(
   '/',
   joinLimiter,
