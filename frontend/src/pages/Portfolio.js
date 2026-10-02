@@ -9,7 +9,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
-import { FiCamera, FiImage, FiPlus, FiDownload, FiX, FiEye, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { FiCamera, FiImage, FiPlus, FiDownload, FiX, FiEye, FiEdit2, FiTrash2, FiArrowUp, FiArrowDown, FiStar } from 'react-icons/fi';
 // import { FiZap, FiCheck } from 'react-icons/fi'; // used by the AI tools below (switched off)
 // import { Card, CardContent } from '../components/ui/card';
 // import { Badge } from '../components/ui/badge';
@@ -111,6 +111,24 @@ const Portfolio = () => {
   };
 
   const removePhoto = (url) => setForm((f) => ({ ...f, images: f.images.filter((u) => u !== url) }));
+  // The first photo is the project's cover
+  const makeCover = (url) => setForm((f) => ({ ...f, images: [url, ...f.images.filter((u) => u !== url)] }));
+
+  // Swap a project with its neighbour; the top project is the featured one
+  const moveItem = async (index, step) => {
+    const target = index + step;
+    if (target < 0 || target >= items.length) return;
+    const previous = items;
+    const next = [...items];
+    [next[index], next[target]] = [next[target], next[index]];
+    setItems(next);
+    try {
+      await axios.put(`${API_URL}/api/portfolio/order`, { ids: next.map((i) => i._id) });
+    } catch (error) {
+      setItems(previous);
+      toast.error('Could not save the new order');
+    }
+  };
 
   /* AI tools (switched off): auto-generate drafts from photos, and suggest a style.
   const handleAutoGenFiles = async (fileList) => { ... };
@@ -405,9 +423,14 @@ const Portfolio = () => {
         </button>
       </div>
       {items.length === 0 && !loading && <p className="text-sm text-gray-500">No projects yet. Add your first {copy.workNoun}.</p>}
+      {items.length > 1 && <p className="mb-2 text-xs text-gray-400">Use the arrows to change the order. The top project is featured first.</p>}
       <ul className="space-y-2">
-        {items.map((item) => (
-          <li key={item._id} className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-2">
+        {items.map((item, index) => (
+          <li key={item._id} className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white p-2">
+            <div className="flex shrink-0 flex-col">
+              <button type="button" onClick={() => moveItem(index, -1)} disabled={index === 0} className="p-1 text-gray-500 hover:text-black disabled:opacity-25" aria-label={`Move ${item.title} up`}><FiArrowUp className="h-3.5 w-3.5" /></button>
+              <button type="button" onClick={() => moveItem(index, 1)} disabled={index === items.length - 1} className="p-1 text-gray-500 hover:text-black disabled:opacity-25" aria-label={`Move ${item.title} down`}><FiArrowDown className="h-3.5 w-3.5" /></button>
+            </div>
             {item.images?.[0] ? (
               <img src={item.images[0]} alt="" className="h-12 w-14 shrink-0 rounded object-cover" />
             ) : (
@@ -415,7 +438,7 @@ const Portfolio = () => {
             )}
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-black">{item.title}</p>
-              <p className="text-xs text-gray-500">{item.images?.length || 0} photo{item.images?.length === 1 ? '' : 's'}</p>
+              <p className="text-xs text-gray-500">{index === 0 ? 'Featured · ' : ''}{item.images?.length || 0} photo{item.images?.length === 1 ? '' : 's'}</p>
             </div>
             <button type="button" onClick={() => openEditDialog(item)} className="p-2 text-gray-500 hover:text-black" aria-label={`Edit ${item.title}`}><FiEdit2 /></button>
             <button type="button" onClick={() => handleDelete(item)} className="p-2 text-gray-500 hover:text-red-600" aria-label={`Remove ${item.title}`}><FiTrash2 /></button>
@@ -562,11 +585,25 @@ const Portfolio = () => {
               </div>
               <p className="mt-2 text-xs text-gray-400">Add as many photos as you like • Max 18MB each • JPG, PNG, GIF, WebP</p>
               {uploadProgress && <p className="mt-2 text-xs text-gray-600">Uploading {uploadProgress.done} of {uploadProgress.total}…</p>}
+              {form.images.length > 1 && <p className="mt-2 text-xs text-gray-500">Tap the star on a photo to make it the cover.</p>}
               {form.images.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {form.images.map((url) => (
+                  {form.images.map((url, i) => (
                     <div key={url} className="relative">
-                      <img src={url} alt="" className="h-16 w-16 rounded-md object-cover" />
+                      <img src={url} alt="" className={`h-16 w-16 rounded-md object-cover ${i === 0 ? 'ring-2 ring-yellow-400 ring-offset-1' : ''}`} />
+                      {i === 0 ? (
+                        <span className="absolute bottom-0 left-0 right-0 rounded-b-md bg-yellow-400 text-center text-[10px] font-semibold text-black" data-testid="pf-cover-badge">Cover</span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => makeCover(url)}
+                          className="absolute bottom-1 left-1 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-black shadow hover:bg-yellow-400"
+                          aria-label="Set as cover"
+                          title="Set as cover"
+                        >
+                          <FiStar className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => removePhoto(url)}

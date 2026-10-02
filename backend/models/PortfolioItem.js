@@ -30,6 +30,11 @@ const portfolioItemSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  // Position chosen by the owner; lower comes first. Ties fall back to newest first.
+  order: {
+    type: Number,
+    default: 0
+  },
   // Short AI-generated take on the item — informational, never blocks saving
   aiFeedback: {
     type: String,

@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const router = express.Router();
 const User = require('../models/User');
 const PortfolioItem = require('../models/PortfolioItem');
@@ -22,6 +23,8 @@ const buildStarterSuggestions = (user) => {
   return suggestions.slice(0, 5);
 };
 
+const ITEM_ORDER = { order: 1, createdAt: -1 };
+
 const LOOK_TEXT_LIMITS = { tagline: 160, aboutText: 1200, closingLine: 120, contactInfo: 160 };
 const lookOf = (user) => {
   const p = user.portfolio || {};
@@ -39,7 +42,7 @@ const lookOf = (user) => {
 router.get('/me', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
-    const items = await PortfolioItem.find({ user: req.userId }).sort({ createdAt: -1 });
+    const items = await PortfolioItem.find({ user: req.userId }).sort(ITEM_ORDER);
 
     const starterSuggestions = items.length === 0 ? buildStarterSuggestions(user) : [];
 
@@ -63,7 +66,7 @@ router.get('/me', auth, async (req, res) => {
 router.get('/style-suggestion', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
-    const items = await PortfolioItem.find({ user: req.userId }).sort({ createdAt: -1 });
+    const items = await PortfolioItem.find({ user: req.userId }).sort(ITEM_ORDER);
     const suggestion = await suggestPortfolioStyle(items, user.role);
     if (suggestion?.error) {
       return res.status(503).json({ error: 'Style suggestions are unavailable right now', detail: suggestion.error });
@@ -98,7 +101,7 @@ router.get('/:username', async (req, res) => {
       .populate('connections', '_id');
     if (!user) return res.status(404).json({ error: 'Portfolio not found' });
 
-    const items = await PortfolioItem.find({ user: user._id }).sort({ createdAt: -1 });
+    const items = await PortfolioItem.find({ user: user._id }).sort(ITEM_ORDER);
 
     res.json({
       user: {
@@ -135,8 +138,12 @@ router.post('/items', auth, async (req, res) => {
     // const review = await analyzePortfolioItem(title, description);
     const review = null;
 
+    // New work goes to the top of the owner's chosen order
+    const first = await PortfolioItem.findOne({ user: req.userId }).sort(ITEM_ORDER).select('order');
+
     const item = new PortfolioItem({
       user: req.userId,
+      order: first ? first.order - 1 : 0,
       title: title.trim(),
       description: description || '',
       images: Array.isArray(images) ? images : [],
@@ -151,6 +158,26 @@ router.post('/items', auth, async (req, res) => {
     res.status(201).json({ message: 'Added to portfolio', item });
   } catch (error) {
     res.status(500).json({ error: 'Failed to add portfolio item', message: error.message });
+  }
+});
+
+// Save the owner's project order: ids listed top to bottom
+router.put('/order', auth, async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0 || ids.some((id) => !mongoose.isValidObjectId(id))) {
+      return res.status(400).json({ error: 'ids must be a list of project ids' });
+    }
+    const owned = await PortfolioItem.countDocuments({ user: req.userId, _id: { $in: ids } });
+    if (owned !== new Set(ids.map(String)).size) {
+      return res.status(400).json({ error: 'Some projects were not found' });
+    }
+    await PortfolioItem.bulkWrite(ids.map((id, index) => ({
+      updateOne: { filter: { _id: id, user: req.userId }, update: { $set: { order: index } } }
+    })));
+    res.json({ message: 'Order saved' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to save order', message: error.message });
   }
 });
 
