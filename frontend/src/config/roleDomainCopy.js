@@ -5,7 +5,7 @@
 
 const ROLE_COPY = {
   student: {
-    jobsLabel: 'Internships',
+    jobsLabel: 'Jobs',
     jobsSubtitle: 'AI-matched internships and entry roles to help you learn on the job',
     connectionsLabel: 'Mentors & Peers',
     connectionsSubtitle: 'Find mentors and classmates. Every connection is a step toward your first role.',

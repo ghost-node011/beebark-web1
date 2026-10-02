@@ -31,7 +31,7 @@ const VARIANTS = {
       subtitle: 'Discover opportunities, showcase your work and connect with architects, studios and peers.',
       nextStep: 'Add a studio project to showcase your work and get noticed by studios and recruiters.',
       primary: { label: 'Add a studio project', to: '/portfolio' },
-      secondary: { label: 'Find internships', to: '/jobs' },
+      secondary: { label: 'Find jobs', to: '/jobs' },
       opportunitiesTitle: 'Recommended Opportunities',
       peopleTitle: 'People to Connect With',
       official: 'Welcome to BeeBark! A community for the next generation of architects. Share your work, find opportunities and connect with inspiring people and studios.'
@@ -57,7 +57,7 @@ const VARIANTS = {
       subtitle: 'Discover opportunities, showcase your work and connect with interior designers, studios and peers.',
       nextStep: 'Add a design project to showcase your work and get noticed by interior design studios and recruiters.',
       primary: { label: 'Add a design project', to: '/portfolio' },
-      secondary: { label: 'Find internships', to: '/jobs' },
+      secondary: { label: 'Find jobs', to: '/jobs' },
       opportunitiesTitle: 'Recommended Opportunities',
       peopleTitle: 'People to Connect With',
       official: 'Welcome to BeeBark! A community for the next generation of interior designers. Share your work, find opportunities and connect with inspiring people and studios.'
@@ -109,7 +109,7 @@ const VARIANTS = {
       subtitle: 'Explore internships and entry-level roles, connect with construction professionals and showcase your potential.',
       nextStep: 'Add your skills to get matched with construction internships and entry-level opportunities from leading employers.',
       primary: { label: 'Add your skills', to: '/profile' },
-      secondary: { label: 'Find internships', to: '/jobs' },
+      secondary: { label: 'Find jobs', to: '/jobs' },
       opportunitiesTitle: 'Latest Opportunities',
       peopleTitle: 'Recommended Connections',
       official: 'Welcome to the Construction community on BeeBark! Connect with construction firms, engineers and industry professionals, explore opportunities and take the next step in your career.'
