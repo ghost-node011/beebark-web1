@@ -5,7 +5,7 @@ import { useUI } from '../context/UIContext';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import {
   FiHome, FiMessageCircle, FiUsers, FiLayers, FiBriefcase,
-  FiVideo, FiX, FiImage
+  FiVideo, FiX, FiImage, FiFileText, FiSend
 } from 'react-icons/fi';
 import { getCopy } from '../config/roleDomainCopy';
 
@@ -24,6 +24,8 @@ const Sidebar = () => {
     // { id: 'reels', path: '/reels', icon: FiFilm, label: 'Reels' },
     // { id: 'projects', path: '/projects', icon: FiTrendingUp, label: 'Projects Center' },
     { id: 'jobs', path: '/jobs', icon: FiBriefcase, label: copy.jobsLabel },
+    { id: 'news', path: '/news', icon: FiFileText, label: 'News' },
+    { id: 'official', path: '/official', icon: FiSend, label: '@BeeBark Official' },
     // { id: 'store', path: '/store', icon: FiShoppingBag, label: 'Store' },
     // { id: 'rent', path: '/rent', icon: FiDollarSign, label: 'Rent & Sell' },
     // { id: 'events', path: '/events', icon: FiCalendar, label: 'Events' },

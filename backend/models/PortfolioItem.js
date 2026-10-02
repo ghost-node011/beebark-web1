@@ -24,6 +24,8 @@ const portfolioItemSchema = new mongoose.Schema({
   }],
   // Free-text bucket for filtering (e.g. "Residential", "Commercial") — kept
   // free-text rather than a fixed enum since this app spans many professions
+  location: { type: String, default: '' },
+  projectStatus: { type: String, default: '' },
   category: {
     type: String,
     default: ''

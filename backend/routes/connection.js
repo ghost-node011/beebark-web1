@@ -31,6 +31,7 @@ router.get('/search', auth, async (req, res) => {
     const users = await User.find({
       $and: [
         { _id: { $ne: req.userId } },
+        { isDemo: currentUser.isDemo ? true : { $ne: true } },
         {
           $or: [
             { name: { $regex: query, $options: 'i' } },

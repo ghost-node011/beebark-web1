@@ -47,6 +47,19 @@ const jobSchema = new mongoose.Schema({
       default: 'manual'
     }
   }],
+  industry: {
+    type: String,
+    enum: ['architecture', 'interiors', 'construction', 'real_estate', 'related', ''],
+    default: ''
+  },
+  employmentType: {
+    type: String,
+    enum: ['internship', 'graduate', 'full_time', 'part_time', 'contract', 'freelance', ''],
+    default: ''
+  },
+  tags: [{ type: String }],
+  imageUrl: { type: String, default: '' },
+  isDemo: { type: Boolean, default: false },
   status: {
     type: String,
     enum: ['active', 'closed'],

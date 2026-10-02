@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@700,900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -99,3 +100,5 @@ body {
   transform: translateY(-1px);
   box-shadow: 0 6px 20px rgba(255, 235, 59, 0.5);
 }
+/* Headings on the dashboard, News and Official pages */
+.font-display { font-family: 'Satoshi', 'Inter', sans-serif; }

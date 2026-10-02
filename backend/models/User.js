@@ -127,6 +127,14 @@ const userSchema = new mongoose.Schema({
   }],
   // Free-text domain when "related" is selected — AI-confirmed at entry time
   industriesOther: { type: String, default: '' },
+  // Where the person is right now; drives the dashboard's chips and wording
+  careerStage: {
+    type: String,
+    enum: ['studying', 'career_prep', 'fresher', 'intern', 'employed', 'freelance', 'business_owner', ''],
+    default: ''
+  },
+  // Demo accounts and their seed data are only shown to other demo accounts
+  isDemo: { type: Boolean, default: false, index: true },
   onboardingCompleted: {
     type: Boolean,
     default: false

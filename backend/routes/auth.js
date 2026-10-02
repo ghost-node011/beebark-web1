@@ -41,6 +41,8 @@ const publicUser = (user) => ({
   role: user.role,
   intent: user.intent || [],
   industries: user.industries || [],
+  careerStage: user.careerStage || '',
+  isDemo: !!user.isDemo,
   location: user.location || '',
   bio: user.bio || '',
   skills: user.skills || [],

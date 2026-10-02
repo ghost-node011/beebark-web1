@@ -21,6 +21,8 @@ import PublicProfile from './pages/PublicProfile';
 import Connections from './pages/Connections';
 import Chat from './pages/Chat';
 import Jobs from './pages/Jobs';
+import News from './pages/News';
+import Official from './pages/Official';
 import Meetings from './pages/Meetings';
 import MeetingRoom from './pages/MeetingRoom';
 import './App.css';
@@ -110,6 +112,8 @@ function App() {
             <Route path="/connections" element={<PrivateRoute><Connections /></PrivateRoute>} />
             <Route path="/chat" element={<PrivateRoute><Chat /></PrivateRoute>} />
             <Route path="/jobs" element={<PrivateRoute><Jobs /></PrivateRoute>} />
+            <Route path="/news" element={<PrivateRoute><News /></PrivateRoute>} />
+            <Route path="/official" element={<PrivateRoute><Official /></PrivateRoute>} />
             <Route path="/meetings" element={<PrivateRoute><Meetings /></PrivateRoute>} />
             <Route path="/meeting-room/:meetingId" element={<PrivateRoute><MeetingRoom /></PrivateRoute>} />
             <Route path="/reels" element={<PrivateRoute><Dashboard /></PrivateRoute>} />

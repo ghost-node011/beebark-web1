@@ -231,7 +231,7 @@ router.get('/:userId', auth, async (req, res) => {
 
 router.put('/update', auth, async (req, res) => {
   try {
-    const { name, bio, pronouns, profilePic, coverPhoto, skills, experience, education, location, intent, industries, specialization, projectTypeFocus, markets, analyticsPublic, galleryPublic, activityPublic } = req.body;
+    const { name, bio, pronouns, profilePic, coverPhoto, skills, experience, education, location, intent, industries, specialization, projectTypeFocus, markets, analyticsPublic, galleryPublic, activityPublic, careerStage } = req.body;
     const VALID_INTENT = ['learn', 'network', 'hire', 'get_hired'];
     const VALID_INDUSTRY = ['architecture', 'interiors', 'construction', 'real_estate', 'related'];
     const asTagList = (arr) => arr.map((s) => String(s).trim()).filter(Boolean).slice(0, 20);
@@ -251,6 +251,8 @@ router.put('/update', auth, async (req, res) => {
     if (Array.isArray(specialization)) updateData.specialization = asTagList(specialization);
     if (Array.isArray(projectTypeFocus)) updateData.projectTypeFocus = asTagList(projectTypeFocus);
     if (Array.isArray(markets)) updateData.markets = asTagList(markets);
+    const VALID_STAGE = ['studying', 'career_prep', 'fresher', 'intern', 'employed', 'freelance', 'business_owner', ''];
+    if (careerStage !== undefined && VALID_STAGE.includes(careerStage)) updateData.careerStage = careerStage;
     if (typeof analyticsPublic === 'boolean') updateData['settings.analyticsPublic'] = analyticsPublic;
     if (typeof galleryPublic === 'boolean') updateData['settings.galleryPublic'] = galleryPublic;
     if (typeof activityPublic === 'boolean') updateData['settings.activityPublic'] = activityPublic;

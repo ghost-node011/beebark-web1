@@ -58,13 +58,18 @@ router.get('/list', auth, async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
 
-    const jobs = await Job.find({ status: 'active' })
+    const viewer = await User.findById(req.userId).select('isDemo').lean();
+    const filter = { status: 'active', isDemo: viewer?.isDemo ? true : { $ne: true } };
+    if (req.query.industry) filter.industry = req.query.industry;
+    if (req.query.type) filter.employmentType = { $in: String(req.query.type).split(',') };
+
+    const jobs = await Job.find(filter)
       .populate('postedBy', 'name company profilePic')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
 
-    const total = await Job.countDocuments({ status: 'active' });
+    const total = await Job.countDocuments(filter);
 
     res.json({ 
       jobs,
@@ -84,7 +89,7 @@ router.get('/list', auth, async (req, res) => {
 router.get('/recommended', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
-    const allJobs = await Job.find({ status: 'active' })
+    const allJobs = await Job.find({ status: 'active', isDemo: user?.isDemo ? true : { $ne: true } })
       .populate('postedBy', 'name company profilePic');
 
     const recommendations = await getJobRecommendationsLLM(user, allJobs);

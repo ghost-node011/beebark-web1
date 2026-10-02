@@ -130,6 +130,7 @@ app.use('/api/meetings', meetingRoutes);
 app.use('/api/stories', storyRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/waitlist', waitlistRoutes);
 app.use('/api/external/waitlist', require('./routes/externalWaitlist'));
 

@@ -1,5 +1,7 @@
 const User = require('../models/User');
 
+const PUBLIC_FIELDS = 'name username profilePic role bio location skills industries experience careerStage connections isDemo';
+
 const getConnectionSuggestions = async (userId, limit = 10) => {
   try {
     const currentUser = await User.findById(userId)
@@ -15,9 +17,13 @@ const getConnectionSuggestions = async (userId, limit = 10) => {
     const pendingRequestIds = (currentUser.pendingRequests || []).map(id => id.toString());
     const excludeIds = [userId.toString(), ...connectionIds, ...sentRequestIds, ...pendingRequestIds];
 
+    // Only public profile fields leave the server (never password/OTP/token data).
+    // Demo accounts only see each other, and real users never see demo accounts.
     const potentialConnections = await User.find({
-      _id: { $nin: excludeIds }
+      _id: { $nin: excludeIds },
+      isDemo: currentUser.isDemo ? true : { $ne: true }
     })
+    .select(PUBLIC_FIELDS)
     .populate('connections', '_id name')
     .limit(50)
     .lean();
@@ -38,6 +44,9 @@ const getConnectionSuggestions = async (userId, limit = 10) => {
       if (user.role === currentUser.role) {
         score += 2;
       }
+
+      const sharedIndustries = (user.industries || []).filter((i) => (currentUser.industries || []).includes(i));
+      score += sharedIndustries.length * 4;
 
       return {
         ...user,
