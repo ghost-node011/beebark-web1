@@ -32,7 +32,7 @@ Respond ONLY with a JSON object in this exact shape:
 { "corrected": "the corrected/standard term", "alternatives": ["related term", "..."], "changed": true, "relevant": true, "relevantReason": "" }`;
 
   try {
-    const result = await askGroqForJson(prompt);
+    const result = await askGroqForJson(prompt, { light: true });
     if (typeof result.corrected !== 'string') return null;
     return {
       corrected: result.corrected,

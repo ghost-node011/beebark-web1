@@ -1,6 +1,12 @@
 const Message = require('../models/Message');
 const PortfolioItem = require('../models/PortfolioItem');
 const { askGroqForJson } = require('./groqClient');
+const aiCache = require('./aiCache');
+
+// Reuse the AI wording while the stats are unchanged (up to a day), and never
+// regenerate more than once an hour even if they change.
+const INSIGHTS_TTL_MS = 24 * 60 * 60 * 1000;
+const INSIGHTS_MIN_REFRESH_MS = 60 * 60 * 1000;
 
 // Real, computed metrics — never invented. Groq (or the fallback) only
 // turns these numbers into readable coaching copy.
@@ -96,7 +102,8 @@ const computeProfileCompletion = (user) => {
   const doneCount = checks.filter((c) => c.done).length;
   return {
     percent: Math.round((doneCount / checks.length) * 100),
-    missing: checks.filter((c) => !c.done).map((c) => c.label)
+    missing: checks.filter((c) => !c.done).map((c) => c.label),
+    items: checks.map((c) => ({ key: c.key, label: c.label, done: !!c.done }))
   };
 };
 
@@ -104,6 +111,13 @@ const getDashboardInsights = async (user) => {
   const m = await computeMetrics(user);
   const profileCompletion = computeProfileCompletion(user);
   const fallback = fallbackInsights(m);
+
+  const key = `insights:${user._id}`;
+  const inputs = aiCache.fingerprint({ m, profileCompletion, role: user.role, industries: user.industries });
+  const cached = aiCache.get(key);
+  if (cached && (cached.inputs === inputs || Date.now() - cached.savedAt < INSIGHTS_MIN_REFRESH_MS)) {
+    return { ...cached.value, metrics: m, profileCompletion };
+  }
 
   const prompt = `You are a friendly career coach inside a professional networking app. Based ONLY on
 these real, measured stats for this user — do not invent anything not listed here — write a short,
@@ -134,15 +148,15 @@ Respond ONLY with a JSON object in this exact shape:
 { "greeting": "one short warm sentence", "wins": ["short specific win", "..."], "improvements": ["short specific, actionable suggestion", "..."] }`;
 
   try {
-    const result = await askGroqForJson(prompt);
+    const result = await askGroqForJson(prompt, { light: true });
     if (!Array.isArray(result.wins) || !Array.isArray(result.improvements)) return { ...fallback, metrics: m, profileCompletion };
-    return {
+    const copy = {
       greeting: typeof result.greeting === 'string' ? result.greeting : fallback.greeting,
       wins: result.wins,
-      improvements: result.improvements,
-      metrics: m,
-      profileCompletion
+      improvements: result.improvements
     };
+    aiCache.set(key, copy, INSIGHTS_TTL_MS, { inputs });
+    return { ...copy, metrics: m, profileCompletion };
   } catch (error) {
     console.error('Dashboard insights error:', error.message);
     return { ...fallback, metrics: m, profileCompletion };
