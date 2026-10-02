@@ -1,16 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '../ui/button';
-import { FiEdit2, FiTrash2, FiMail } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiMail, FiChevronLeft, FiChevronRight, FiArrowRight } from 'react-icons/fi';
 
 export const THEME_META = [
-  { key: 'grid', label: 'Contemporary', description: 'Numbered project grid, monochrome' },
-  { key: 'timeline', label: 'Spec Sheet', description: 'Chaptered spreads with project meta' },
-  { key: 'minimal', label: 'Editorial', description: 'Large-format photography book' },
-  { key: 'magazine', label: 'Bold', description: 'Color-blocked magazine spreads' },
-  { key: 'stack', label: 'Stacked', description: 'Case-study cards, image + notes' },
-  { key: 'mosaic', label: 'Mosaic', description: 'Asymmetric photo-led grid' },
-  { key: 'index', label: 'Index', description: 'Text-first list, fast to scan' },
-  { key: 'brutalist', label: 'Brutalist', description: 'Thick borders, hard shadows' }
+  { key: 'editorial', label: 'Editorial', description: 'Refined and light, with a warm serif feel' },
+  { key: 'studio', label: 'Studio', description: 'Bold and dark, one project at a time' }
+  // Earlier layouts, kept in the code but not offered for now:
+  // { key: 'grid', label: 'Contemporary', description: 'Numbered project grid, monochrome' },
+  // { key: 'timeline', label: 'Spec Sheet', description: 'Chaptered spreads with project meta' },
+  // { key: 'minimal', label: 'Editorial (classic)', description: 'Large-format photography book' },
+  // { key: 'magazine', label: 'Bold', description: 'Color-blocked magazine spreads' },
+  // { key: 'stack', label: 'Stacked', description: 'Case-study cards, image + notes' },
+  // { key: 'mosaic', label: 'Mosaic', description: 'Asymmetric photo-led grid' },
+  // { key: 'index', label: 'Index', description: 'Text-first list, fast to scan' },
+  // { key: 'brutalist', label: 'Brutalist', description: 'Thick borders, hard shadows' }
 ];
 
 export const FONT_META = [
@@ -36,7 +39,8 @@ export const FONT_META = [
   { key: 'spectral', label: 'Spectral', description: 'Literary book serif', stack: "'Spectral', Georgia, serif" }
 ];
 
-export const ACCENT_PRESETS = ['#D4F547', '#FFB347', '#7DD3FC', '#FCA5A5', '#C4B5FD', '#000000'];
+export const ACCENT_PRESETS = ['#F5C518', '#1F1F1F', '#A8A8A8', '#9AA08B', '#E9E2D8'];
+// Earlier presets: ['#D4F547', '#FFB347', '#7DD3FC', '#FCA5A5', '#C4B5FD', '#000000']
 
 const fontStack = (font) => FONT_META.find((f) => f.key === font)?.stack || FONT_META[0].stack;
 const num = (i) => String(i + 1).padStart(2, '0');
@@ -402,13 +406,283 @@ export const BrutalistTemplate = ({ items, user, headline, editable, onEdit, onD
   </div>
 );
 
-export const TEMPLATES = {
-  grid: GridTemplate,
-  timeline: TimelineTemplate,
-  minimal: MinimalTemplate,
-  magazine: MagazineTemplate,
-  stack: StackTemplate,
-  mosaic: MosaicTemplate,
-  index: IndexTemplate,
-  brutalist: BrutalistTemplate
+
+// ---------- Customisation shared by Editorial and Studio ----------
+// Background and text colours default to each template's own palette; an
+// empty value in the saved settings means "use the template default".
+export const PALETTE_DEFAULTS = {
+  editorial: { background: '#FBF8F3', textColor: '#1C1A17' },
+  studio: { background: '#151618', textColor: '#FFFFFF' }
 };
+
+export const COLOUR_PRESETS = {
+  editorial: [
+    { label: 'Cream', background: '#FBF8F3', textColor: '#1C1A17' },
+    { label: 'White', background: '#FFFFFF', textColor: '#111111' },
+    { label: 'Sand', background: '#EFE6D8', textColor: '#2B2620' },
+    { label: 'Sage', background: '#E7EAE0', textColor: '#1F2A1F' },
+    { label: 'Blush', background: '#F6E9E4', textColor: '#2E1F1B' },
+    { label: 'Stone', background: '#E9E9E6', textColor: '#1E1E1E' }
+  ],
+  studio: [
+    { label: 'Charcoal', background: '#151618', textColor: '#FFFFFF' },
+    { label: 'Black', background: '#000000', textColor: '#FFFFFF' },
+    { label: 'Ink', background: '#0F172A', textColor: '#F8FAFC' },
+    { label: 'Forest', background: '#14211B', textColor: '#EEF3EA' },
+    { label: 'Espresso', background: '#1F1A17', textColor: '#F5EFE6' },
+    { label: 'Plum', background: '#221623', textColor: '#F6EEF4' }
+  ]
+};
+
+export const DEFAULT_CLOSING_LINE = "Let's work together.";
+
+const HEX = /^#[0-9a-fA-F]{6}$/;
+const rgba = (hex, a) => {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+};
+const isLight = (hex) => {
+  const n = parseInt(hex.slice(1), 16);
+  return (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255 > 0.6;
+};
+
+// Everything a template needs from the saved look, with defaults filled in
+const resolveLook = (theme, look = {}) => {
+  const base = PALETTE_DEFAULTS[theme];
+  const bg = HEX.test(look.background || '') ? look.background : base.background;
+  const fg = HEX.test(look.textColor || '') ? look.textColor : base.textColor;
+  return {
+    bg,
+    fg,
+    muted: rgba(fg, 0.65),
+    faint: rgba(fg, 0.5),
+    line: rgba(fg, 0.12),
+    onDark: isLight(fg),
+    body: look.bodyFont ? { fontFamily: fontStack(look.bodyFont) } : {},
+    tagline: look.tagline || '',
+    about: look.aboutText || '',
+    closing: look.closingLine || DEFAULT_CLOSING_LINE,
+    contact: look.contactInfo || ''
+  };
+};
+
+// An accent too close to the background is swapped for the text colour
+const visibleAccent = (accent, bg, fg) => {
+  if (!HEX.test(accent || '')) return fg;
+  const d = (a, b) => Math.abs(parseInt(a.slice(1), 16) - parseInt(b.slice(1), 16));
+  return isLight(accent) === isLight(bg) && d(accent, bg) < 0x303030 ? fg : accent;
+};
+
+// ---------- EDITORIAL: light, refined, serif-led; split hero and full galleries ----------
+const editorialSection = (id) => `editorial-${id}`;
+
+export const EditorialTemplate = ({ items, user, headline, editable, onEdit, onDelete, font = 'playfair', accentColor = '#F5C518', look }) => {
+  const display = { fontFamily: fontStack(font) };
+  const L = resolveLook('editorial', look);
+  const accent = visibleAccent(accentColor, L.bg, L.fg);
+  const hero = items[0];
+  const about = L.about || user?.bio || headline;
+  const contact = L.contact || user?.email || `@${user?.username}`;
+  return (
+    <div style={{ backgroundColor: L.bg, color: L.fg, ...L.body }}>
+      <nav className="flex items-center justify-between gap-4 border-b px-6 py-5 sm:px-12" style={{ borderColor: L.line }}>
+        <span className="text-sm uppercase tracking-[0.25em]" style={display}>{user?.name}</span>
+        <div className="flex gap-5 text-xs" style={{ color: L.muted }} data-pdf-ignore>
+          <a href={`#${editorialSection('projects')}`} className="hover:underline">Projects</a>
+          <a href={`#${editorialSection('about')}`} className="hover:underline">About</a>
+          <a href={`#${editorialSection('contact')}`} className="hover:underline">Contact</a>
+        </div>
+      </nav>
+
+      {L.tagline && (
+        <p className="max-w-3xl px-6 pt-10 text-2xl leading-snug sm:px-12 sm:text-3xl" style={display} data-testid="pf-tagline">{L.tagline}</p>
+      )}
+
+      {hero && (
+        <header className="grid gap-8 px-6 py-12 sm:px-12 lg:grid-cols-[1fr_1.2fr] lg:items-center lg:py-16">
+          <div>
+            <p className="text-xs uppercase tracking-[0.3em]" style={{ color: L.faint }}>{[hero.category, hero.location].filter(Boolean).join(' · ') || 'Featured project'}</p>
+            <h1 className="mt-4 text-5xl leading-[1.02] sm:text-7xl" style={display}>{hero.title}</h1>
+            {hero.description && <p className="mt-5 max-w-md leading-relaxed" style={{ color: L.muted }}>{hero.description}</p>}
+            <a href={`#${editorialSection(hero._id)}`} className="mt-6 inline-flex items-center gap-2 text-sm font-semibold" data-pdf-ignore>
+              View project <FiArrowRight />
+            </a>
+          </div>
+          {hero.images?.[0] && <img src={hero.images[0]} alt={hero.title} className="h-[420px] w-full object-cover sm:h-[520px]" />}
+        </header>
+      )}
+
+      <section id={editorialSection('projects')} className="border-t" style={{ borderColor: L.line }}>
+        {items.map((item, i) => (
+          <article key={item._id} id={editorialSection(item._id)} className="border-b px-6 py-14 sm:px-12" style={{ borderColor: L.line }}>
+            <div className="grid gap-8 lg:grid-cols-[1fr_2fr]">
+              <div>
+                <span className="text-sm" style={{ color: accent }}>{num(i)}</span>
+                <h2 className="mt-2 text-3xl leading-tight sm:text-4xl" style={display}>{item.title}</h2>
+                <p className="mt-2 text-sm" style={{ color: L.faint }}>{[item.category, item.projectStatus, item.location].filter(Boolean).join(' · ')}</p>
+                {item.description && <p className="mt-4 leading-relaxed" style={{ color: L.muted }}>{item.description}</p>}
+                <Tags tags={item.tags} light={L.onDark} />
+                <Controls item={item} editable={editable} onEdit={onEdit} onDelete={onDelete} light={L.onDark} />
+              </div>
+              {item.images?.length > 0 && (
+                <div className="space-y-4">
+                  <img src={item.images[0]} alt={item.title} className="max-h-[560px] w-full object-cover" />
+                  {item.images.length > 1 && (
+                    <div className="grid grid-cols-2 gap-4">
+                      {item.images.slice(1).map((src) => (
+                        <img key={src} src={src} alt="" className="aspect-[4/3] w-full object-cover" />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </article>
+        ))}
+      </section>
+
+      <section id={editorialSection('about')} className="px-6 py-14 sm:px-12">
+        <p className="text-xs uppercase tracking-[0.3em]" style={{ color: L.faint }}>About</p>
+        <h2 className="mt-3 text-3xl sm:text-4xl" style={display}>{user?.name}</h2>
+        {about && <p className="mt-4 max-w-2xl whitespace-pre-line leading-relaxed" style={{ color: L.muted }} data-testid="pf-about">{about}</p>}
+        {user?.experience?.length > 0 && (
+          <ul className="mt-8 grid gap-6 sm:grid-cols-2">
+            {user.experience.map((exp, i) => (
+              <li key={i} className="border-l-2 pl-4" style={{ borderColor: accent }}>
+                <p className="font-semibold">{exp.title}</p>
+                <p className="text-sm" style={{ color: L.muted }}>{[exp.company, exp.duration].filter(Boolean).join(' · ')}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <footer id={editorialSection('contact')} className="flex flex-col gap-3 border-t px-6 py-12 sm:flex-row sm:items-center sm:justify-between sm:px-12" style={{ borderColor: L.line }}>
+        <p className="text-2xl sm:text-3xl" style={display} data-testid="pf-closing">{L.closing}</p>
+        <p className="flex items-center gap-2 break-all" style={{ color: L.muted }}><FiMail className="shrink-0" />{contact}</p>
+      </footer>
+    </div>
+  );
+};
+
+// ---------- STUDIO: bold and dark; one project at a time with a thumbnail strip ----------
+export const StudioTemplate = ({ items, user, headline, editable, onEdit, onDelete, onAdd, font = 'playfair', accentColor = '#F5C518', look }) => {
+  const [current, setCurrent] = useState(0);
+  const display = { fontFamily: fontStack(font) };
+  const L = resolveLook('studio', look);
+  const ring = visibleAccent(accentColor, L.bg, L.fg);
+  const safe = Math.min(current, Math.max(items.length - 1, 0));
+  const item = items[safe];
+  const go = (step) => setCurrent((c) => (c + step + items.length) % items.length);
+  const about = L.about || user?.bio || headline;
+  const contact = L.contact || user?.email || `@${user?.username}`;
+  // The project card flips the page colours: text colour as its background
+  const card = { backgroundColor: L.fg, color: L.bg };
+  const cardMuted = rgba(L.bg, 0.65);
+  const cardLine = rgba(L.bg, 0.2);
+
+  return (
+    <div style={{ backgroundColor: L.bg, color: L.fg, ...L.body }}>
+      <nav className="flex items-center justify-between gap-4 px-6 py-5 sm:px-12">
+        <span className="text-sm uppercase tracking-[0.25em]" style={display}>{user?.name}</span>
+        <span className="text-xs capitalize" style={{ color: L.faint }}>{[user?.role, user?.location].filter(Boolean).join(' · ')}</span>
+      </nav>
+
+      {L.tagline && (
+        <p className="max-w-3xl px-6 pb-6 pt-2 text-2xl leading-snug sm:px-12 sm:text-4xl" style={display} data-testid="pf-tagline">{L.tagline}</p>
+      )}
+
+      {item && (
+        <section className="px-6 sm:px-12">
+          <div className="overflow-hidden rounded-xl" style={card}>
+            {item.images?.[0] && <img src={item.images[0]} alt={item.title} className="h-[300px] w-full object-cover sm:h-[520px]" />}
+            <div className="flex flex-col gap-4 p-6 sm:flex-row sm:items-end sm:justify-between sm:p-8">
+              <div className="min-w-0">
+                <h1 className="text-4xl leading-tight sm:text-5xl" style={display}>{item.title}</h1>
+                <p className="mt-2" style={{ color: cardMuted }}>{item.description ? item.description.split(/(?<=\.)\s/)[0] : [item.category, item.location].filter(Boolean).join(' · ')}</p>
+              </div>
+              <div className="flex shrink-0 items-center gap-4" data-pdf-ignore>
+                <span className="text-sm tabular-nums" style={{ color: cardMuted }}>{num(safe)} / {num(items.length - 1)}</span>
+                <button type="button" onClick={() => go(-1)} aria-label="Previous project" className="rounded-full border p-2 hover:opacity-70" style={{ borderColor: cardLine }}><FiChevronLeft /></button>
+                <button type="button" onClick={() => go(1)} aria-label="Next project" className="rounded-full border p-2 hover:opacity-70" style={{ borderColor: cardLine }}><FiChevronRight /></button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      <div className="flex gap-3 overflow-x-auto px-6 py-5 sm:px-12" data-pdf-ignore>
+        {items.map((it, i) => (
+          <button
+            key={it._id}
+            type="button"
+            onClick={() => setCurrent(i)}
+            className="w-36 shrink-0 text-left"
+            aria-pressed={i === safe}
+          >
+            <span className="block h-20 overflow-hidden rounded-lg border-2" style={{ borderColor: i === safe ? ring : 'transparent' }}>
+              {it.images?.[0] ? <img src={it.images[0]} alt="" className="h-full w-full object-cover" /> : <span className="block h-full w-full" style={{ backgroundColor: L.line }} />}
+            </span>
+            <span className="mt-1 block truncate text-xs" style={{ color: L.muted }}>{it.title}</span>
+          </button>
+        ))}
+        {editable && onAdd && (
+          <button type="button" onClick={onAdd} className="flex h-20 w-32 shrink-0 flex-col items-center justify-center rounded-lg border text-xs hover:opacity-80" style={{ borderColor: L.line, color: L.muted }}>
+            <span className="text-xl">+</span>Add work
+          </button>
+        )}
+      </div>
+
+      {/* Every project in full, so nothing is hidden (and the PDF includes all work) */}
+      <section className="border-t px-6 py-12 sm:px-12" style={{ borderColor: L.line }}>
+        <p className="text-xs uppercase tracking-[0.3em]" style={{ color: L.faint }}>All work</p>
+        <div className="mt-6 space-y-14">
+          {items.map((it, i) => (
+            <article key={it._id}>
+              <div className="flex flex-wrap items-baseline justify-between gap-3">
+                <h2 className="text-3xl" style={display}><span className="mr-3 text-base" style={{ color: ring }}>{num(i)}</span>{it.title}</h2>
+                <p className="text-sm" style={{ color: L.faint }}>{[it.category, it.projectStatus, it.location].filter(Boolean).join(' · ')}</p>
+              </div>
+              {it.description && <p className="mt-3 max-w-3xl leading-relaxed" style={{ color: L.muted }}>{it.description}</p>}
+              {it.images?.length > 0 && (
+                <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-3">
+                  {it.images.map((src) => (
+                    <img key={src} src={src} alt="" className="aspect-[4/3] w-full rounded-lg object-cover" />
+                  ))}
+                </div>
+              )}
+              <Tags tags={it.tags} light={L.onDark} />
+              <Controls item={it} editable={editable} onEdit={onEdit} onDelete={onDelete} light={L.onDark} />
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <footer className="flex flex-col gap-3 border-t px-6 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-12" style={{ borderColor: L.line }}>
+        <div>
+          <p className="text-2xl" style={display} data-testid="pf-closing">{L.closing}</p>
+          {about && <p className="mt-1 max-w-xl whitespace-pre-line text-sm" style={{ color: L.muted }} data-testid="pf-about">{about}</p>}
+        </div>
+        <p className="flex items-center gap-2 break-all" style={{ color: L.muted }}><FiMail className="shrink-0" />{contact}</p>
+      </footer>
+    </div>
+  );
+};
+
+// Only Editorial and Studio are offered. Anyone who picked an earlier layout
+// sees Editorial; the earlier templates stay above, commented out of use.
+export const TEMPLATES = {
+  editorial: EditorialTemplate,
+  studio: StudioTemplate
+  // grid: GridTemplate,
+  // timeline: TimelineTemplate,
+  // minimal: MinimalTemplate,
+  // magazine: MagazineTemplate,
+  // stack: StackTemplate,
+  // mosaic: MosaicTemplate,
+  // index: IndexTemplate,
+  // brutalist: BrutalistTemplate
+};
+
+export const resolveTemplate = (theme) => TEMPLATES[theme] || TEMPLATES.editorial;
+export const resolveThemeKey = (theme) => (TEMPLATES[theme] ? theme : 'editorial');

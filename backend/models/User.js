@@ -187,8 +187,8 @@ const userSchema = new mongoose.Schema({
   portfolio: {
     theme: {
       type: String,
-      enum: ['grid', 'timeline', 'minimal', 'magazine', 'stack', 'mosaic', 'index', 'brutalist'],
-      default: 'grid'
+      enum: ['editorial', 'studio', 'grid', 'timeline', 'minimal', 'magazine', 'stack', 'mosaic', 'index', 'brutalist'],
+      default: 'editorial'
     },
     headline: { type: String, default: '' },
     font: {
@@ -196,7 +196,15 @@ const userSchema = new mongoose.Schema({
       enum: ['playfair', 'space', 'mono', 'classic', 'inter', 'dmserif', 'cormorant', 'bodoni', 'fraunces', 'archivo', 'bigshoulders', 'oswald', 'bebas', 'plexmono', 'plexsans', 'poppins', 'manrope', 'syne', 'unbounded', 'spectral'],
       default: 'playfair'
     },
-    accentColor: { type: String, default: '#D4F547' }
+    accentColor: { type: String, default: '#D4F547' },
+    // Customisation for Editorial and Studio; empty means the template default
+    background: { type: String, default: '' },
+    textColor: { type: String, default: '' },
+    bodyFont: { type: String, default: '' },
+    tagline: { type: String, default: '', maxlength: 160 },
+    aboutText: { type: String, default: '', maxlength: 1200 },
+    closingLine: { type: String, default: '', maxlength: 120 },
+    contactInfo: { type: String, default: '', maxlength: 160 }
   },
   settings: {
     // Owner-controlled, per-section visibility on the public-facing profile.

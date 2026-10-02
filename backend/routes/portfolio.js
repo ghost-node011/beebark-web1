@@ -22,6 +22,20 @@ const buildStarterSuggestions = (user) => {
   return suggestions.slice(0, 5);
 };
 
+const LOOK_TEXT_LIMITS = { tagline: 160, aboutText: 1200, closingLine: 120, contactInfo: 160 };
+const lookOf = (user) => {
+  const p = user.portfolio || {};
+  return {
+    background: p.background || '',
+    textColor: p.textColor || '',
+    bodyFont: p.bodyFont || '',
+    tagline: p.tagline || '',
+    aboutText: p.aboutText || '',
+    closingLine: p.closingLine || '',
+    contactInfo: p.contactInfo || ''
+  };
+};
+
 router.get('/me', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
@@ -35,6 +49,7 @@ router.get('/me', auth, async (req, res) => {
       headline: user.portfolio?.headline || '',
       font: user.portfolio?.font || 'playfair',
       accentColor: user.portfolio?.accentColor || '#D4F547',
+      look: lookOf(user),
       starterSuggestions
     });
   } catch (error) {
@@ -101,7 +116,8 @@ router.get('/:username', async (req, res) => {
       theme: user.portfolio?.theme || 'grid',
       headline: user.portfolio?.headline || '',
       font: user.portfolio?.font || 'playfair',
-      accentColor: user.portfolio?.accentColor || '#D4F547'
+      accentColor: user.portfolio?.accentColor || '#D4F547',
+      look: lookOf(user)
     });
   } catch (error) {
     res.status(500).json({ error: 'Failed to load portfolio', message: error.message });
@@ -110,12 +126,14 @@ router.get('/:username', async (req, res) => {
 
 router.post('/items', auth, async (req, res) => {
   try {
-    const { title, description, images, tags, category } = req.body;
+    const { title, description, images, tags, category, location, projectStatus } = req.body;
     if (!title?.trim()) {
       return res.status(400).json({ error: 'Title is required' });
     }
 
-    const review = await analyzePortfolioItem(title, description);
+    // AI review of new items is switched off for now (no AI in the portfolio maker)
+    // const review = await analyzePortfolioItem(title, description);
+    const review = null;
 
     const item = new PortfolioItem({
       user: req.userId,
@@ -124,6 +142,8 @@ router.post('/items', auth, async (req, res) => {
       images: Array.isArray(images) ? images : [],
       tags: Array.isArray(tags) && tags.length > 0 ? tags : (review?.suggestedTags || []),
       category: category || '',
+      location: location || '',
+      projectStatus: projectStatus || '',
       aiFeedback: review?.feedback || ''
     });
     await item.save();
@@ -165,8 +185,10 @@ router.put('/items/:id', auth, async (req, res) => {
     const item = await PortfolioItem.findOne({ _id: req.params.id, user: req.userId });
     if (!item) return res.status(404).json({ error: 'Portfolio item not found' });
 
-    const { title, description, images, tags, category } = req.body;
+    const { title, description, images, tags, category, location, projectStatus } = req.body;
     if (title !== undefined) item.title = title;
+    if (location !== undefined) item.location = location;
+    if (projectStatus !== undefined) item.projectStatus = projectStatus;
     if (description !== undefined) item.description = description;
     if (images !== undefined) item.images = images;
     if (tags !== undefined) item.tags = tags;
@@ -192,8 +214,9 @@ router.delete('/items/:id', auth, async (req, res) => {
 
 router.put('/theme', auth, async (req, res) => {
   try {
-    const { theme, headline, font, accentColor } = req.body;
-    const validThemes = ['grid', 'timeline', 'minimal', 'magazine', 'stack', 'mosaic', 'index', 'brutalist'];
+    const { theme, headline, font, accentColor, background, textColor, bodyFont } = req.body;
+    // Only Editorial and Studio are offered; earlier layouts remain valid for existing data
+    const validThemes = ['editorial', 'studio', 'grid', 'timeline', 'minimal', 'magazine', 'stack', 'mosaic', 'index', 'brutalist'];
     const validFonts = ['playfair', 'space', 'mono', 'classic', 'inter', 'dmserif', 'cormorant', 'bodoni', 'fraunces', 'archivo', 'bigshoulders', 'oswald', 'bebas', 'plexmono', 'plexsans', 'poppins', 'manrope', 'syne', 'unbounded', 'spectral'];
     if (theme && !validThemes.includes(theme)) {
       return res.status(400).json({ error: 'Invalid theme' });
@@ -205,14 +228,33 @@ router.put('/theme', auth, async (req, res) => {
       return res.status(400).json({ error: 'accentColor must be a hex color like #RRGGBB' });
     }
 
+    // Colours may be cleared ('') to fall back to the template default
+    for (const [key, value] of Object.entries({ background, textColor })) {
+      if (value !== undefined && value !== '' && !/^#[0-9a-fA-F]{6}$/.test(value)) {
+        return res.status(400).json({ error: `${key} must be a hex color like #RRGGBB` });
+      }
+    }
+    if (bodyFont !== undefined && bodyFont !== '' && !validFonts.includes(bodyFont)) {
+      return res.status(400).json({ error: 'Invalid text font' });
+    }
+    for (const [key, max] of Object.entries(LOOK_TEXT_LIMITS)) {
+      const value = req.body[key];
+      if (value !== undefined && (typeof value !== 'string' || value.length > max)) {
+        return res.status(400).json({ error: `${key} must be text of up to ${max} characters` });
+      }
+    }
+
     const update = {};
+    for (const key of ['background', 'textColor', 'bodyFont', ...Object.keys(LOOK_TEXT_LIMITS)]) {
+      if (req.body[key] !== undefined) update[`portfolio.${key}`] = typeof req.body[key] === 'string' ? req.body[key].trim() : req.body[key];
+    }
     if (theme) update['portfolio.theme'] = theme;
     if (headline !== undefined) update['portfolio.headline'] = headline;
     if (font) update['portfolio.font'] = font;
     if (accentColor) update['portfolio.accentColor'] = accentColor;
 
     const user = await User.findByIdAndUpdate(req.userId, update, { new: true });
-    res.json({ message: 'Portfolio settings updated', portfolio: user.portfolio });
+    res.json({ message: 'Portfolio settings updated', portfolio: user.portfolio, look: lookOf(user) });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update portfolio settings', message: error.message });
   }

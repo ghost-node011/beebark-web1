@@ -63,7 +63,7 @@ router.post('/profile-photo', auth, upload.single('image'), async (req, res) => 
   }
 });
 
-router.post('/multiple', auth, upload.array('images', 5), async (req, res) => {
+router.post('/multiple', auth, upload.array('images', 10), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: 'No images provided' });

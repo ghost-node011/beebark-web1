@@ -4,7 +4,7 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import { Button } from '../components/ui/button';
 import { API_URL } from '../config/api';
-import { TEMPLATES } from '../components/portfolio/PortfolioTemplates';
+import { resolveTemplate } from '../components/portfolio/PortfolioTemplates';
 import { exportPortfolioPdf } from '../utils/exportPortfolioPdf';
 import { FiArrowLeft, FiDownload } from 'react-icons/fi';
 
@@ -47,7 +47,7 @@ const PublicPortfolio = () => {
     return <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-500">Loading...</div>;
   }
 
-  const Template = TEMPLATES[data.theme] || TEMPLATES.grid;
+  const Template = resolveTemplate(data.theme);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -65,7 +65,7 @@ const PublicPortfolio = () => {
         <p className="text-gray-500 px-4 sm:px-6">This portfolio is empty for now.</p>
       ) : (
         <div ref={captureRef}>
-          <Template items={data.items} user={data.user} headline={data.headline} editable={false} font={data.font} accentColor={data.accentColor} />
+          <Template items={data.items} user={data.user} headline={data.headline} editable={false} font={data.font} accentColor={data.accentColor} look={data.look} />
         </div>
       )}
     </div>
