@@ -46,12 +46,27 @@ const waitlistCorsOptions = {
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type']
 };
+// Read-only waitlist access for outside systems (the Aurigin admin portal):
+// its own CORS allowlist from WAITLIST_EXTERNAL_CORS_ORIGINS (comma-separated),
+// separate from CORS_ORIGINS and the marketing site's list above. Unset means
+// no browser origin is allowed — server-to-server calls don't need CORS.
+const externalCorsOrigins = (process.env.WAITLIST_EXTERNAL_CORS_ORIGINS || '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+const externalCorsOptions = {
+  origin: externalCorsOrigins.length ? externalCorsOrigins : false,
+  methods: ['GET', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'x-api-key']
+};
 const isWaitlistPath = (req) => req.path === '/api/waitlist' || req.path.startsWith('/api/waitlist/');
+const isExternalPath = (req) => req.path.startsWith('/api/external/');
 const appCors = cors(corsOptions);
 
 app.use(securityHeaders);
 app.use('/api/waitlist', cors(waitlistCorsOptions));
-app.use((req, res, next) => (isWaitlistPath(req) ? next() : appCors(req, res, next)));
+app.use('/api/external', cors(externalCorsOptions));
+app.use((req, res, next) => (isWaitlistPath(req) || isExternalPath(req) ? next() : appCors(req, res, next)));
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(sanitizeRequest);
@@ -116,6 +131,7 @@ app.use('/api/stories', storyRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/waitlist', waitlistRoutes);
+app.use('/api/external/waitlist', require('./routes/externalWaitlist'));
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
