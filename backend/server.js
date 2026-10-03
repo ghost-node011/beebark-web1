@@ -23,6 +23,8 @@ const corsOptions = {
 };
 
 const app = express();
+// Behind one proxy (Nginx on EC2, Render's router): use the visitor's real IP for rate limits
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
