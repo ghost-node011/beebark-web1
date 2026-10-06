@@ -5,9 +5,10 @@ import { useUI } from '../context/UIContext';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import {
   FiHome, FiMessageCircle, FiUsers, FiLayers, FiBriefcase,
-  FiVideo, FiX, FiImage, FiFileText, FiSend
+  FiVideo, FiX, FiImage, FiFileText, FiSend, FiCalendar, FiHome as FiProperty, FiSettings
 } from 'react-icons/fi';
 import { getCopy } from '../config/roleDomainCopy';
+import { personHeadline } from '../utils/personHeadline';
 
 const Sidebar = () => {
   const { user } = useAuth();
@@ -20,10 +21,14 @@ const Sidebar = () => {
     { id: 'messages', path: '/chat', icon: FiMessageCircle, label: 'Messages' },
     { id: 'connections', path: '/connections', icon: FiUsers, label: copy.connectionsLabel },
     // { id: 'feed', path: '/feed', icon: FiLayers, label: 'Feed' },
-    { id: 'portfolio', path: '/portfolio', icon: FiImage, label: copy.domain === 'real_estate' ? 'Listings' : 'Portfolio' },
+    ...(copy.domain === 'real_estate' || (user?.industries || []).includes('real_estate')
+      ? [{ id: 'listings', path: '/listings', icon: FiProperty, label: 'Listings' }]
+      : []),
+    { id: 'portfolio', path: '/portfolio', icon: FiImage, label: 'Portfolio' },
     // { id: 'reels', path: '/reels', icon: FiFilm, label: 'Reels' },
     // { id: 'projects', path: '/projects', icon: FiTrendingUp, label: 'Projects Center' },
     { id: 'jobs', path: '/jobs', icon: FiBriefcase, label: copy.jobsLabel },
+    { id: 'calendar', path: '/calendar', icon: FiCalendar, label: 'Calendar' },
     { id: 'news', path: '/news', icon: FiFileText, label: 'News' },
     { id: 'official', path: '/official', icon: FiSend, label: '@BeeBark Official' },
     // { id: 'store', path: '/store', icon: FiShoppingBag, label: 'Store' },
@@ -32,6 +37,7 @@ const Sidebar = () => {
     // { id: 'memories', path: '/memories', icon: FiImage, label: 'Memories' },
     // { id: 'wallet', path: '/wallet', icon: FiDollarSign, label: 'Wallet & Economy' },
     // { id: 'meetings', path: '/meetings', icon: FiVideo, label: 'Meetings' },
+    { id: 'settings', path: '/settings', icon: FiSettings, label: 'Settings' },
   ];
 
   return (
@@ -93,7 +99,7 @@ const Sidebar = () => {
             </Avatar>
             <div className="flex-1">
               <p className="font-semibold text-sm text-black">{user?.name}</p>
-              <p className="text-xs text-slate-500 capitalize">{user?.role}</p>
+              <p className="text-xs text-slate-500 truncate">{personHeadline(user)}</p>
             </div>
           </NavLink>
         </div>

@@ -25,6 +25,10 @@ import News from './pages/News';
 import Official from './pages/Official';
 import Meetings from './pages/Meetings';
 import MeetingRoom from './pages/MeetingRoom';
+import Settings from './pages/Settings';
+import Notifications from './pages/Notifications';
+import CalendarPage from './pages/Calendar';
+import Listings from './pages/Listings';
 import './App.css';
 
 const PrivateRoute = ({ children }) => {
@@ -115,6 +119,10 @@ function App() {
             <Route path="/news" element={<PrivateRoute><News /></PrivateRoute>} />
             <Route path="/official" element={<PrivateRoute><Official /></PrivateRoute>} />
             <Route path="/meetings" element={<PrivateRoute><Meetings /></PrivateRoute>} />
+            <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
+            <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
+            <Route path="/calendar" element={<PrivateRoute><CalendarPage /></PrivateRoute>} />
+            <Route path="/listings" element={<PrivateRoute><Listings /></PrivateRoute>} />
             <Route path="/meeting-room/:meetingId" element={<PrivateRoute><MeetingRoom /></PrivateRoute>} />
             <Route path="/reels" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
             <Route path="/projects" element={<PrivateRoute><Dashboard /></PrivateRoute>} />

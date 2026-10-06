@@ -4,7 +4,6 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar';
-import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
@@ -16,8 +15,13 @@ import { ProfileHero, VisibilityPill, PillFilter, PAGE_BG } from '../components/
 import {
   FiUserPlus, FiMessageCircle, FiEye, FiUsers,
   FiBriefcase, FiImage, FiZap, FiThumbsUp, FiThumbsDown, FiX,
-  FiTarget, FiLayers, FiGlobe, FiBookOpen, FiHeart, FiMessageSquare
+  FiTarget, FiLayers, FiGlobe, FiBookOpen, FiHeart, FiMessageSquare,
+  FiMoreHorizontal, FiFlag, FiSlash, FiUserCheck, FiHome
 } from 'react-icons/fi';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../components/ui/dropdown-menu';
+import ReportDialog from '../components/ReportDialog';
+import { ExperienceItem, sortExperience, AvailabilityChips, LanguagesList, BusinessDetails, PeopleStrip } from '../components/profile/ProfileSections';
+import { personHeadline } from '../utils/personHeadline';
 
 const ROLE_LABELS = { student: 'Student', professional: 'Professional', firm: 'Firm', recruiter: 'Recruiter', company: 'Firm' };
 const labelsFrom = (values, options) => (values || []).map((v) => options.find((o) => o.value === v)?.label || v);
@@ -25,7 +29,7 @@ const labelsFrom = (values, options) => (values || []).map((v) => options.find((
 const PublicProfile = () => {
   const { username } = useParams();
   const navigate = useNavigate();
-  const { user: viewer, refreshUser } = useAuth();
+  const { refreshUser } = useAuth();
   const [data, setData] = useState(null);
   const [notFound, setNotFound] = useState(false);
   const [bioExpanded, setBioExpanded] = useState(false);
@@ -48,22 +52,36 @@ const PublicProfile = () => {
       .catch(() => {});
   }, [data, username]);
 
-  const isConnected = viewer?.connections?.some((c) => (c._id || c) === data?.user?._id) || false;
-  const requestAlreadySent = viewer?.sentRequests?.some((id) => (id._id || id) === data?.user?._id) || false;
-  const [justRequested, setJustRequested] = useState(false);
-  const requestPending = requestAlreadySent || justRequested;
+  const [status, setStatus] = useState(null); // connected | sent | received | none, from the server
+  const [reportOpen, setReportOpen] = useState(false);
+  useEffect(() => { setStatus(data?.connectionStatus || null); }, [data]);
 
   const handleConnect = async () => {
     setConnecting(true);
     try {
-      await axios.post(`${API_URL}/api/connections/send-request/${data.user._id}`);
-      toast.success('Connection request sent');
-      setJustRequested(true);
-      refreshUser(); // keeps viewer.sentRequests current if they navigate away and back
+      const res = status === 'received'
+        ? await axios.post(`${API_URL}/api/connections/accept-request/${data.user._id}`)
+        : await axios.post(`${API_URL}/api/connections/send-request/${data.user._id}`);
+      const connected = status === 'received' || res.data?.connected;
+      setStatus(connected ? 'connected' : 'sent');
+      toast.success(connected ? `You're now connected with ${data.user.name.split(' ')[0]}` : 'Connection request sent');
+      refreshUser(); // keeps viewer.connections / sentRequests current elsewhere
     } catch (error) {
       toast.error(error.response?.data?.error || 'Could not send request');
     } finally {
       setConnecting(false);
+    }
+  };
+
+  const handleBlock = async () => {
+    if (!window.confirm(`Block ${data.user.name}? They won't be able to find you, message you or connect with you, and your connection will be removed.`)) return;
+    try {
+      await axios.post(`${API_URL}/api/account/block/${data.user._id}`);
+      toast.success(`${data.user.name} is blocked. You can unblock them in Settings.`);
+      refreshUser();
+      navigate('/connections');
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Could not block');
     }
   };
 
@@ -104,20 +122,25 @@ const PublicProfile = () => {
             name={user.name}
             username={user.username}
             roleLabel={ROLE_LABELS[user.role] || 'Professional'}
-            subtitle={`@${user.username}${industryLabels.length > 0 ? ' · ' + industryLabels.join(', ') : ''}`}
+            subtitle={personHeadline(user)}
+            badges={<AvailabilityChips values={user.availability} />}
             pronouns={user.pronouns}
             location={user.location}
             connectionCount={user.connectionCount}
             actions={
               !data.isOwnProfile && (
                 <>
-                  {isConnected ? (
+                  {status === 'connected' ? (
                     <Button onClick={() => navigate(`/chat?with=${user._id}`)} className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold">
                       <FiMessageCircle className="mr-2" />Message
                     </Button>
-                  ) : requestPending ? (
+                  ) : status === 'sent' ? (
                     <Button disabled className="bg-gray-200 text-gray-500 cursor-default">
                       <FiUserPlus className="mr-2" />Requested
+                    </Button>
+                  ) : status === 'received' ? (
+                    <Button onClick={handleConnect} disabled={connecting} className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold" data-testid="accept-request">
+                      <FiUserCheck className="mr-2" />{connecting ? 'Accepting...' : 'Accept request'}
                     </Button>
                   ) : (
                     <Button onClick={handleConnect} disabled={connecting} className="bg-black hover:bg-gray-800 text-white">
@@ -127,6 +150,15 @@ const PublicProfile = () => {
                   <Link to={`/portfolio/${user.username}`} target="_blank">
                     <Button variant="outline"><FiImage className="mr-2" />Portfolio</Button>
                   </Link>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="icon" aria-label="More options" data-testid="profile-more"><FiMoreHorizontal /></Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setReportOpen(true)} data-testid="profile-report"><FiFlag className="mr-2" />Report</DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleBlock} className="text-red-600" data-testid="profile-block"><FiSlash className="mr-2" />Block</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </>
               )
             }
@@ -210,6 +242,13 @@ const PublicProfile = () => {
                 )}
               </Card>
 
+              {user.business && (
+                <Card className="p-6">
+                  <h3 className="text-lg font-bold text-black mb-3 flex items-center font-serif"><FiHome className="mr-2" />Business</h3>
+                  <BusinessDetails business={user.business} />
+                </Card>
+              )}
+
               {industryLabels.length > 0 && (
                 <Card className="p-6">
                   <h3 className="font-bold text-black mb-2 font-serif">Industry</h3>
@@ -275,12 +314,9 @@ const PublicProfile = () => {
                 <h3 className="text-lg font-bold text-black mb-3 flex items-center font-serif"><FiBriefcase className="mr-2" />Experience</h3>
                 {user.experience?.length > 0 ? (
                   <div className="space-y-4">
-                    {user.experience.map((exp, idx) => (
-                      <div key={idx} className="border-l-4 border-yellow-400 pl-4">
-                        <h4 className="font-semibold text-black">{exp.title}</h4>
-                        <p className="text-gray-700 text-sm">{exp.company}</p>
-                        <p className="text-xs text-gray-500">{exp.duration}</p>
-                        {exp.description && <p className="text-sm text-gray-600 mt-1">{exp.description}</p>}
+                    {sortExperience(user.experience).map((exp) => (
+                      <div key={exp._index} className="border-l-4 border-yellow-400 pl-4">
+                        <ExperienceItem exp={exp} />
                       </div>
                     ))}
                   </div>
@@ -300,6 +336,13 @@ const PublicProfile = () => {
                       </div>
                     ))}
                   </div>
+                </Card>
+              )}
+
+              {user.languages?.length > 0 && (
+                <Card className="p-6">
+                  <h3 className="text-lg font-bold text-black mb-3 flex items-center font-serif"><FiGlobe className="mr-2" />Languages</h3>
+                  <LanguagesList languages={user.languages} />
                 </Card>
               )}
           </div>
@@ -336,23 +379,16 @@ const PublicProfile = () => {
               {data.associatedProfessionals?.length > 0 && (
                 <Card className="p-6">
                   <h3 className="text-lg font-bold text-black mb-3 font-serif">Associated Professionals</h3>
-                  <div className="flex gap-4 overflow-x-auto pb-1">
-                    {data.associatedProfessionals.map((p) => (
-                      <Link key={p._id} to={`/profile/${p.username}`} className="flex flex-col items-center text-center w-20 shrink-0 hover:opacity-80">
-                        <Avatar className="w-14 h-14">
-                          <AvatarImage src={p.profilePic} />
-                          <AvatarFallback className="bg-gray-200 text-black font-semibold">{p.name?.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <p className="text-xs font-medium text-black mt-1 truncate w-full">{p.name}</p>
-                        <p className="text-[10px] text-gray-500 truncate w-full capitalize">{ROLE_LABELS[p.role] || 'Professional'}</p>
-                      </Link>
-                    ))}
-                  </div>
+                  <PeopleStrip people={data.associatedProfessionals} />
                 </Card>
               )}
           </div>
         </div>
       </div>
+      {!data.isOwnProfile && (
+        <ReportDialog open={reportOpen} onOpenChange={setReportOpen} person={user} context="profile"
+          onDone={({ blocked }) => { if (blocked) { refreshUser(); navigate('/connections'); } }} />
+      )}
     </div>
   );
 };

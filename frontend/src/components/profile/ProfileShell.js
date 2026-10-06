@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Badge } from '../ui/badge';
-import { FiCamera, FiX, FiShare2 } from 'react-icons/fi';
+import { FiCamera, FiX, FiShare2, FiMapPin, FiPlus } from 'react-icons/fi';
 
 export const TABS = ['Overview', 'Portfolio', 'Experience', 'Activity'];
 
@@ -41,7 +41,7 @@ export const TAB_TO_SECTION_ID = {
 // The tab bar is a scroll-to-section nav, not a content gate — every section
 // always renders on the page; clicking a tab just scrolls to it, so nothing
 // can ever go missing behind an unclicked tab.
-export const ProfileHero = ({ coverPhoto, profilePic, name, username, roleLabel, subtitle, pronouns, location, connectionCount, actions, headerExtra, onPhotoEdit }) => {
+export const ProfileHero = ({ coverPhoto, profilePic, name, username, roleLabel, subtitle, pronouns, location, connectionCount, actions, headerExtra, onPhotoEdit, onAddLocation, badges }) => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const scrollToSection = (tab) => {
     document.getElementById(TAB_TO_SECTION_ID[tab])?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -116,9 +116,16 @@ export const ProfileHero = ({ coverPhoto, profilePic, name, username, roleLabel,
               {pronouns && <span className="text-base font-normal text-gray-500 ml-2">({pronouns})</span>}
             </h1>
             {subtitle && <p className="text-base text-gray-700 mt-1 break-words">{subtitle}</p>}
+            {badges && <div className="mt-2">{badges}</div>}
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-gray-600">
               <Badge className="bg-slate-900 text-yellow-400 capitalize">{roleLabel}</Badge>
-              {location && <span>{location}</span>}
+              {location ? (
+                <span className="inline-flex items-center gap-1"><FiMapPin className="w-3.5 h-3.5" />{location}</span>
+              ) : onAddLocation && (
+                <button type="button" onClick={onAddLocation} className="inline-flex items-center gap-1 text-gray-500 hover:text-black underline-offset-2 hover:underline">
+                  <FiPlus className="w-3.5 h-3.5" />Add location
+                </button>
+              )}
               <span>{connectionCount} connection{connectionCount === 1 ? '' : 's'}</span>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { FaUserGraduate, FaUserTie, FaBuilding } from 'react-icons/fa';
+import { FaUserGraduate, FaUserTie } from 'react-icons/fa';
 
 // Account types a user can pick at signup. The `value` is what the backend
 // stores in `user.role` and what future features should gate functionality on.
@@ -12,14 +12,8 @@ export const ROLES = [
   {
     value: 'professional',
     label: 'Professional',
-    tagline: 'Architect, designer, engineer, contractor & more',
+    tagline: 'Architect, designer, engineer, contractor, business owner & more',
     icon: FaUserTie
-  },
-  {
-    value: 'firm',
-    label: 'Firm',
-    tagline: 'Represent a studio, practice, or company',
-    icon: FaBuilding
   }
 ];
 

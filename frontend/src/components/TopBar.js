@@ -4,8 +4,7 @@ import { useUI } from '../context/UIContext';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Input } from './ui/input';
-import { Button } from './ui/button';
-import { FiSearch, FiLogOut, FiMenu } from 'react-icons/fi';
+import { FiSearch, FiLogOut, FiMenu, FiUser, FiSettings, FiCalendar, FiBell, FiChevronDown } from 'react-icons/fi';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -15,14 +14,7 @@ import {
 } from './ui/dropdown-menu';
 import ProfileCompletionBadge from './ProfileCompletionBadge';
 import NotificationBell from './NotificationBell';
-
-const ROLE_LABELS = {
-  student: 'Student',
-  professional: 'Professional',
-  firm: 'Firm',
-  recruiter: 'Recruiter',
-  company: 'Firm'
-};
+import { personHeadline } from '../utils/personHeadline';
 
 const TopBar = () => {
   const { user, logout, logoutAll } = useAuth();
@@ -66,35 +58,38 @@ const TopBar = () => {
         <ProfileCompletionBadge />
         <NotificationBell />
 
-        <div className="flex items-center gap-3 sm:border-l sm:border-slate-200 sm:pl-3">
-          <div className="text-right hidden md:block">
-            <p className="font-semibold text-sm text-black leading-tight">{user?.name}</p>
-            <p className="text-xs text-slate-500 capitalize">{ROLE_LABELS[user?.role] || 'Professional'}</p>
-          </div>
-          <Avatar className="w-9 h-9 cursor-pointer" onClick={() => navigate('/profile')}>
-            <AvatarImage src={user?.profilePic} />
-            <AvatarFallback className="bg-yellow-400 text-black font-semibold">
-              {user?.name?.charAt(0)}
-            </AvatarFallback>
-          </Avatar>
-        </div>
-
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-slate-600 hover:text-red-600"
-              data-testid="logout-button"
+            <button
+              className="flex items-center gap-2 sm:gap-3 sm:border-l sm:border-slate-200 sm:pl-3 rounded-lg hover:bg-slate-50 py-1 pr-1"
+              aria-label="Account menu"
+              data-testid="account-menu"
             >
-              <FiLogOut className="w-5 h-5" />
-            </Button>
+              <div className="text-right hidden md:block max-w-[12rem]">
+                <p className="font-semibold text-sm text-black leading-tight truncate">{user?.name}</p>
+                <p className="text-xs text-slate-500 truncate">{personHeadline(user)}</p>
+              </div>
+              <Avatar className="w-9 h-9">
+                <AvatarImage src={user?.profilePic} />
+                <AvatarFallback className="bg-yellow-400 text-black font-semibold">
+                  {user?.name?.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <FiChevronDown className="w-4 h-4 text-slate-500 hidden sm:block" />
+            </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleLogout} data-testid="logout-this-device">
-              Log out
-            </DropdownMenuItem>
+          <DropdownMenuContent align="end" className="w-60">
+            <div className="px-2 py-2">
+              <p className="text-sm font-semibold text-black truncate">{user?.name}</p>
+              <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+            </div>
             <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate('/profile')}><FiUser className="mr-2" />View profile</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate('/notifications')}><FiBell className="mr-2" />Notifications</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate('/calendar')}><FiCalendar className="mr-2" />Calendar</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate('/settings')} data-testid="menu-settings"><FiSettings className="mr-2" />Settings & privacy</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout} data-testid="logout-this-device"><FiLogOut className="mr-2" />Log out</DropdownMenuItem>
             <DropdownMenuItem onClick={handleLogoutAll} className="text-red-600" data-testid="logout-all-devices">
               Log out from all devices
             </DropdownMenuItem>

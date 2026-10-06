@@ -12,6 +12,7 @@ import { FiSearch, FiUserPlus, FiUserCheck, FiMessageCircle, FiX, FiUsers } from
 import { API_URL } from '../config/api';
 import { getCopy } from '../config/roleDomainCopy';
 import { useAuth } from '../context/AuthContext';
+import { personHeadline } from '../utils/personHeadline';
 
 const Connections = () => {
   const navigate = useNavigate();
@@ -81,7 +82,17 @@ const Connections = () => {
 
   const handleConnect = async (userId) => {
     try {
-      await axios.post(`${API_URL}/api/connections/send-request/${userId}`);
+      const { data } = await axios.post(`${API_URL}/api/connections/send-request/${userId}`);
+      if (data?.connected) {
+        // They had already asked to connect with you, so this connects you both
+        toast.success("You're now connected");
+        fetchConnections();
+        fetchPendingRequests();
+        refreshUser?.();
+        setSuggestions(suggestions.filter(s => s._id !== userId));
+        setSearchResults(searchResults.map(s => (s._id === userId ? { ...s, isConnected: true } : s)));
+        return;
+      }
       toast.success('Connection request sent!');
       setSuggestions(suggestions.filter(s => s._id !== userId));
       setSearchResults(searchResults.map(s => 
@@ -218,7 +229,7 @@ const Connections = () => {
                             <p className="text-sm text-gray-800">@{suggestion.username}</p>
                           )}
                           <p className="text-sm text-gray-700">
-                            {suggestion.role === 'recruiter' ? 'Recruiter' : 'Professional'}
+                            {personHeadline(suggestion)}
                           </p>
                         </div>
                       </Link>
@@ -299,7 +310,7 @@ const Connections = () => {
                         {user.username && (
                           <p className="text-sm text-gray-600 truncate">@{user.username}</p>
                         )}
-                        <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                        <p className="text-sm text-gray-500 truncate">{personHeadline(user)}</p>
                         {user.bio && (
                           <p className="text-sm text-gray-600 mt-1 line-clamp-1">{user.bio}</p>
                         )}
@@ -356,7 +367,7 @@ const Connections = () => {
                           <p className="text-sm text-gray-600">@{connection.username}</p>
                         )}
                         <p className="text-xs text-gray-500">
-                          {connection.role === 'recruiter' ? 'Recruiter' : 'Professional'}
+                          {personHeadline(connection)}
                         </p>
                       </div>
                     </Link>
@@ -403,7 +414,7 @@ const Connections = () => {
                         {request.username && (
                           <p className="text-sm text-gray-600 truncate">@{request.username}</p>
                         )}
-                        <p className="text-sm text-gray-500 truncate">{request.email}</p>
+                        <p className="text-sm text-gray-500 truncate">{personHeadline(request)}</p>
                       </div>
                     </div>
                     <div className="flex space-x-2 shrink-0">

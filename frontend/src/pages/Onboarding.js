@@ -6,7 +6,8 @@ import { FaCheck, FaArrowLeft, FaTimes } from 'react-icons/fa';
 import ImageUpload from '../components/ImageUpload';
 import ResumeImport from '../components/ResumeImport';
 import { ROLES } from '../config/roles';
-import { INTENTS, INDUSTRIES } from '../config/onboarding';
+import { intentsFor, INDUSTRIES } from '../config/onboarding';
+import { LocationInput } from '../components/AutocompleteInput';
 import { SuggestChip, useSuggestChip } from '../components/ai/SuggestChip';
 
 const TOTAL_STEPS = 4;
@@ -48,7 +49,7 @@ const Onboarding = () => {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
 
-  const [role, setRole] = useState(user?.role && ['student', 'professional', 'firm'].includes(user.role) ? user.role : '');
+  const [role, setRole] = useState(user?.role && ['student', 'professional'].includes(user.role) ? user.role : '');
   const [intent, setIntent] = useState(user?.intent || []);
   const [industries, setIndustries] = useState(user?.industries || []);
   const [industriesOther, setIndustriesOther] = useState(user?.industriesOther || '');
@@ -84,7 +85,7 @@ const Onboarding = () => {
 
   const canContinue =
     ((step === 0 && !!role) ||
-      (step === 1 && intent.length > 0) ||
+      (step === 1 && intent.some((v) => intentsFor({ role }).some((i) => i.value === v))) ||
       (step === 2 && industries.length > 0) ||
       step === 3) &&
     !industryOtherUnresolved;
@@ -124,7 +125,7 @@ const Onboarding = () => {
   const finish = async () => {
     setSaving(true);
     try {
-      await updateOnboarding({ role, intent, industries, industriesOther, bio, location, skills, profilePic, name, complete: true });
+      await updateOnboarding({ role, intent: intent.filter((v) => intentsFor({ role }).some((i) => i.value === v)), industries, industriesOther, bio, location, skills, profilePic, name, complete: true });
       toast.success("You're all set!");
       navigate('/dashboard');
     } catch (error) {
@@ -184,7 +185,7 @@ const Onboarding = () => {
             {/* Step 2 — Intent (multi select) */}
             {step === 1 && (
               <div className="grid sm:grid-cols-2 gap-4" data-testid="onboarding-intent">
-                {INTENTS.map((it) => (
+                {intentsFor({ role }).map((it) => (
                   <OptionCard
                     key={it.value}
                     active={intent.includes(it.value)}
@@ -338,12 +339,11 @@ const Onboarding = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-black mb-1">Location</label>
-                  <input
-                    type="text"
+                  <LocationInput
                     value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="City, Country"
-                    className="w-full rounded-xl border-2 border-gray-200 p-3 text-sm focus:border-yellow-400 focus:outline-none"
+                    onChange={setLocation}
+                    placeholder="Start typing your city"
+                    className="w-full rounded-xl border-2 border-gray-200 h-auto p-3 text-sm focus:border-yellow-400 focus-visible:ring-0"
                     data-testid="location-input"
                   />
                   {detectedLocation && location === detectedLocation && (

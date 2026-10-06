@@ -7,7 +7,7 @@ const ROLE_COPY = {
   student: {
     jobsLabel: 'Jobs',
     jobsSubtitle: 'AI-matched internships and entry roles to help you learn on the job',
-    connectionsLabel: 'Mentors & Peers',
+    connectionsLabel: 'Connections',
     connectionsSubtitle: 'Find mentors and classmates. Every connection is a step toward your first role.',
     portfolioSubtitle: 'Show what you\'ve built — coursework, personal projects, competition entries',
     portfolioAddLabel: 'Add Project',

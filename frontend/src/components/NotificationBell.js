@@ -15,7 +15,9 @@ const ICONS = {
   connection_accepted: FiUserCheck
 };
 
-const timeAgo = (dateStr) => {
+export const notificationText = (n) => MESSAGES[n.type]?.(n.actor?.name || 'Someone') || 'New notification';
+
+export const timeAgo = (dateStr) => {
   const seconds = Math.floor((Date.now() - new Date(dateStr)) / 1000);
   if (seconds < 60) return 'just now';
   const minutes = Math.floor(seconds / 60);
@@ -23,7 +25,8 @@ const timeAgo = (dateStr) => {
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+  if (days < 7) return `${days}d ago`;
+  return new Date(dateStr).toLocaleDateString([], { day: 'numeric', month: 'short' });
 };
 
 const NotificationBell = () => {
@@ -34,7 +37,7 @@ const NotificationBell = () => {
   const containerRef = useRef(null);
 
   const fetchNotifications = useCallback(() => {
-    axios.get(`${API_URL}/api/notifications`)
+    axios.get(`${API_URL}/api/notifications`, { params: { limit: 15 } })
       .then((res) => {
         setNotifications(res.data.notifications || []);
         setUnreadCount(res.data.unreadCount || 0);
@@ -87,15 +90,18 @@ const NotificationBell = () => {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-lg z-50" data-testid="notification-dropdown">
-          <div className="px-4 py-3 border-b border-slate-100 font-semibold text-sm text-black">Notifications</div>
+        <div className="absolute right-0 mt-2 w-[min(20rem,calc(100vw-1.5rem))] max-h-96 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-lg z-50" data-testid="notification-dropdown">
+          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+            <span className="font-semibold text-sm text-black">Notifications</span>
+            <button onClick={() => { setOpen(false); navigate('/notifications'); }} className="text-xs font-medium text-slate-500 hover:text-black">See all</button>
+          </div>
           {notifications.length === 0 ? (
             <p className="px-4 py-8 text-center text-sm text-slate-400">No notifications yet</p>
           ) : (
             <div className="divide-y divide-slate-100">
               {notifications.map((n) => {
                 const Icon = ICONS[n.type] || FiBell;
-                const message = MESSAGES[n.type]?.(n.actor?.name || 'Someone') || 'New notification';
+                const message = notificationText(n);
                 return (
                   <button
                     key={n._id}
@@ -116,6 +122,13 @@ const NotificationBell = () => {
               })}
             </div>
           )}
+          <button
+            onClick={() => { setOpen(false); navigate('/notifications'); }}
+            className="sticky bottom-0 w-full border-t border-slate-100 bg-white px-4 py-2.5 text-sm font-medium text-black hover:bg-slate-50"
+            data-testid="notifications-view-all"
+          >
+            View all notifications
+          </button>
         </div>
       )}
     </div>

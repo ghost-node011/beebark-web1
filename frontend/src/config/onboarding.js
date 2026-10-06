@@ -8,6 +8,22 @@ export const INTENTS = [
   { value: 'get_hired', label: 'Get Hired', tagline: 'Discover roles & opportunities', icon: FaBriefcase }
 ];
 
+// Goals differ by who you are: students don't hire, business owners rarely want to be hired
+export const intentsFor = (user) => {
+  if (user?.role === 'student') {
+    return INTENTS.filter((i) => i.value !== 'hire')
+      .map((i) => (i.value === 'get_hired' ? { ...i, label: 'Get Hired', tagline: 'Internships & first jobs' } : i));
+  }
+  if (user?.careerStage === 'business_owner') {
+    return INTENTS.filter((i) => i.value !== 'get_hired')
+      .map((i) => (i.value === 'hire' ? { ...i, tagline: 'Build your team, find freelancers' } : i));
+  }
+  if (['fresher', 'intern'].includes(user?.careerStage)) {
+    return INTENTS.filter((i) => i.value !== 'hire');
+  }
+  return INTENTS;
+};
+
 // Onboarding step 3 — industry focus (multi-select)
 export const INDUSTRIES = [
   { value: 'architecture', label: 'Architecture' },
