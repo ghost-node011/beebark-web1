@@ -171,7 +171,7 @@ const CalendarPage = () => {
                       key={key}
                       onClick={() => setSelectedDay(key)}
                       onDoubleClick={() => setDraft({ ...EMPTY, date: key })}
-                      className={`flex min-w-0 flex-col items-stretch justify-start h-14 sm:h-24 p-1 sm:p-1.5 text-left transition ${isSelected ? 'bg-yellow-50 ring-2 ring-inset ring-yellow-400' : 'bg-white hover:bg-gray-50'}`}
+                      className={`flex min-w-0 flex-col items-stretch justify-start h-14 sm:h-24 px-1 pt-2 pb-1 sm:px-1.5 sm:pt-4 text-left transition ${isSelected ? 'bg-yellow-50 ring-2 ring-inset ring-yellow-400' : 'bg-white hover:bg-gray-50'}`}
                       aria-label={`${d.toDateString()}, ${list.length} event${list.length === 1 ? '' : 's'}`}
                     >
                       <span className={`self-center shrink-0 inline-flex w-7 h-7 items-center justify-center rounded-full text-sm ${key === today ? 'bg-black text-white font-bold' : inMonth ? 'text-black' : 'text-gray-300'}`}>{d.getDate()}</span>

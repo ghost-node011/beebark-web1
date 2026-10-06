@@ -498,7 +498,7 @@ export const EditorialTemplate = ({ items, user, headline, editable, onEdit, onD
   const contact = L.contact || user?.email || `@${user?.username}`;
   return (
     <div style={{ backgroundColor: L.bg, color: L.fg, ...L.body }}>
-      <nav className="flex items-center justify-between gap-4 border-b px-6 py-5 sm:px-12" style={{ borderColor: L.line }}>
+      <nav className="flex items-center justify-between gap-4 border-b px-5 py-4 sm:px-12 sm:py-5" style={{ borderColor: L.line }}>
         <span className="text-sm uppercase tracking-[0.25em]" style={display}>{user?.name}</span>
         <div className="flex gap-5 text-xs" style={{ color: L.muted }} data-pdf-ignore>
           <a href={`#${editorialSection('projects')}`} className="hover:underline">Projects</a>
@@ -508,14 +508,14 @@ export const EditorialTemplate = ({ items, user, headline, editable, onEdit, onD
       </nav>
 
       {L.tagline && (
-        <p className="max-w-3xl px-6 pt-10 text-2xl leading-snug sm:px-12 sm:text-3xl" style={display} data-testid="pf-tagline">{L.tagline}</p>
+        <p className="max-w-3xl px-5 pt-8 text-xl leading-snug sm:px-12 sm:pt-10 sm:text-3xl" style={display} data-testid="pf-tagline">{L.tagline}</p>
       )}
 
       {hero && (
-        <header className={`grid gap-8 px-6 py-12 sm:px-12 lg:grid-cols-[1fr_1.2fr] lg:items-center lg:py-16 ${onOpen ? 'cursor-pointer' : ''}`} onClick={openOnClick(onOpen, hero)}>
+        <header className={`grid gap-6 sm:gap-8 px-5 py-8 sm:px-12 sm:py-12 lg:grid-cols-[1fr_1.2fr] lg:items-center lg:py-16 ${onOpen ? 'cursor-pointer' : ''}`} onClick={openOnClick(onOpen, hero)}>
           <div>
             <p className="text-xs uppercase tracking-[0.3em]" style={{ color: L.faint }}>{[hero.category, hero.location].filter(Boolean).join(' · ') || 'Featured project'}</p>
-            <h1 className="mt-4 break-words text-5xl leading-[1.02] sm:text-7xl" style={display}><OpenTitle item={hero} onOpen={onOpen} /></h1>
+            <h1 className="mt-4 break-words text-4xl leading-[1.05] sm:text-7xl" style={display}><OpenTitle item={hero} onOpen={onOpen} /></h1>
             {hero.description && <p className="mt-5 max-w-md leading-relaxed" style={{ color: L.muted }}>{hero.description}</p>}
             {onOpen ? (
               <button type="button" onClick={() => onOpen(hero)} className="mt-6 inline-flex items-center gap-2 text-sm font-semibold hover:underline" data-pdf-ignore>
@@ -527,7 +527,7 @@ export const EditorialTemplate = ({ items, user, headline, editable, onEdit, onD
               </a>
             )}
           </div>
-          {hero.images?.[0] && <img src={hero.images[0]} alt={hero.title} data-photo="0" className="h-[420px] w-full object-cover sm:h-[520px]" />}
+          {hero.images?.[0] && <img src={hero.images[0]} alt={hero.title} data-photo="0" className="h-[260px] w-full object-cover sm:h-[520px]" />}
         </header>
       )}
 
@@ -536,7 +536,7 @@ export const EditorialTemplate = ({ items, user, headline, editable, onEdit, onD
           <article
             key={item._id}
             id={editorialSection(item._id)}
-            className={`border-b px-6 py-14 sm:px-12 ${onOpen ? 'cursor-pointer' : ''}`}
+            className={`border-b px-5 py-10 sm:px-12 sm:py-14 ${onOpen ? 'cursor-pointer' : ''}`}
             style={{ borderColor: L.line }}
             onClick={openOnClick(onOpen, item)}
             data-testid={`project-tile-${item._id}`}
@@ -552,7 +552,7 @@ export const EditorialTemplate = ({ items, user, headline, editable, onEdit, onD
               </div>
               {item.images?.length > 0 && (
                 <div className="space-y-4">
-                  <img src={item.images[0]} alt={item.title} data-photo="0" className="max-h-[560px] w-full object-cover" />
+                  <img src={item.images[0]} alt={item.title} data-photo="0" className="aspect-[4/3] w-full object-cover sm:aspect-auto sm:max-h-[560px]" />
                   {item.images.length > 1 && (
                     <div className="grid grid-cols-2 gap-4">
                       {item.images.slice(1).map((src, n) => (
@@ -567,7 +567,7 @@ export const EditorialTemplate = ({ items, user, headline, editable, onEdit, onD
         ))}
       </section>
 
-      <section id={editorialSection('about')} className="px-6 py-14 sm:px-12">
+      <section id={editorialSection('about')} className="px-5 py-10 sm:px-12 sm:py-14">
         <p className="text-xs uppercase tracking-[0.3em]" style={{ color: L.faint }}>About</p>
         <h2 className="mt-3 text-3xl sm:text-4xl" style={display}>{user?.name}</h2>
         {about && <p className="mt-4 max-w-2xl whitespace-pre-line leading-relaxed" style={{ color: L.muted }} data-testid="pf-about">{about}</p>}
@@ -619,12 +619,12 @@ export const StudioTemplate = ({ items, user, headline, editable, onEdit, onDele
       )}
 
       {item && (
-        <section className="px-6 sm:px-12">
+        <section className="px-4 sm:px-12">
           <div className={`overflow-hidden rounded-xl ${onOpen ? 'cursor-pointer' : ''}`} style={card} onClick={openOnClick(onOpen, item)}>
-            {item.images?.[0] && <img src={item.images[0]} alt={item.title} data-photo="0" className="h-[300px] w-full object-cover sm:h-[520px]" />}
+            {item.images?.[0] && <img src={item.images[0]} alt={item.title} data-photo="0" className="h-[240px] w-full object-cover sm:h-[520px]" />}
             <div className="flex flex-col gap-4 p-6 sm:flex-row sm:items-end sm:justify-between sm:p-8">
               <div className="min-w-0">
-                <h1 className="break-words text-4xl leading-tight sm:text-5xl" style={display}><OpenTitle item={item} onOpen={onOpen} /></h1>
+                <h1 className="break-words text-3xl leading-tight sm:text-5xl" style={display}><OpenTitle item={item} onOpen={onOpen} /></h1>
                 <p className="mt-2" style={{ color: cardMuted }}>{item.description ? item.description.split(/(?<=\.)\s/)[0] : [item.category, item.location].filter(Boolean).join(' · ')}</p>
               </div>
               <div className="flex shrink-0 items-center gap-4" data-pdf-ignore>

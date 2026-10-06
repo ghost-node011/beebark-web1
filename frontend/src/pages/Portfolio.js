@@ -53,7 +53,8 @@ const Portfolio = () => {
   const [viewingId, setViewingId] = useState(null);
   const [viewerPhoto, setViewerPhoto] = useState(0);
   const [exporting, setExporting] = useState(false);
-  const [mobileTab, setMobileTab] = useState('preview');
+  // Phones open on the project list (the part you manage); desktops show everything
+  const [mobileTab, setMobileTab] = useState('projects');
   const [activeCategory, setActiveCategory] = useState('All');
   const captureRef = useRef(null);
 
@@ -576,12 +577,12 @@ const Portfolio = () => {
           ))}
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-          <aside className={`space-y-8 rounded-2xl border border-gray-200 bg-white p-5 lg:sticky lg:top-24 lg:block lg:self-start ${mobileTab === 'preview' ? 'hidden' : ''}`}>
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+          <aside className={`min-w-0 rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 lg:sticky lg:top-24 lg:block lg:self-start ${mobileTab === 'preview' ? 'hidden' : ''}`}>
             <div className={mobileTab === 'projects' ? 'hidden lg:block' : ''}>{designPanel}</div>
-            <div className={mobileTab === 'design' ? 'hidden lg:block' : ''}>{projectsPanel}</div>
+            <div className={mobileTab === 'design' ? 'hidden lg:block lg:mt-8' : 'lg:mt-8'}>{projectsPanel}</div>
           </aside>
-          <div className={mobileTab === 'preview' ? '' : 'hidden lg:block'}>{previewPanel}</div>
+          <div className={`min-w-0 ${mobileTab === 'preview' ? '' : 'hidden lg:block'}`}>{previewPanel}</div>
         </div>
       </div>
 

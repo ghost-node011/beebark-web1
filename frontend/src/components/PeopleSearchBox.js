@@ -103,7 +103,7 @@ const PeopleSearchBox = () => {
       )}
 
       {open && (q.trim() || recent.length > 0) && (
-        <div id="people-search-list" role="listbox" className="absolute left-0 right-0 mt-2 max-h-[70vh] overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl z-50 w-[min(36rem,calc(100vw-1.5rem))]" data-testid="search-dropdown">
+        <div id="people-search-list" role="listbox" className="fixed left-3 right-3 top-[3.75rem] sm:absolute sm:left-0 sm:right-auto sm:top-auto sm:mt-2 sm:w-[min(36rem,calc(100vw-1.5rem))] max-h-[70vh] overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl z-50" data-testid="search-dropdown">
           {!q.trim() ? (
             <div className="py-2">
               <div className="flex items-center justify-between px-4 py-1.5">
