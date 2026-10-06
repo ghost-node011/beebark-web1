@@ -662,25 +662,42 @@ export const StudioTemplate = ({ items, user, headline, editable, onEdit, onDele
       {/* Every project in full, so nothing is hidden (and the PDF includes all work) */}
       <section className="border-t px-6 py-12 sm:px-12" style={{ borderColor: L.line }}>
         <p className="text-xs uppercase tracking-[0.3em]" style={{ color: L.faint }}>All work</p>
-        <div className="mt-6 space-y-14">
-          {items.map((it, i) => (
-            <article key={it._id} className={onOpen ? 'cursor-pointer' : ''} onClick={openOnClick(onOpen, it)} data-testid={`project-tile-${it._id}`}>
-              <div className="flex flex-wrap items-baseline justify-between gap-3">
-                <h2 className="min-w-0 break-words text-3xl" style={display}><span className="mr-3 text-base" style={{ color: ring }}>{num(i)}</span><OpenTitle item={it} onOpen={onOpen} /></h2>
-                <p className="text-sm" style={{ color: L.faint }}>{[it.category, it.projectStatus, it.location].filter(Boolean).join(' · ')}</p>
-              </div>
-              {it.description && <p className="mt-3 max-w-3xl leading-relaxed" style={{ color: L.muted }}>{it.description}</p>}
-              {it.images?.length > 0 && (
-                <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-3">
-                  {it.images.map((src, n) => (
-                    <img key={src} src={src} alt="" data-photo={n} className="aspect-[4/3] w-full rounded-lg object-cover" />
-                  ))}
+        <div className="mt-8 space-y-16 lg:space-y-20">
+          {items.map((it, i) => {
+            const photos = it.images || [];
+            const flip = i % 2 === 1; // alternate sides so the page reads like a spread
+            return (
+              <article
+                key={it._id}
+                className={`grid items-center gap-6 lg:gap-12 ${!photos.length ? '' : flip ? 'lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]' : 'lg:grid-cols-[minmax(0,1fr)_minmax(0,1.45fr)]'} ${onOpen ? 'cursor-pointer' : ''}`}
+                onClick={openOnClick(onOpen, it)}
+                data-testid={`project-tile-${it._id}`}
+              >
+                <div className={`min-w-0 ${flip && photos.length ? 'lg:order-2' : ''}`}>
+                  <p className="text-sm" style={{ color: ring }}>{num(i)}</p>
+                  <h2 className="mt-1 min-w-0 break-words text-3xl sm:text-4xl" style={display}><OpenTitle item={it} onOpen={onOpen} /></h2>
+                  {[it.category, it.projectStatus, it.location].filter(Boolean).length > 0 && (
+                    <p className="mt-2 text-sm" style={{ color: L.faint }}>{[it.category, it.projectStatus, it.location].filter(Boolean).join(' · ')}</p>
+                  )}
+                  {it.description && <p className="mt-4 leading-relaxed" style={{ color: L.muted }}>{it.description}</p>}
+                  <Tags tags={it.tags} light={L.onDark} />
+                  <Controls item={it} editable={editable} onEdit={onEdit} onDelete={onDelete} light={L.onDark} />
                 </div>
-              )}
-              <Tags tags={it.tags} light={L.onDark} />
-              <Controls item={it} editable={editable} onEdit={onEdit} onDelete={onDelete} light={L.onDark} />
-            </article>
-          ))}
+                {photos.length > 0 && (
+                  <div className={`min-w-0 ${flip ? 'lg:order-1' : ''}`}>
+                    <img src={photos[0]} alt={it.title} data-photo={0} className="aspect-[4/3] w-full rounded-xl object-cover" />
+                    {photos.length > 1 && (
+                      <div className={`mt-3 grid gap-3 ${photos.length === 2 ? 'grid-cols-1' : photos.length === 3 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                        {photos.slice(1).map((src, n) => (
+                          <img key={src} src={src} alt="" data-photo={n + 1} className={`w-full rounded-lg object-cover ${photos.length === 2 ? 'aspect-[16/7]' : 'aspect-[4/3]'}`} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </article>
+            );
+          })}
         </div>
       </section>
 
