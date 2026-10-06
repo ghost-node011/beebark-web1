@@ -24,10 +24,12 @@ import ReportDialog from '../components/ReportDialog';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 import {
-  FiUpload, FiBriefcase, FiMapPin, FiDollarSign, FiFileText, FiAward, FiZap, FiCheckCircle,
+  FiUpload, FiBriefcase, FiMapPin, FiFileText, FiAward, FiZap, FiCheckCircle,
   FiShare2, FiFlag, FiEdit2, FiTrash2, FiLock, FiUnlock, FiCalendar, FiX, FiUsers, FiPlus
 } from 'react-icons/fi';
 import { API_URL } from '../config/api';
+import { FaMoneyBillWave } from 'react-icons/fa';
+import { inrSalary } from '../utils/salary';
 import { getCopy } from '../config/roleDomainCopy';
 
 const EMPLOYMENT_TYPES = { full_time: 'Full-time', part_time: 'Part-time', internship: 'Internship', contract: 'Contract', freelance: 'Freelance', graduate: 'Graduate' };
@@ -121,7 +123,7 @@ const JobForm = ({ initial, submitLabel, onSubmit }) => {
         </div>
         <div>
           <Label>Salary</Label>
-          <Input value={form.salary} onChange={(e) => set('salary')(e.target.value)} maxLength={80} placeholder="$80k-100k" />
+          <Input value={form.salary} onChange={(e) => set('salary')(e.target.value)} maxLength={80} placeholder="e.g. ₹6–8 LPA or ₹40,000/month" />
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -579,7 +581,7 @@ const Jobs = () => {
                       )}
                       {job.salary && (
                         <div className="flex items-center text-sm text-gray-600">
-                          <FiDollarSign className="mr-2" />{job.salary}
+                          <FaMoneyBillWave className="mr-2" />{inrSalary(job.salary)}
                         </div>
                       )}
                     </div>
@@ -642,7 +644,7 @@ const Jobs = () => {
                       )}
                       {job.salary && (
                         <div className="flex items-center text-sm text-gray-600">
-                          <FiDollarSign className="mr-2" />{job.salary}
+                          <FaMoneyBillWave className="mr-2" />{inrSalary(job.salary)}
                         </div>
                       )}
                     </div>
@@ -843,7 +845,7 @@ const Jobs = () => {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600">
                     {detailJob.location && <div className="flex items-center"><FiMapPin className="mr-2" />{detailJob.location}</div>}
-                    {detailJob.salary && <div className="flex items-center"><FiDollarSign className="mr-2" />{detailJob.salary}</div>}
+                    {detailJob.salary && <div className="flex items-center"><FaMoneyBillWave className="mr-2" />{inrSalary(detailJob.salary)}</div>}
                     {detailJob.applyBy && <div className="flex items-center"><FiCalendar className="mr-2" />Apply by {new Date(detailJob.applyBy).toLocaleDateString()}</div>}
                     {detailJob.applicantCount !== undefined && <div className="flex items-center"><FiUsers className="mr-2" />{detailJob.applicantCount} applicant{detailJob.applicantCount === 1 ? '' : 's'}</div>}
                   </div>

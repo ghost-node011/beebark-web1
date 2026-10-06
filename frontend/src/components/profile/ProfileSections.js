@@ -8,6 +8,7 @@ import {
 import { FaWhatsapp } from 'react-icons/fa6';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { SOCIAL } from './ProfileShell';
+import { inrSalary } from '../../utils/salary';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { AVAILABILITY_LABELS, experienceDates, employmentTypeLabel, proficiencyLabel } from '../../config/profileOptions';
 import { personHeadline } from '../../utils/personHeadline';
@@ -128,7 +129,7 @@ export const JobRows = ({ jobs }) => (
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-black truncate">{j.title}</p>
           <p className="text-sm text-gray-600 truncate">{[j.company, j.location].filter(Boolean).join(' · ')}</p>
-          <p className="text-xs text-gray-500">{[JOB_TYPE[j.employmentType], WORKPLACE[j.workplace], j.salary].filter(Boolean).join(' · ')}</p>
+          <p className="text-xs text-gray-500">{[JOB_TYPE[j.employmentType], WORKPLACE[j.workplace], inrSalary(j.salary)].filter(Boolean).join(' · ')}</p>
         </div>
         <span className="text-xs font-semibold text-black shrink-0">View →</span>
       </Link>
