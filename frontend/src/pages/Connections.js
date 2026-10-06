@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Sidebar from '../components/Sidebar';
@@ -15,12 +15,14 @@ import {
 import { toast } from 'sonner';
 import {
   FiSearch, FiUserPlus, FiUserCheck, FiMessageCircle, FiX, FiUsers, FiMoreHorizontal, FiUser,
-  FiShare2, FiUserMinus, FiFlag, FiSlash, FiMapPin, FiClock, FiSend, FiCheck
+  FiShare2, FiUserMinus, FiFlag, FiSlash, FiMapPin, FiClock, FiSend, FiCheck,
+  FiSliders,
 } from 'react-icons/fi';
 import { API_URL } from '../config/api';
 import { getCopy } from '../config/roleDomainCopy';
 import { useAuth } from '../context/AuthContext';
 import { personHeadline } from '../utils/personHeadline';
+import Highlight, { searchWords } from '../components/Highlight';
 
 // "3d ago" style label for a date, or '' when there isn't one
 const timeAgo = (date) => {
@@ -62,16 +64,20 @@ const CardTop = ({ person, children }) => (
   </>
 );
 
-const CardIdentity = ({ person }) => (
+const CardIdentity = ({ person, words }) => (
   <div className="px-4 pt-2 text-center min-w-0">
     <Link to={`/profile/${person.username}`} className="block font-semibold text-black hover:underline truncate">
-      {person.name}
+      <Highlight text={person.name} words={words} />
     </Link>
-    <p className="text-sm text-gray-600 line-clamp-2 min-h-[2.5rem]">{personHeadline(person)}</p>
+    <p className="text-sm text-gray-600 line-clamp-2 min-h-[2.5rem]"><Highlight text={personHeadline(person)} words={words} /></p>
     {person.location && (
       <p className="mt-1 text-xs text-gray-500 flex items-center justify-center gap-1 truncate">
-        <FiMapPin className="w-3 h-3 shrink-0" /><span className="truncate">{person.location}</span>
+        <FiMapPin className="w-3 h-3 shrink-0" /><span className="truncate"><Highlight text={person.location} words={words} /></span>
       </p>
+    )}
+    {person.matchedOn && <p className="mt-1 text-xs text-gray-500 truncate"><Highlight text={person.matchedOn} words={words} /></p>}
+    {person.mutualConnectionsCount > 0 && words && (
+      <p className="mt-1 text-xs text-gray-500">{person.mutualConnectionsCount} mutual connection{person.mutualConnectionsCount > 1 ? 's' : ''}</p>
     )}
   </div>
 );
@@ -175,23 +181,32 @@ const Connections = () => {
     setSearchResults((list) => list.map((s) => (s._id === id ? { ...s, ...changes } : s)));
   };
 
-  const handleSearch = async (e) => {
+  // Results update as you type (name, role, company, skills, city)
+  const searchSeq = useRef(0);
+  useEffect(() => {
+    const term = searchQuery.trim();
+    if (!term) return undefined;
+    const t = setTimeout(async () => {
+      const seq = ++searchSeq.current;
+      setSearching(true);
+      try {
+        const response = await axios.get(`${API_URL}/api/people/search`, { params: { q: term, limit: 30 } });
+        if (seq !== searchSeq.current) return; // a newer search has started
+        setSearchResults(response.data.people || []);
+        setHasSearched(true);
+        setActiveTab('search');
+      } catch {
+        toast.error('Search failed');
+      } finally {
+        if (seq === searchSeq.current) setSearching(false);
+      }
+    }, 200);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  const handleSearch = (e) => {
     e?.preventDefault();
-    if (searchQuery.length < 2) {
-      toast.error('Please enter at least 2 characters to search');
-      return;
-    }
-    setSearching(true);
-    try {
-      const response = await axios.get(`${API_URL}/api/connections/search?query=${encodeURIComponent(searchQuery)}`);
-      setSearchResults(response.data.users || []);
-      setHasSearched(true);
-      setActiveTab('search');
-    } catch {
-      toast.error('Search failed');
-    } finally {
-      setSearching(false);
-    }
+    navigate(`/search${searchQuery.trim() ? `?q=${encodeURIComponent(searchQuery.trim())}` : ''}`);
   };
 
   const handleConnect = async (userId) => {
@@ -290,6 +305,8 @@ const Connections = () => {
   };
 
   const clearSearch = () => {
+    searchSeq.current += 1;
+    setSearching(false);
     setSearchQuery('');
     setSearchResults([]);
     setHasSearched(false);
@@ -395,12 +412,13 @@ const Connections = () => {
             <div className="relative flex-1 min-w-0 max-w-2xl">
               <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
               <Input
-                placeholder="Search people by name, username, or email..."
+                placeholder="Search by name, role, company, skill or city"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-11 pr-10 h-12 bg-white border border-gray-200 focus-visible:ring-yellow-400 rounded-xl"
                 data-testid="connection-search-input"
               />
+              {searching && <span className="absolute right-10 top-1/2 -mt-2 h-4 w-4 rounded-full border-2 border-yellow-400 border-t-transparent animate-spin" aria-label="Searching" />}
               {searchQuery && (
                 <button
                   type="button"
@@ -414,11 +432,11 @@ const Connections = () => {
             </div>
             <Button
               type="submit"
-              disabled={searching || searchQuery.length < 2}
-              className="h-12 bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-4 sm:px-8 rounded-xl shrink-0"
+              className="h-12 bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-4 sm:px-6 rounded-xl shrink-0"
               data-testid="search-button"
+              title="Search with filters (role, industry, location, open to)"
             >
-              {searching ? 'Searching...' : 'Search'}
+              <FiSliders className="w-4 h-4 sm:mr-2" /><span className="hidden sm:inline">Advanced</span>
             </Button>
           </form>
 
@@ -690,7 +708,7 @@ const Connections = () => {
                   {searchResults.map((p) => (
                     <div key={p._id} className="bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col hover:shadow-md transition-shadow" data-testid={`search-result-${p._id}`}>
                       <CardTop person={p} />
-                      <CardIdentity person={p} />
+                      <CardIdentity person={p} words={searchWords(searchQuery)} />
                       <div className="mt-auto p-4">
                         {relationAction(p, `connect-search-btn-${p._id}`)}
                       </div>

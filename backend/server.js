@@ -136,6 +136,7 @@ app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/account', require('./routes/account'));
 app.use('/api/calendar', require('./routes/calendar'));
 app.use('/api/listings', require('./routes/listing'));
+app.use('/api/people', require('./routes/people'));
 app.use('/api/ai', aiRoutes);
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/waitlist', waitlistRoutes);

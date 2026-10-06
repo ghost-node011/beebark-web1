@@ -102,7 +102,20 @@ const PublicProfile = () => {
   }
 
   if (!data) {
-    return <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-500">Loading...</div>;
+    // Keep the app frame while the profile loads, so the page doesn't flash
+    return (
+      <div className={`min-h-screen ${PAGE_BG}`}>
+        <Sidebar />
+        <TopBar />
+        <div className="lg:ml-64 mt-16 p-4 sm:p-6 lg:p-8">
+          <div className="max-w-5xl mx-auto animate-pulse space-y-4" aria-label="Loading profile">
+            <div className="h-56 rounded-2xl bg-gray-200" />
+            <div className="h-6 w-64 rounded bg-gray-200" />
+            <div className="h-4 w-96 max-w-full rounded bg-gray-200" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const { user } = data;

@@ -1,4 +1,5 @@
 const express = require('express');
+const { searchPeople } = require('../utils/peopleSearch');
 const mongoose = require('mongoose');
 const router = express.Router();
 const User = require('../models/User');
@@ -18,46 +19,13 @@ router.get('/suggestions', auth, async (req, res) => {
 });
 
 // Search users by name, username, or email
+// Same ranked, word-by-word search as /api/people/search; kept for older callers
 router.get('/search', auth, async (req, res) => {
   try {
-    const { query } = req.query;
-    
-    if (!query || query.length < 2) {
-      return res.status(400).json({ error: 'Search query must be at least 2 characters' });
-    }
-
-    const currentUser = await User.findById(req.userId);
-    const connectionIds = currentUser.connections.map(id => id.toString());
-    const sentRequestIds = (currentUser.sentRequests || []).map(id => id.toString());
-    const receivedRequestIds = (currentUser.pendingRequests || []).map(id => id.toString());
-
-    const users = await User.find({
-      $and: [
-        { _id: { $ne: req.userId, $nin: currentUser.blockedUsers || [] } },
-        { isDemo: currentUser.isDemo ? true : { $ne: true } },
-        { accountStatus: { $ne: 'deactivated' } },
-        { blockedUsers: { $ne: currentUser._id } },
-        {
-          $or: [
-            { name: { $regex: query, $options: 'i' } },
-            { username: { $regex: query, $options: 'i' } },
-            { email: { $regex: query, $options: 'i' } }
-          ]
-        }
-      ]
-    })
-    .select(PERSON_FIELDS)
-    .limit(20);
-
-    // Add connection status to each user
-    const usersWithStatus = users.map(user => ({
-      ...user.toObject(),
-      isConnected: connectionIds.includes(user._id.toString()),
-      requestSent: sentRequestIds.includes(user._id.toString()),
-      requestReceived: receivedRequestIds.includes(user._id.toString())
-    }));
-
-    res.json({ users: usersWithStatus });
+    const query = String(req.query.query || req.query.q || '');
+    if (query.trim().length < 1) return res.json({ users: [] });
+    const { people } = await searchPeople(req.userId, { q: query, limit: 30 });
+    res.json({ users: people });
   } catch (error) {
     res.status(500).json({ error: 'Search failed', message: error.message });
   }

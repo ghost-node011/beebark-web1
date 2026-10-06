@@ -19,6 +19,7 @@ const INDUSTRY_LABELS = {
 
 export const personHeadline = (p) => {
   if (!p) return '';
+  if (p.headline) return p.headline; // written by the person themselves
   const experience = p.experience || [];
   const current = experience.find((e) => e.current) || experience[0];
   if (current?.title) return current.company ? `${current.title} at ${current.company}` : current.title;

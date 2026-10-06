@@ -30,6 +30,7 @@ import Notifications from './pages/Notifications';
 import CalendarPage from './pages/Calendar';
 import Listings from './pages/Listings';
 import ListingDetail from './pages/ListingDetail';
+import Search from './pages/Search';
 import './App.css';
 
 const PrivateRoute = ({ children }) => {
@@ -125,6 +126,7 @@ function App() {
             <Route path="/calendar" element={<PrivateRoute><CalendarPage /></PrivateRoute>} />
             <Route path="/listings" element={<PrivateRoute><Listings /></PrivateRoute>} />
             <Route path="/listing/:id" element={<PrivateRoute><ListingDetail /></PrivateRoute>} />
+            <Route path="/search" element={<PrivateRoute><Search /></PrivateRoute>} />
             <Route path="/meeting-room/:meetingId" element={<PrivateRoute><MeetingRoom /></PrivateRoute>} />
             <Route path="/reels" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
             <Route path="/projects" element={<PrivateRoute><Dashboard /></PrivateRoute>} />

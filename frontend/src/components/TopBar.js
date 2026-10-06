@@ -3,8 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useUI } from '../context/UIContext';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Input } from './ui/input';
-import { FiSearch, FiLogOut, FiMenu, FiUser, FiSettings, FiCalendar, FiBell, FiChevronDown } from 'react-icons/fi';
+import { FiLogOut, FiMenu, FiUser, FiSettings, FiCalendar, FiBell, FiChevronDown } from 'react-icons/fi';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -14,6 +13,7 @@ import {
 } from './ui/dropdown-menu';
 import ProfileCompletionBadge from './ProfileCompletionBadge';
 import NotificationBell from './NotificationBell';
+import PeopleSearchBox from './PeopleSearchBox';
 import { personHeadline } from '../utils/personHeadline';
 
 const TopBar = () => {
@@ -44,14 +44,7 @@ const TopBar = () => {
           <FiMenu className="w-6 h-6" />
         </button>
 
-        <div className="relative w-full max-w-xl">
-          <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
-          <Input
-            placeholder="Search..."
-            className="pl-10 bg-slate-50 border-slate-200"
-            data-testid="search-input"
-          />
-        </div>
+        <PeopleSearchBox />
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
