@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const fs = require('fs');
 const auth = require('../middleware/auth');
-const { upload, uploadToCloudinary } = require('../config/cloudinary');
+const { upload, uploadChatFile, uploadToCloudinary } = require('../config/cloudinary');
 const { verifyProfilePhoto } = require('../utils/photoVerifier');
 
 router.post('/image', auth, upload.single('image'), async (req, res) => {
@@ -93,6 +93,35 @@ router.post('/multiple', auth, upload.array('images', 10), async (req, res) => {
     console.error('Upload error:', error);
     res.status(500).json({ error: 'Failed to upload images', message: error.message });
   }
+});
+
+// Files attached to a chat message (up to 5, 18 MB each)
+router.post('/chat-files', auth, (req, res) => {
+  uploadChatFile.array('files', 5)(req, res, async (err) => {
+    if (err) {
+      const tooBig = err.code === 'LIMIT_FILE_SIZE';
+      return res.status(400).json({ error: tooBig ? 'Each file must be under 18 MB' : err.code === 'LIMIT_FILE_COUNT' ? 'Send up to 5 files at a time' : err.message });
+    }
+    if (!req.files || req.files.length === 0) return res.status(400).json({ error: 'No files provided' });
+    try {
+      const cloud = process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY;
+      const files = [];
+      for (const file of req.files) {
+        const url = cloud ? (await uploadToCloudinary(file.path, 'chat')).url : `/uploads/${file.filename}`;
+        files.push({
+          url,
+          name: file.originalname.slice(0, 200),
+          mime: file.mimetype,
+          size: file.size,
+          kind: /^image\//.test(file.mimetype) ? 'image' : 'file'
+        });
+      }
+      res.json({ files });
+    } catch (error) {
+      console.error('Chat file upload error:', error);
+      res.status(500).json({ error: 'Failed to upload files', message: error.message });
+    }
+  });
 });
 
 module.exports = router;

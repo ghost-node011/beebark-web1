@@ -13,7 +13,7 @@ import {
 import { toast } from 'sonner';
 import {
   FiSend, FiArrowLeft, FiSearch, FiStar, FiArchive, FiTrash2, FiFlag, FiSlash,
-  FiMoreVertical, FiUser, FiInbox, FiX, FiAlertOctagon
+  FiMoreVertical, FiUser, FiInbox, FiX, FiAlertOctagon, FiCheck, FiClock, FiAlertCircle, FiMail, FiPaperclip, FiFile, FiDownload, FiImage
 } from 'react-icons/fi';
 import { API_URL } from '../config/api';
 import ReportDialog from '../components/ReportDialog';
@@ -59,6 +59,82 @@ const dayLabel = (d) => {
   return date.toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long', year: date.getFullYear() === now.getFullYear() ? undefined : 'numeric' });
 };
 
+const clock = (d) => new Date(d).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+// "just now", "5 min ago", "2 h ago", then a date and time
+const ago = (d, now) => {
+  const s = Math.max(0, Math.floor((now - new Date(d)) / 1000));
+  if (s < 45) return 'just now';
+  if (s < 3600) return `${Math.round(s / 60)} min ago`;
+  if (s < 86400) return `${Math.round(s / 3600)} h ago`;
+  return `${listTime(d)}, ${clock(d)}`;
+};
+
+const fileUrl = (url) => (url && url.startsWith('/') ? `${API_URL}${url}` : url);
+const fileSize = (n) => (n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
+const MAX_FILE = 18 * 1024 * 1024;
+const ACCEPT = 'image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.dwg,.dxf,.skp,.rvt';
+
+// What the conversation list shows for a message that's only files
+const previewText = (text, attachments = []) => {
+  if (text) return text;
+  if (!attachments.length) return '';
+  if (attachments.every((a) => a.kind === 'image')) return `📷 Photo${attachments.length > 1 ? `s (${attachments.length})` : ''}`;
+  return `📎 ${attachments[0].name || 'File'}${attachments.length > 1 ? ` +${attachments.length - 1}` : ''}`;
+};
+
+// Photos as a grid, other files as download rows
+const Attachments = ({ items, mine }) => {
+  const images = items.filter((a) => a.kind === 'image');
+  const files = items.filter((a) => a.kind !== 'image');
+  return (
+    <div className="space-y-1.5 mb-1">
+      {images.length > 0 && (
+        <div className={`grid gap-1 ${images.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+          {images.map((a) => (
+            <a key={a.url} href={fileUrl(a.url)} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="block overflow-hidden rounded-lg bg-black/5">
+              <img src={a.preview || fileUrl(a.url)} alt={a.name || 'Photo'} className={`w-full object-cover ${images.length > 1 ? 'h-28' : 'max-h-72'}`} loading="lazy" />
+            </a>
+          ))}
+        </div>
+      )}
+      {files.map((a) => (
+        <a
+          key={a.url}
+          href={fileUrl(a.url)}
+          target="_blank"
+          rel="noopener noreferrer"
+          download={a.name || true}
+          onClick={(e) => e.stopPropagation()}
+          className={`flex items-center gap-2 rounded-lg px-2.5 py-2 ${mine ? 'bg-black/10 hover:bg-black/15' : 'bg-gray-100 hover:bg-gray-200'}`}
+        >
+          <FiFile className="w-5 h-5 shrink-0" />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-medium">{a.name || 'File'}</span>
+            {a.size > 0 && <span className="block text-[10px] opacity-60">{fileSize(a.size)}</span>}
+          </span>
+          <FiDownload className="w-4 h-4 shrink-0 opacity-70" />
+        </a>
+      ))}
+    </div>
+  );
+};
+
+const statusOf = (m) => (m.failed ? 'failed' : m.pending ? 'sending' : m.readAt ? 'read' : m.deliveredAt ? 'delivered' : 'sent');
+
+// Sending: clock. Sent: one tick. Delivered: two grey ticks. Read: two blue ticks.
+const Ticks = ({ status, className = '' }) => {
+  if (status === 'sending') return <FiClock className={`w-3 h-3 ${className}`} aria-label="Sending" />;
+  if (status === 'failed') return <FiAlertCircle className={`w-3.5 h-3.5 text-red-600 ${className}`} aria-label="Not sent" />;
+  const colour = status === 'read' ? 'text-sky-500' : '';
+  return (
+    <span className={`inline-flex ${colour} ${className}`} aria-label={status === 'read' ? 'Read' : status === 'delivered' ? 'Delivered' : 'Sent'}>
+      <FiCheck className="w-3.5 h-3.5" strokeWidth={3} />
+      {status !== 'sent' && <FiCheck className="w-3.5 h-3.5 -ml-2" strokeWidth={3} />}
+    </span>
+  );
+};
+
 const Chat = () => {
   const socket = useSocket();
   const { user, refreshUser } = useAuth();
@@ -76,6 +152,18 @@ const Chat = () => {
   const [blocked, setBlocked] = useState(false);
   const [newMessage, setNewMessage] = useState('');
   const [reportOpen, setReportOpen] = useState(false);
+  const [infoFor, setInfoFor] = useState(null);
+  const [pendingFiles, setPendingFiles] = useState([]); // { id, name, size, kind, preview, status, data }
+  const [dragging, setDragging] = useState(false);
+  const fileInputRef = useRef(null); // message id whose receipt details are open
+  const [now, setNow] = useState(Date.now());
+  const receiptsOn = user?.readReceipts !== false;
+
+  // Keeps "Seen 3 min ago" current
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(t);
+  }, []);
   const messagesEndRef = useRef(null);
   const selectedIdRef = useRef(null);
   selectedIdRef.current = selected?.person?._id || null;
@@ -99,8 +187,28 @@ const Chat = () => {
     return () => clearTimeout(t);
   }, [fetchConversations, query]);
 
+  // Update one row in place (and move it to the top) rather than reloading the list
+  const refetchTimer = useRef(null);
+  const touchRow = useCallback((personId, change) => {
+    let found = false;
+    setConversations((list) => {
+      const i = list.findIndex((c) => c.person._id === personId);
+      if (i < 0) return list;
+      found = true;
+      const row = change(list[i]);
+      return [row, ...list.slice(0, i), ...list.slice(i + 1)];
+    });
+    setSelected((cur) => (cur && cur.person._id === personId ? change(cur) : cur));
+    if (!found) {
+      clearTimeout(refetchTimer.current);
+      refetchTimer.current = setTimeout(fetchConversations, 400);
+    }
+  }, [fetchConversations]);
+
   const openConversation = useCallback(async (row) => {
     setSelected(row);
+    setInfoFor(null);
+    setPendingFiles([]);
     setMessages([]);
     setBlocked(false);
     try {
@@ -145,32 +253,52 @@ const Chat = () => {
   useEffect(() => {
     if (!socket) return undefined;
     const onReceive = (message) => {
+      const open = message.sender === selectedIdRef.current && document.visibilityState === 'visible';
       if (message.sender === selectedIdRef.current) {
         setMessages((prev) => (prev.some((m) => m._id === message._id) ? prev : [...prev, message]));
-        axios.put(`${API_URL}/api/messages/conversations/${message.sender}/read`).catch(() => {});
       }
-      fetchConversations();
+      if (open) socket.emit('mark-read', { other: message.sender });
+      touchRow(message.sender, (row) => ({
+        ...row,
+        lastMessage: { text: previewText(message.text, message.attachments), fromMe: false, createdAt: message.createdAt },
+        unread: open ? 0 : (row.unread || 0) + 1
+      }));
+      if (!open) setTotals((t) => ({ ...t, unreadMessages: (t.unreadMessages || 0) + 1 }));
     };
-    const onSent = (message) => {
-      setMessages((prev) => {
-        const withoutTemp = prev.filter((m) => !(String(m._id).startsWith('temp-') && m.text === message.text));
-        return withoutTemp.some((m) => m._id === message._id) ? withoutTemp : [...withoutTemp, message];
-      });
-      fetchConversations();
+    // Receipts for messages you sent
+    const stamp = (field) => ({ by, at }) => {
+      if (by === selectedIdRef.current) {
+        setMessages((prev) => prev.map((m) => (String(m.sender) === String(myId) && !m.pending && !m.failed
+          ? { ...m, deliveredAt: m.deliveredAt || at, ...(field === 'readAt' ? { readAt: m.readAt || at } : {}) }
+          : m)));
+      }
+      setConversations((list) => list.map((c) => (c.person._id === by && c.lastMessage?.fromMe
+        ? { ...c, lastMessage: { ...c.lastMessage, deliveredAt: c.lastMessage.deliveredAt || at, ...(field === 'readAt' ? { readAt: c.lastMessage.readAt || at } : {}) } }
+        : c)));
     };
-    const onError = (error) => {
-      toast.error(error.error || 'Failed to send message');
-      setMessages((prev) => prev.filter((m) => !String(m._id).startsWith('temp-')));
-    };
+    const onDelivered = stamp('deliveredAt');
+    const onRead = stamp('readAt');
     socket.on('receive-message', onReceive);
-    socket.on('message-sent', onSent);
-    socket.on('message-error', onError);
+    socket.on('messages-delivered', onDelivered);
+    socket.on('messages-read', onRead);
     return () => {
       socket.off('receive-message', onReceive);
-      socket.off('message-sent', onSent);
-      socket.off('message-error', onError);
+      socket.off('messages-delivered', onDelivered);
+      socket.off('messages-read', onRead);
     };
-  }, [socket, fetchConversations]);
+  }, [socket, touchRow, myId]);
+
+  // Coming back to the tab with a chat open reads what arrived meanwhile
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && selectedIdRef.current) {
+        if (socket?.connected) socket.emit('mark-read', { other: selectedIdRef.current });
+        touchRow(selectedIdRef.current, (row) => ({ ...row, unread: 0 }));
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [socket, touchRow]);
 
   // Without a live connection, poll the open conversation
   useEffect(() => {
@@ -183,40 +311,131 @@ const Chat = () => {
   }, [selected, socket]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Scroll only the message pane (scrollIntoView also moved the whole page)
+    const pane = messagesEndRef.current?.parentElement;
+    if (pane) pane.scrollTo({ top: pane.scrollHeight, behavior: 'smooth' });
   }, [messages]);
 
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    const text = newMessage.trim();
-    if (!text || !selected || blocked) return;
-    const receiver = selected.person._id;
-    setNewMessage('');
-    const temp = { _id: `temp-${Date.now()}`, sender: myId, receiver, text, createdAt: new Date().toISOString() };
-    setMessages((prev) => [...prev, temp]);
-
+  // Show the message straight away, then swap in the saved copy (or mark it failed)
+  const deliver = async (receiver, text, clientId, attachments = []) => {
+    const settle = (saved, error) => {
+      setMessages((prev) => prev.map((m) => (m.clientId !== clientId ? m
+        : saved ? { ...saved, clientId } : { ...m, pending: false, failed: true, error })));
+      if (saved) {
+        touchRow(receiver, (row) => ({ ...row, lastMessage: { text: previewText(saved.text, saved.attachments), fromMe: true, createdAt: saved.createdAt, deliveredAt: saved.deliveredAt, readAt: null } }));
+      } else {
+        toast.error(error || 'Message not sent');
+      }
+    };
     if (socket?.connected) {
-      socket.emit('send-message', { receiver, text });
+      socket.timeout(10000).emit('send-message', { receiver, text, attachments, clientId }, (err, res) => {
+        if (err) settle(null, 'No response from the server. Tap the message to retry.');
+        else if (res?.ok) settle(res.message);
+        else settle(null, res?.error);
+      });
       return;
     }
     try {
-      const res = await axios.post(`${API_URL}/api/messages/send`, { receiver, text });
-      setMessages((prev) => [...prev.filter((m) => m._id !== temp._id), res.data.data]);
-      fetchConversations();
+      const res = await axios.post(`${API_URL}/api/messages/send`, { receiver, text, attachments });
+      settle(res.data.data);
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Failed to send message');
-      setMessages((prev) => prev.filter((m) => m._id !== temp._id));
-      setNewMessage(text);
+      settle(null, error.response?.data?.error || 'Message not sent');
     }
   };
 
-  const updateFlags = async (row, flags, note) => {
+  // Files upload as soon as they're picked, so sending is instant
+  const addFiles = async (fileList) => {
+    const picked = Array.from(fileList || []);
+    if (!picked.length) return;
+    const room = 5 - pendingFiles.length;
+    if (room <= 0) return toast.error('Send up to 5 files at a time');
+    if (picked.length > room) toast.error(`Only the first ${room} file${room > 1 ? 's' : ''} were added (5 max)`);
+    const accepted = picked.slice(0, room).filter((f) => {
+      if (f.size > MAX_FILE) { toast.error(`${f.name} is over 18 MB`); return false; }
+      return true;
+    });
+    const entries = accepted.map((f) => ({
+      id: `f-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      name: f.name,
+      size: f.size,
+      kind: f.type.startsWith('image/') ? 'image' : 'file',
+      preview: f.type.startsWith('image/') ? URL.createObjectURL(f) : null,
+      status: 'uploading',
+      file: f
+    }));
+    setPendingFiles((list) => [...list, ...entries]);
+    await Promise.all(entries.map(async (entry) => {
+      const body = new FormData();
+      body.append('files', entry.file);
+      try {
+        const res = await axios.post(`${API_URL}/api/upload/chat-files`, body, { headers: { 'Content-Type': 'multipart/form-data' } });
+        const data = res.data.files?.[0];
+        setPendingFiles((list) => list.map((x) => (x.id === entry.id ? { ...x, status: 'done', data } : x)));
+      } catch (error) {
+        toast.error(error.response?.data?.error || `Couldn't upload ${entry.name}`);
+        setPendingFiles((list) => list.filter((x) => x.id !== entry.id));
+      }
+    }));
+  };
+
+  const removePending = (id) => setPendingFiles((list) => list.filter((x) => x.id !== id));
+  const uploading = pendingFiles.some((f) => f.status === 'uploading');
+
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    const text = newMessage.trim();
+    const ready = pendingFiles.filter((f) => f.status === 'done');
+    if ((!text && !ready.length) || !selected || blocked || uploading) return;
+    const receiver = selected.person._id;
+    const attachments = ready.map((f) => f.data);
+    setNewMessage('');
+    setPendingFiles([]);
+    const clientId = `c-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const shown = ready.map((f) => ({ ...f.data, preview: f.preview }));
+    setMessages((prev) => [...prev, { _id: clientId, clientId, sender: myId, receiver, text, attachments: shown, createdAt: new Date().toISOString(), pending: true }]);
+    deliver(receiver, text, clientId, attachments);
+  };
+
+  const retry = (m) => {
+    setMessages((prev) => prev.map((x) => (x.clientId === m.clientId ? { ...x, pending: true, failed: false, createdAt: new Date().toISOString() } : x)));
+    deliver(m.receiver, m.text, m.clientId, (m.attachments || []).map(({ preview, ...a }) => a));
+  };
+
+  const markUnread = async (row) => {
     try {
-      await axios.put(`${API_URL}/api/messages/conversations/${row.person._id}`, flags);
-      if (note) toast.success(note);
-      if (flags.archived !== undefined && selected?.person._id === row.person._id) setSelected(null);
-      fetchConversations();
+      await axios.put(`${API_URL}/api/messages/conversations/${row.person._id}`, { markedUnread: true });
+      setConversations((list) => list.map((c) => (c.person._id === row.person._id ? { ...c, unread: Math.max(1, c.unread || 0), markedUnread: true } : c)));
+      if (selected?.person._id === row.person._id) setSelected(null);
     } catch {
+      toast.error('Could not mark as unread');
+    }
+  };
+
+  // Star / archive change on screen immediately; the server catches up behind
+  const updateFlags = async (row, flags, note) => {
+    const id = row.person._id;
+    const before = { conversations, totals, selected };
+    const leavesView = (flags.archived !== undefined && (filter === 'archived') !== flags.archived)
+      || (flags.starred === false && filter === 'starred');
+    setConversations((list) => (leavesView ? list.filter((c) => c.person._id !== id) : list.map((c) => (c.person._id === id ? { ...c, ...flags } : c))));
+    setSelected((cur) => (cur && cur.person._id === id ? (flags.archived !== undefined ? null : { ...cur, ...flags }) : cur));
+    setTotals((t) => {
+      const next = { ...t };
+      if (flags.starred !== undefined && !row.archived) next.starred = Math.max(0, (t.starred || 0) + (flags.starred ? 1 : -1));
+      if (flags.archived !== undefined) {
+        next.archived = Math.max(0, (t.archived || 0) + (flags.archived ? 1 : -1));
+        next.all = Math.max(0, (t.all || 0) + (flags.archived ? -1 : 1));
+        if (row.starred) next.starred = Math.max(0, (t.starred || 0) + (flags.archived ? -1 : 1));
+      }
+      return next;
+    });
+    if (note && flags.archived !== undefined) toast.success(note);
+    try {
+      await axios.put(`${API_URL}/api/messages/conversations/${id}`, flags);
+    } catch {
+      setConversations(before.conversations);
+      setTotals(before.totals);
+      setSelected(before.selected);
       toast.error('Could not update conversation');
     }
   };
@@ -262,6 +481,9 @@ const Chat = () => {
       <DropdownMenuItem onClick={() => updateFlags(row, { starred: !row.starred }, row.starred ? 'Removed star' : 'Starred')}>
         <FiStar className="mr-2" />{row.starred ? 'Remove star' : 'Star'}
       </DropdownMenuItem>
+      {!row.unread && (
+        <DropdownMenuItem onClick={() => markUnread(row)} data-testid="chat-mark-unread"><FiMail className="mr-2" />Mark as unread</DropdownMenuItem>
+      )}
       <DropdownMenuItem onClick={() => updateFlags(row, { archived: !row.archived }, row.archived ? 'Moved to inbox' : 'Archived')}>
         {row.archived ? <FiInbox className="mr-2" /> : <FiArchive className="mr-2" />}{row.archived ? 'Move to inbox' : 'Archive'}
       </DropdownMenuItem>
@@ -275,6 +497,9 @@ const Chat = () => {
       <DropdownMenuItem onClick={() => deleteConversation(row)} className="text-red-600" data-testid="chat-delete"><FiTrash2 className="mr-2" />Delete conversation</DropdownMenuItem>
     </DropdownMenuContent>
   );
+
+  // The receipt line ("Seen 2 min ago") sits under your latest message, if it's after their latest
+  const lastMineIndex = messages.length && String(messages[messages.length - 1].sender) === String(myId) ? messages.length - 1 : -1;
 
   const countFor = (id) => (id === 'unread' ? totals.unread : id === 'archived' ? totals.archived : id === 'starred' ? totals.starred : id === 'jobs' ? totals.jobs : null);
   const reportTarget = reportOpen && typeof reportOpen === 'object' ? reportOpen : selected;
@@ -340,8 +565,9 @@ const Chat = () => {
                       <span className="ml-auto shrink-0 text-xs text-gray-400">{listTime(row.lastMessage?.createdAt)}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <p className={`flex-1 truncate text-sm ${row.unread ? 'text-black font-medium' : 'text-gray-500'}`}>
-                        {row.lastMessage ? `${row.lastMessage.fromMe ? 'You: ' : ''}${row.lastMessage.text}` : personHeadline(row.person)}
+                      <p className={`flex-1 truncate text-sm flex items-center gap-1 ${row.unread ? 'text-black font-medium' : 'text-gray-500'}`}>
+                        {row.lastMessage?.fromMe && <Ticks status={statusOf(row.lastMessage)} className="shrink-0 text-gray-400" />}
+                        <span className="truncate">{row.lastMessage ? `${row.lastMessage.fromMe ? 'You: ' : ''}${row.lastMessage.text}` : personHeadline(row.person)}</span>
                       </p>
                       {row.unread > 0 && (
                         <span className="shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-yellow-400 text-black text-[11px] font-bold flex items-center justify-center">{row.unread > 99 ? '99+' : row.unread}</span>
@@ -367,7 +593,17 @@ const Chat = () => {
         </div>
 
         {/* Conversation — hidden on mobile until one is selected */}
-        <div className={`flex-1 flex-col min-w-0 ${selected ? 'flex' : 'hidden md:flex'}`}>
+        <div
+          className={`relative flex-1 flex-col min-w-0 ${selected ? 'flex' : 'hidden md:flex'}`}
+          onDragOver={(e) => { if (selected && !blocked && e.dataTransfer?.types?.includes('Files')) { e.preventDefault(); setDragging(true); } }}
+          onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragging(false); }}
+          onDrop={(e) => { if (!selected || blocked) return; e.preventDefault(); setDragging(false); addFiles(e.dataTransfer.files); }}
+        >
+          {dragging && (
+            <div className="absolute inset-0 z-20 m-3 flex items-center justify-center rounded-2xl border-2 border-dashed border-yellow-400 bg-yellow-50/90 pointer-events-none">
+              <p className="flex items-center gap-2 font-semibold text-black"><FiImage />Drop files to attach</p>
+            </div>
+          )}
           {selected ? (
             <>
               <div className="h-16 border-b flex items-center justify-between px-4 sm:px-6 bg-white gap-3">
@@ -419,20 +655,53 @@ const Chat = () => {
                   const mine = String(msg.sender) === String(myId);
                   const prev = messages[idx - 1];
                   const newDay = !prev || !sameDay(new Date(prev.createdAt), new Date(msg.createdAt));
+                  const status = mine ? statusOf(msg) : null;
+                  const isLastMine = mine && idx === lastMineIndex;
+                  const showInfo = infoFor === (msg.clientId || msg._id);
                   return (
-                    <React.Fragment key={msg._id || idx}>
+                    <React.Fragment key={msg.clientId || msg._id || idx}>
                       {newDay && (
                         <div className="flex justify-center py-2">
                           <span className="rounded-full bg-white border border-gray-200 px-3 py-0.5 text-[11px] font-medium text-gray-500">{dayLabel(msg.createdAt)}</span>
                         </div>
                       )}
-                      <div className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`px-4 py-2 rounded-2xl max-w-[80%] sm:max-w-md break-words whitespace-pre-wrap ${mine ? 'bg-yellow-400 text-black rounded-br-sm' : 'bg-white border text-black rounded-bl-sm'} ${String(msg._id).startsWith('temp-') ? 'opacity-60' : ''}`}>
+                      <div className={`flex flex-col ${mine ? 'items-end' : 'items-start'}`}>
+                        <button
+                          type="button"
+                          onClick={() => (msg.failed ? retry(msg) : mine && setInfoFor(showInfo ? null : (msg.clientId || msg._id)))}
+                          className={`text-left px-4 py-2 rounded-2xl max-w-[80%] sm:max-w-md break-words whitespace-pre-wrap ${mine ? 'bg-yellow-400 text-black rounded-br-sm' : 'bg-white border text-black rounded-bl-sm cursor-text'} ${msg.failed ? 'ring-2 ring-red-300' : ''}`}
+                          title={msg.failed ? 'Tap to retry' : mine ? 'Message info' : undefined}
+                          data-testid={mine ? 'my-message' : 'their-message'}
+                        >
+                          {msg.attachments?.length > 0 && <Attachments items={msg.attachments} mine={mine} />}
                           {msg.text}
-                          <span className="block text-[10px] text-right mt-0.5 text-black/50">
-                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                          <span className="flex items-center justify-end gap-1 text-[10px] mt-0.5 text-black/50">
+                            {clock(msg.createdAt)}
+                            {mine && <Ticks status={status} className={status === 'read' ? '' : 'text-black/50'} />}
                           </span>
-                        </div>
+                        </button>
+                        {msg.failed && (
+                          <button type="button" onClick={() => retry(msg)} className="mt-0.5 text-[11px] font-medium text-red-600 hover:underline">Not sent. Tap to retry</button>
+                        )}
+                        {showInfo && !msg.pending && !msg.failed && (
+                          <div className="mt-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-[11px] text-gray-600 space-y-0.5 shadow-sm" data-testid="message-info">
+                            <p className="flex items-center gap-2"><Ticks status="sent" className="text-gray-400" />Sent {listTime(msg.createdAt) === clock(msg.createdAt) ? 'today' : listTime(msg.createdAt)}, {clock(msg.createdAt)}</p>
+                            <p className="flex items-center gap-2"><Ticks status="delivered" className="text-gray-400" />{msg.deliveredAt ? `Delivered ${ago(msg.deliveredAt, now)}` : 'Not delivered yet'}</p>
+                            {receiptsOn ? (
+                              <p className="flex items-center gap-2"><Ticks status="read" />{msg.readAt ? `Read ${ago(msg.readAt, now)}` : 'Not read yet'}</p>
+                            ) : (
+                              <p className="text-gray-400">Read receipts are off in your settings</p>
+                            )}
+                          </div>
+                        )}
+                        {isLastMine && !showInfo && !msg.failed && (
+                          <p className="mt-0.5 text-[11px] text-gray-500" data-testid="last-receipt">
+                            {status === 'sending' ? 'Sending...'
+                              : status === 'read' ? `Seen ${ago(msg.readAt, now)}`
+                              : status === 'delivered' ? `Delivered ${ago(msg.deliveredAt, now)}`
+                              : 'Sent'}
+                          </p>
+                        )}
                       </div>
                     </React.Fragment>
                   );
@@ -444,19 +713,44 @@ const Chat = () => {
                 {blocked ? (
                   <p className="text-center text-sm text-gray-500 py-2">You can't reply to this conversation.</p>
                 ) : (
-                  <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+                  <form onSubmit={handleSendMessage} className="space-y-2">
+                    {pendingFiles.length > 0 && (
+                      <div className="flex gap-2 overflow-x-auto pb-1" data-testid="pending-files">
+                        {pendingFiles.map((f) => (
+                          <div key={f.id} className="relative shrink-0 w-20">
+                            <div className="w-20 h-20 rounded-lg border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center">
+                              {f.preview ? <img src={f.preview} alt={f.name} className="w-full h-full object-cover" /> : <FiFile className="w-7 h-7 text-gray-400" />}
+                              {f.status === 'uploading' && (
+                                <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-lg">
+                                  <div className="w-5 h-5 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
+                                </div>
+                              )}
+                            </div>
+                            <p className="mt-0.5 truncate text-[10px] text-gray-600">{f.name}</p>
+                            <button type="button" onClick={() => removePending(f.id)} className="absolute -top-1.5 -right-1.5 rounded-full bg-black text-white p-0.5" aria-label={`Remove ${f.name}`}><FiX className="w-3 h-3" /></button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                    <input ref={fileInputRef} type="file" multiple accept={ACCEPT} className="hidden" onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} data-testid="chat-file-input" />
+                    <button type="button" onClick={() => fileInputRef.current?.click()} className="w-11 h-11 rounded-lg flex items-center justify-center shrink-0 text-gray-600 hover:bg-gray-100" aria-label="Attach files" title="Attach photos or files" data-testid="chat-attach">
+                      <FiPaperclip className="w-5 h-5" />
+                    </button>
                     <Input
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
-                      placeholder="Write a message..."
+                      onPaste={(e) => { const files = Array.from(e.clipboardData?.files || []); if (files.length) { e.preventDefault(); addFiles(files); } }}
+                      placeholder={pendingFiles.length ? 'Add a message (optional)' : 'Write a message...'}
                       className="flex-1 border-gray-300"
                       maxLength={5000}
                       spellCheck
                       data-testid="chat-input"
                     />
-                    <button type="submit" disabled={!newMessage.trim()} className="w-11 h-11 bg-yellow-400 hover:bg-yellow-500 disabled:opacity-50 rounded-lg flex items-center justify-center shrink-0" aria-label="Send" data-testid="chat-send">
+                    <button type="submit" disabled={uploading || (!newMessage.trim() && !pendingFiles.some((f) => f.status === 'done'))} className="w-11 h-11 bg-yellow-400 hover:bg-yellow-500 disabled:opacity-50 rounded-lg flex items-center justify-center shrink-0" aria-label="Send" data-testid="chat-send">
                       <FiSend className="w-5 h-5 text-black" />
                     </button>
+                    </div>
                   </form>
                 )}
               </div>

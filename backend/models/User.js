@@ -248,7 +248,9 @@ const userSchema = new mongoose.Schema({
     // shown off and was always visible before this setting existed.
     analyticsPublic: { type: Boolean, default: false },
     galleryPublic: { type: Boolean, default: true },
-    activityPublic: { type: Boolean, default: false }
+    activityPublic: { type: Boolean, default: false },
+    // Off: others don't see when you've read their messages, and you don't see theirs
+    readReceipts: { type: Boolean, default: true }
   },
   resetPasswordToken: String,
   resetPasswordExpires: Date

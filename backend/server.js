@@ -128,6 +128,8 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/upload', uploadRoutes);
+// Files stored locally when Cloudinary isn't configured (local development)
+app.use('/uploads', express.static('/tmp/uploads', { fallthrough: false, maxAge: '7d' }));
 app.use('/api/meetings', meetingRoutes);
 app.use('/api/stories', storyRoutes);
 app.use('/api/portfolio', portfolioRoutes);
@@ -182,22 +184,40 @@ io.on('connection', (socket) => {
     connectedUsers.set(userId, socket.id);
     debug('✅ User registered:', userId, 'Socket:', socket.id);
     debug('📊 Active users:', Array.from(connectedUsers.keys()));
+    // Messages sent while they were away have now reached them
+    require('./utils/directMessages').markDelivered({ userId, io, connectedUsers }).catch(() => {});
   });
 
-  socket.on('send-message', async (data) => {
+  // The client passes an acknowledgement callback so it can swap its pending
+  // bubble for the saved message as soon as it's stored
+  socket.on('send-message', async (data, ack) => {
+    const clientId = data && typeof data.clientId === 'string' ? data.clientId.slice(0, 64) : undefined;
     try {
       const { sendDirectMessage } = require('./utils/directMessages');
       const messageData = await sendDirectMessage({
         senderId: socket.data.authUserId,
         receiverId: String(data && data.receiver),
         text: data && data.text,
+        attachments: data && data.attachments,
         io,
         connectedUsers
       });
-      // Confirm to sender
-      socket.emit('message-sent', messageData);
+      if (typeof ack === 'function') ack({ ok: true, message: messageData, clientId });
+      else socket.emit('message-sent', { ...messageData, clientId });
     } catch (error) {
-      socket.emit('message-error', { error: error.message });
+      if (typeof ack === 'function') ack({ ok: false, error: error.message, clientId });
+      else socket.emit('message-error', { error: error.message, clientId });
+    }
+  });
+
+  // The receiver has the conversation open: mark it read and tell the sender
+  socket.on('mark-read', async (data) => {
+    const otherId = String(data && data.other);
+    if (!/^[a-f0-9]{24}$/.test(otherId)) return;
+    try {
+      await require('./utils/directMessages').markRead({ readerId: socket.data.authUserId, otherId, io, connectedUsers });
+    } catch (err) {
+      debug('mark-read failed', err.message);
     }
   });
 

@@ -8,6 +8,8 @@ const conversationStateSchema = new mongoose.Schema({
   starred: { type: Boolean, default: false },
   archived: { type: Boolean, default: false },
   deleted: { type: Boolean, default: false },
+  // "Mark as unread": shown as unread until you open it again
+  markedUnread: { type: Boolean, default: false },
   clearedAt: Date
 }, { timestamps: true });
 

@@ -54,6 +54,17 @@ const uploadDocument = multer({
   }
 });
 
+// Chat attachments: photos and everyday work files (drawings, documents, sheets)
+const CHAT_FILE_TYPES = /\.(jpe?g|png|gif|webp|heic|pdf|docx?|xlsx?|pptx?|txt|csv|zip|dwg|dxf|skp|rvt)$/i;
+const uploadChatFile = multer({
+  storage: storage,
+  limits: { fileSize: 18 * 1024 * 1024, files: 5 },
+  fileFilter: (req, file, cb) => {
+    if (CHAT_FILE_TYPES.test(file.originalname)) return cb(null, true);
+    cb(new Error('This file type can\'t be sent. Try a photo, PDF, Office document, ZIP or CAD file.'));
+  }
+});
+
 const uploadToCloudinary = async (filePath, folder = 'social-network') => {
   try {
     const result = await cloudinary.uploader.upload(filePath, {
@@ -75,4 +86,4 @@ const uploadToCloudinary = async (filePath, folder = 'social-network') => {
   }
 };
 
-module.exports = { cloudinary, upload, uploadDocument, uploadToCloudinary };
+module.exports = { cloudinary, upload, uploadDocument, uploadChatFile, uploadToCloudinary };

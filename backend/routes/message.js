@@ -7,7 +7,7 @@ const Job = require('../models/Job');
 const ConversationState = require('../models/ConversationState');
 const Report = require('../models/Report');
 const auth = require('../middleware/auth');
-const { sendDirectMessage } = require('../utils/directMessages');
+const { sendDirectMessage, markDelivered, markRead, toData } = require('../utils/directMessages');
 const { PERSON_FIELDS, isBlockedBetween, uniqueIds } = require('../utils/userRelations');
 
 const isId = (v) => mongoose.isValidObjectId(v);
@@ -40,29 +40,51 @@ router.get('/conversations', auth, async (req, res) => {
     ]);
     const stateOf = new Map(states.map((s) => [String(s.other), s]));
 
-    const lastAndUnread = await Message.aggregate([
-      { $match: { $or: [{ sender: me._id, receiver: { $in: ids } }, { receiver: me._id, sender: { $in: ids } }] } },
+    // Opening the inbox means anything waiting has reached this device
+    markDelivered({ userId: me._id, io: req.app.get('io'), connectedUsers: req.app.get('connectedUsers') }).catch(() => {});
+
+    // One row per conversation: the last message and the unread count, counted
+    // in the database (only messages after a "delete for me" are included)
+    const pairs = ids.flatMap((id) => {
+      const cleared = stateOf.get(String(id))?.clearedAt;
+      const after = cleared ? { createdAt: { $gt: cleared } } : {};
+      return [{ sender: me._id, receiver: id, ...after }, { sender: id, receiver: me._id, ...after }];
+    });
+    const lastAndUnread = pairs.length ? await Message.aggregate([
+      { $match: { $or: pairs } },
       { $addFields: { other: { $cond: [{ $eq: ['$sender', me._id] }, '$receiver', '$sender'] } } },
       { $sort: { createdAt: -1 } },
       {
         $group: {
           _id: '$other',
-          messages: { $push: { text: '$text', sender: '$sender', createdAt: '$createdAt', read: '$read' } }
+          last: { $first: { text: '$text', attachments: '$attachments', sender: '$sender', createdAt: '$createdAt', deliveredAt: '$deliveredAt', readAt: '$readAt' } },
+          unread: { $sum: { $cond: [{ $and: [{ $ne: ['$sender', me._id] }, { $eq: ['$read', false] }] }, 1, 0] } }
         }
       }
-    ]);
-    const msgsOf = new Map(lastAndUnread.map((r) => [String(r._id), r.messages]));
+    ]) : [];
+    const summaryOf = new Map(lastAndUnread.map((r) => [String(r._id), r]));
+    const seeReceipts = me.settings?.readReceipts !== false;
 
     let rows = people.map((p) => {
       const id = String(p._id);
       const state = stateOf.get(id) || {};
-      const visible = (msgsOf.get(id) || []).filter((m) => !state.clearedAt || m.createdAt > state.clearedAt);
-      const last = visible[0];
-      const unread = visible.filter((m) => String(m.sender) === id && !m.read).length;
+      const summary = summaryOf.get(id);
+      const last = summary?.last;
+      const fromMe = last ? String(last.sender) !== id : false;
+      const unread = (summary?.unread || 0) || (state.markedUnread ? 1 : 0);
       return {
         person: p,
-        lastMessage: last ? { text: last.text, fromMe: String(last.sender) !== id, createdAt: last.createdAt } : null,
+        lastMessage: last ? {
+          text: last.text || (last.attachments?.length
+            ? (last.attachments.every((a) => a.kind === 'image') ? `📷 Photo${last.attachments.length > 1 ? `s (${last.attachments.length})` : ''}` : `📎 ${last.attachments[0].name || 'File'}${last.attachments.length > 1 ? ` +${last.attachments.length - 1}` : ''}`)
+            : ''),
+          fromMe,
+          createdAt: last.createdAt,
+          deliveredAt: fromMe ? last.deliveredAt || null : undefined,
+          readAt: fromMe && seeReceipts ? last.readAt || null : undefined
+        } : null,
         unread,
+        markedUnread: !!state.markedUnread,
         starred: !!state.starred,
         archived: !!state.archived,
         deleted: !!state.deleted,
@@ -106,12 +128,13 @@ router.put('/conversations/:otherId', auth, async (req, res) => {
     const set = {};
     if (typeof req.body.starred === 'boolean') set.starred = req.body.starred;
     if (typeof req.body.archived === 'boolean') set.archived = req.body.archived;
+    if (typeof req.body.markedUnread === 'boolean') set.markedUnread = req.body.markedUnread;
     const state = await ConversationState.findOneAndUpdate(
       { user: req.userId, other: req.params.otherId },
       { $set: set },
       { upsert: true, new: true }
     );
-    res.json({ starred: state.starred, archived: state.archived });
+    res.json({ starred: state.starred, archived: state.archived, markedUnread: state.markedUnread });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update conversation', message: error.message });
   }
@@ -137,7 +160,7 @@ router.delete('/conversations/:otherId', auth, async (req, res) => {
 router.put('/conversations/:otherId/read', auth, async (req, res) => {
   try {
     if (!isId(req.params.otherId)) return res.status(400).json({ error: 'Invalid user' });
-    await Message.updateMany({ sender: req.params.otherId, receiver: req.userId, read: false }, { $set: { read: true } });
+    await markRead({ readerId: req.userId, otherId: req.params.otherId, io: req.app.get('io'), connectedUsers: req.app.get('connectedUsers') });
     res.json({ message: 'Marked as read' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to mark as read', message: error.message });
@@ -174,12 +197,14 @@ router.get('/:connectionId', auth, async (req, res) => {
     const { connectionId } = req.params;
     if (!isId(connectionId)) return res.status(400).json({ error: 'Invalid user' });
 
-    const user = await User.findById(req.userId);
-    if (!user.connections.map(String).includes(String(connectionId))) {
+    const [user, other, state] = await Promise.all([
+      User.findById(req.userId).select('connections blockedUsers settings.readReceipts').lean(),
+      User.findById(connectionId).select('blockedUsers').lean(),
+      ConversationState.findOne({ user: req.userId, other: connectionId }).lean()
+    ]);
+    if (!(user.connections || []).some((id) => String(id) === String(connectionId))) {
       return res.status(403).json({ error: 'Not connected with this user' });
     }
-    const other = await User.findById(connectionId).select('blockedUsers');
-    const state = await ConversationState.findOne({ user: req.userId, other: connectionId }).lean();
 
     const match = {
       $or: [
@@ -189,11 +214,22 @@ router.get('/:connectionId', auth, async (req, res) => {
     };
     if (state?.clearedAt) match.createdAt = { $gt: state.clearedAt };
 
-    // Latest 200, shown oldest first
-    const messages = (await Message.find(match).sort({ createdAt: -1 }).limit(200)).reverse();
-    await Message.updateMany({ sender: connectionId, receiver: req.userId, read: false }, { $set: { read: true } });
+    // Opening the conversation reads it (and tells the sender, if receipts are on)
+    await markRead({ readerId: req.userId, otherId: connectionId, io: req.app.get('io'), connectedUsers: req.app.get('connectedUsers') });
 
-    res.json({ messages, blocked: isBlockedBetween(user, other || {}) });
+    // Latest 200, shown oldest first. With your receipts off you don't see theirs either.
+    const seeReceipts = user.settings?.readReceipts !== false;
+    const messages = (await Message.find(match).sort({ createdAt: -1 }).limit(200).lean()).reverse()
+      .map((m) => {
+        const data = toData(m);
+        // Older messages were read before readAt existed
+        if (!data.readAt && m.read && String(m.sender) === String(req.userId)) data.readAt = m.updatedAt;
+        if (String(m.sender) === String(req.userId) && !data.deliveredAt && data.readAt) data.deliveredAt = data.readAt;
+        if (!seeReceipts) data.readAt = null;
+        return data;
+      });
+
+    res.json({ messages, blocked: isBlockedBetween(user, other || {}), readReceipts: seeReceipts });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch messages', message: error.message });
   }
@@ -201,14 +237,15 @@ router.get('/:connectionId', auth, async (req, res) => {
 
 router.post('/send', auth, async (req, res) => {
   try {
-    const { receiver, text } = req.body;
-    if (!text || !receiver || !isId(receiver)) {
-      return res.status(400).json({ error: 'Receiver and text are required' });
+    const { receiver, text, attachments } = req.body;
+    if (!receiver || !isId(receiver)) {
+      return res.status(400).json({ error: 'Receiver is required' });
     }
     const data = await sendDirectMessage({
       senderId: req.userId,
       receiverId: receiver,
       text,
+      attachments,
       io: req.app.get('io'),
       connectedUsers: req.app.get('connectedUsers')
     });

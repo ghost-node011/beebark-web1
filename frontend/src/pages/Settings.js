@@ -18,7 +18,8 @@ import { API_URL } from '../config/api';
 const PRIVACY = [
   { field: 'analyticsPublic', label: 'Show my profile analytics', hint: 'Profile views and counts on your profile' },
   { field: 'galleryPublic', label: 'Show my work gallery', hint: 'Your portfolio photos on your profile' },
-  { field: 'activityPublic', label: 'Show my recent activity', hint: 'Your latest posts on your profile' }
+  { field: 'activityPublic', label: 'Show my recent activity', hint: 'Your latest posts on your profile' },
+  { field: 'readReceipts', label: 'Read receipts', hint: "Let people see when you've read their messages. If you turn this off, you won't see theirs either." }
 ];
 
 const Section = ({ icon: Icon, title, children, tone }) => (
