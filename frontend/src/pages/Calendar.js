@@ -45,15 +45,18 @@ const CalendarPage = () => {
   if (draft) lastDraft.current = draft;
   const form = draft || lastDraft.current;
 
-  // Six weeks starting on the Monday on or before the 1st
+  // Whole weeks (Monday first) covering the month: 4 to 6 rows, no all-next-month row
   const days = useMemo(() => {
+    const lead = (month.getDay() + 6) % 7;
+    const inMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+    const count = Math.ceil((lead + inMonth) / 7) * 7;
     const start = new Date(month);
-    start.setDate(1 - ((month.getDay() + 6) % 7));
-    return Array.from({ length: 42 }, (_, i) => { const d = new Date(start); d.setDate(start.getDate() + i); return d; });
+    start.setDate(1 - lead);
+    return Array.from({ length: count }, (_, i) => { const d = new Date(start); d.setDate(start.getDate() + i); return d; });
   }, [month]);
 
   const load = useCallback(() => {
-    axios.get(`${API_URL}/api/calendar`, { params: { from: ymd(days[0]), to: ymd(days[41]) } })
+    axios.get(`${API_URL}/api/calendar`, { params: { from: ymd(days[0]), to: ymd(days[days.length - 1]) } })
       .then((res) => setEvents(res.data.events || []))
       .catch(() => toast.error('Could not load your calendar'));
   }, [days]);
@@ -168,11 +171,11 @@ const CalendarPage = () => {
                       key={key}
                       onClick={() => setSelectedDay(key)}
                       onDoubleClick={() => setDraft({ ...EMPTY, date: key })}
-                      className={`min-h-[3.5rem] sm:min-h-[5.5rem] p-1 sm:p-1.5 text-left align-top transition ${isSelected ? 'bg-yellow-50 ring-2 ring-inset ring-yellow-400' : 'bg-white hover:bg-gray-50'}`}
+                      className={`flex min-w-0 flex-col items-stretch justify-start h-14 sm:h-24 p-1 sm:p-1.5 text-left transition ${isSelected ? 'bg-yellow-50 ring-2 ring-inset ring-yellow-400' : 'bg-white hover:bg-gray-50'}`}
                       aria-label={`${d.toDateString()}, ${list.length} event${list.length === 1 ? '' : 's'}`}
                     >
-                      <span className={`inline-flex w-6 h-6 items-center justify-center rounded-full text-xs ${key === today ? 'bg-black text-white font-bold' : inMonth ? 'text-black' : 'text-gray-300'}`}>{d.getDate()}</span>
-                      <div className="hidden sm:block space-y-0.5 mt-0.5">
+                      <span className={`self-center shrink-0 inline-flex w-7 h-7 items-center justify-center rounded-full text-sm ${key === today ? 'bg-black text-white font-bold' : inMonth ? 'text-black' : 'text-gray-300'}`}>{d.getDate()}</span>
+                      <div className="hidden sm:block min-w-0 space-y-0.5 mt-0.5 overflow-hidden">
                         {list.slice(0, 2).map((e) => (
                           <p key={e._id} className={`truncate rounded px-1 text-[10px] font-medium ${typeOf(e.type).chip}`}>{e.startTime ? `${time12(e.startTime)} ` : ''}{e.title}</p>
                         ))}
