@@ -12,7 +12,7 @@ const ENUMS = {
   propertyType: ['apartment', 'villa', 'house', 'plot', 'office', 'retail', 'warehouse', 'other'],
   priceUnit: ['total', 'per_month', 'per_sqft'],
   areaUnit: ['sqft', 'sqm', 'acre'],
-  status: ['active', 'under_offer', 'sold', 'rented', 'draft']
+  status: ['active', 'pre_launch', 'under_offer', 'sold', 'rented', 'draft']
 };
 const clip = (v, n) => String(v ?? '').trim().slice(0, n);
 const num = (v) => (v === '' || v === null || v === undefined || !Number.isFinite(Number(v)) || Number(v) < 0 ? null : Number(v));
@@ -22,8 +22,9 @@ function clean(body) {
   if (body.title !== undefined) out.title = clip(body.title, 140);
   if (body.description !== undefined) out.description = clip(body.description, 5000);
   if (body.location !== undefined) out.location = clip(body.location, 200);
+  if (body.subtitle !== undefined) out.subtitle = clip(body.subtitle, 80);
   for (const k of Object.keys(ENUMS)) if (ENUMS[k].includes(body[k])) out[k] = body[k];
-  for (const k of ['price', 'area', 'bedrooms', 'bathrooms']) if (body[k] !== undefined) out[k] = num(body[k]);
+  for (const k of ['price', 'priceTo', 'area', 'bedrooms', 'bathrooms']) if (body[k] !== undefined) out[k] = num(body[k]);
   if (Array.isArray(body.images)) out.images = body.images.filter((u) => typeof u === 'string' && /^(https?:\/\/|\/uploads\/)[^\s"'<>]+$/.test(u)).slice(0, 20);
   if (Array.isArray(body.amenities)) out.amenities = body.amenities.map((a) => clip(a, 40)).filter(Boolean).slice(0, 30);
   return out;

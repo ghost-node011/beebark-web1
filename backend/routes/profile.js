@@ -153,6 +153,10 @@ router.get('/me', auth, async (req, res) => {
       galleryPublic: user.settings?.galleryPublic ?? true,
       activityPublic: user.settings?.activityPublic || false,
       readReceipts: user.settings?.readReceipts !== false,
+      publicProfile: user.settings?.publicProfile !== false,
+      followerCount: (user.followers || []).length,
+      followingCount: (user.following || []).length,
+      badges: { verified: Boolean(user.badges?.verified), pro: Boolean(user.badges?.pro) },
       profileViews: user.profileViews || 0,
       resume: user.resume?.url ? {
         url: user.resume.url,
@@ -198,123 +202,200 @@ router.get('/completion', auth, async (req, res) => {
   }
 });
 
-// Full public-facing profile — hero/bio/skills/experience/portfolio preview,
-// for viewing OTHER users (own profile still uses /me). Counts a real view
-// (excluding self-views) instead of showing a fabricated number.
+const ProfileEvent = require('../models/ProfileEvent');
+
+const DAY = 86400000;
+const pctChange = (now, before) => (before ? Math.round(((now - before) / before) * 100) : now ? 100 : 0);
+const ymd = (d = new Date()) => d.toISOString().slice(0, 10);
+
+// Owner-facing numbers: views this week (vs last), project saves, meeting requests and enquiries this month
+async function analyticsFor(userId, items) {
+  const now = Date.now();
+  const weekAgo = new Date(now - 7 * DAY);
+  const twoWeeksAgo = new Date(now - 14 * DAY);
+  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  const count = (type, from, to) => ProfileEvent.countDocuments({ owner: userId, type, createdAt: { $gte: from, ...(to ? { $lt: to } : {}) } });
+  const [viewsWeek, viewsPrev, meetings, enquiries] = await Promise.all([
+    count('view', weekAgo), count('view', twoWeeksAgo, weekAgo), count('meeting', monthStart), count('enquiry', monthStart)
+  ]);
+  const saves = items.reduce((n, i) => n + (i.savedBy || []).length, 0);
+  return { viewsWeek, viewsChange: pctChange(viewsWeek, viewsPrev), saves, meetingsMonth: meetings, enquiriesMonth: enquiries };
+}
+
+// "4 ongoing, 2 in pre-launch" from the portfolio's project statuses
+function activeProjects(items) {
+  const ongoing = items.filter((i) => /ongoing|progress|construction|under way|underway|active/i.test(i.projectStatus || '')).length;
+  const pre = items.filter((i) => /pre[- ]?launch|upcoming|planned|concept|design stage/i.test(i.projectStatus || '')).length;
+  if (!ongoing && !pre) return '';
+  return [ongoing && `${ongoing} ongoing`, pre && `${pre} in pre-launch`].filter(Boolean).join(', ');
+}
+
+const PUBLIC_SELECT = 'name username profilePic coverPhoto bio pronouns headline contact socialLinks role careerStage location industries skills specialization projectTypeFocus markets experience education languages availability business associatedProfessionals connections followers following badges createdAt settings accountStatus blockedUsers profileViews';
+
+/**
+ * Everything a profile page shows, for a signed-in viewer (viewerId) or an
+ * anonymous visitor (viewerId null, public link). Returns null when hidden.
+ */
+async function buildProfile(username, viewerId, { visitor = '', countView = true } = {}) {
+  const user = await User.findOne({ username })
+    .select(PUBLIC_SELECT)
+    .populate('connections', PERSON_CARD)
+    .populate('associatedProfessionals', `${PERSON_CARD} headline experience`);
+  if (!user || user.accountStatus === 'deactivated') return null;
+
+  const isOwnProfile = Boolean(viewerId) && String(user._id) === String(viewerId);
+  const viewer = viewerId && !isOwnProfile ? await User.findById(viewerId).select('connections sentRequests pendingRequests blockedUsers following').lean() : null;
+  if (viewer && isBlockedBetween(viewer, user)) return null;
+  if (!viewerId && user.settings?.publicProfile === false) return null;
+
+  const has = (list) => (list || []).some((id) => String(id) === String(user._id));
+  const connectionStatus = isOwnProfile ? 'self'
+    : !viewer ? 'none'
+    : has(viewer.connections) ? 'connected'
+    : has(viewer.sentRequests) ? 'sent'
+    : has(viewer.pendingRequests) ? 'received' : 'none';
+  const isFollowing = Boolean(viewer && has(viewer.following));
+  const active = (list) => (list || []).filter((c) => c && c.accountStatus !== 'deactivated');
+
+  // A view counts once per viewer per day (never your own)
+  if (!isOwnProfile && countView) {
+    const day = ymd();
+    const seen = await ProfileEvent.exists(viewerId
+      ? { owner: user._id, actor: viewerId, type: 'view', day }
+      : { owner: user._id, visitor, type: 'view', day });
+    if (!seen) {
+      await Promise.all([
+        ProfileEvent.create({ owner: user._id, actor: viewerId || undefined, visitor: viewerId ? '' : visitor, type: 'view', day }),
+        User.updateOne({ _id: user._id }, { $inc: { profileViews: 1 } })
+      ]);
+    }
+  }
+
+  const analyticsPublic = user.settings?.analyticsPublic || false;
+  const galleryPublic = user.settings?.galleryPublic ?? true;
+  const activityPublic = user.settings?.activityPublic || false;
+  const showAnalytics = isOwnProfile || analyticsPublic;
+  const showGallery = isOwnProfile || galleryPublic;
+  const showActivity = isOwnProfile || activityPublic;
+
+  const [items, portfolioCount, recentPosts, listings, listingCount, openJobs] = await Promise.all([
+    PortfolioItem.find({ user: user._id }).sort({ order: 1, createdAt: -1 }).limit(24).lean(),
+    PortfolioItem.countDocuments({ user: user._id }),
+    showActivity ? Post.find({ author: user._id }).sort({ createdAt: -1 }).limit(5).select('title kind content mediaUrl likes comments createdAt').lean() : [],
+    Listing.find({ user: user._id, status: { $ne: 'draft' } }).sort({ createdAt: -1 }).limit(6).lean(),
+    Listing.countDocuments({ user: user._id, status: { $ne: 'draft' } }),
+    Job.find({ postedBy: user._id, status: { $ne: 'closed' } }).sort({ createdAt: -1 }).limit(6)
+      .select('title company location salary employmentType workplace experienceLevel createdAt applicants').lean()
+  ]);
+
+  // Contact details follow the owner's choice; anonymous visitors never see them
+  const visibility = user.contact?.visibility || 'connections';
+  const contactVisible = isOwnProfile || (viewer && (visibility === 'everyone' || (visibility === 'connections' && connectionStatus === 'connected')));
+  const contact = contactVisible ? {
+    email: user.contact?.email || '', phone: user.contact?.phone || '', whatsapp: user.contact?.whatsapp || '',
+    website: user.contact?.website || '', address: user.contact?.address || '', visibility
+  } : null;
+
+  const firstJob = (user.experience || []).map((e) => e.startDate).filter((d) => /^\d{4}-\d{2}$/.test(d || '')).sort()[0];
+  return {
+    user: {
+      _id: user._id,
+      name: user.name,
+      username: user.username,
+      profilePic: user.profilePic,
+      coverPhoto: user.coverPhoto,
+      bio: user.bio,
+      pronouns: user.pronouns || '',
+      role: user.role,
+      location: user.location,
+      industries: user.industries || [],
+      skills: user.skills || [],
+      specialization: user.specialization || [],
+      projectTypeFocus: user.projectTypeFocus || [],
+      markets: user.markets || [],
+      activeProjects: activeProjects(items),
+      experience: user.experience || [],
+      education: user.education || [],
+      careerStage: user.careerStage || '',
+      headline: user.headline || '',
+      socialLinks: user.socialLinks || [],
+      yearsOfExperience: firstJob ? yearsOfExperience(user.experience) : 0,
+      languages: user.languages || [],
+      availability: user.availability || [],
+      business: user.business?.name ? user.business : null,
+      badges: { verified: Boolean(user.badges?.verified), pro: Boolean(user.badges?.pro) },
+      connectionCount: active(user.connections).length,
+      followerCount: (user.followers || []).length,
+      followingCount: (user.following || []).length,
+      memberSince: user.createdAt,
+      analyticsPublic,
+      galleryPublic,
+      activityPublic,
+      publicProfile: user.settings?.publicProfile !== false,
+      profileViews: showAnalytics ? user.profileViews || 0 : undefined
+    },
+    analytics: showAnalytics ? await analyticsFor(user._id, items) : null,
+    associatedProfessionals: (user.associatedProfessionals ? active(user.associatedProfessionals) : active(user.connections).slice(0, 8))
+      .map((c) => ({ ...toCard(c), headline: c.headline || '', experience: c.experience || [] })),
+    associatedChosen: Array.isArray(user.associatedProfessionals),
+    connectionStatus,
+    isFollowing,
+    contact,
+    contactHiddenReason: contact ? null : !viewerId ? 'signin' : (visibility === 'only_me' ? 'private' : 'connect'),
+    listings,
+    listingCount,
+    openJobs: openJobs.map(({ applicants, ...j }) => ({
+      ...j, applicantCount: (applicants || []).length, hasApplied: Boolean(viewerId && (applicants || []).some((a) => String(a.user) === String(viewerId)))
+    })),
+    portfolioPreview: showGallery ? items.map(({ savedBy, ...i }) => ({
+      ...i, saveCount: (savedBy || []).length, isSaved: Boolean(viewerId && (savedBy || []).some((id) => String(id) === String(viewerId)))
+    })) : [],
+    portfolioCount: showGallery ? portfolioCount : 0,
+    recentActivity: recentPosts.map((p) => ({
+      _id: p._id, title: p.title || '', kind: p.kind || 'update', content: p.content, mediaUrl: p.mediaUrl,
+      likeCount: p.likes?.length || 0, commentCount: p.comments?.length || 0, createdAt: p.createdAt
+    })),
+    isOwnProfile
+  };
+}
+
+// Full profile for a signed-in viewer (own profile still uses /me for editing)
 router.get('/public/:username', auth, async (req, res) => {
   try {
-    const user = await User.findOne({ username: req.params.username })
-      .select('name username profilePic coverPhoto bio pronouns headline contact socialLinks role careerStage location industries skills specialization projectTypeFocus markets experience education languages availability business associatedProfessionals connections createdAt settings accountStatus blockedUsers')
-      .populate('connections', PERSON_CARD)
-      .populate('associatedProfessionals', PERSON_CARD);
-    if (!user) return res.status(404).json({ error: 'Profile not found' });
-
-    const isOwnProfile = user._id.toString() === req.userId.toString();
-    const viewer = isOwnProfile ? null : await User.findById(req.userId).select('connections sentRequests pendingRequests blockedUsers');
-    if (!isOwnProfile && (user.accountStatus === 'deactivated' || isBlockedBetween(viewer, user))) {
-      return res.status(404).json({ error: 'Profile not found' });
-    }
-    const has = (list) => (list || []).some((id) => String(id) === String(user._id));
-    const connectionStatus = isOwnProfile ? 'self'
-      : has(viewer?.connections) ? 'connected'
-      : has(viewer?.sentRequests) ? 'sent'
-      : has(viewer?.pendingRequests) ? 'received' : 'none';
-    const active = (list) => (list || []).filter((c) => c && c.accountStatus !== 'deactivated');
-    if (!isOwnProfile) {
-      await User.updateOne({ _id: user._id }, { $inc: { profileViews: 1 } });
-    }
-    const fresh = await User.findById(user._id).select('profileViews');
-
-    const analyticsPublic = user.settings?.analyticsPublic || false;
-    const galleryPublic = user.settings?.galleryPublic ?? true;
-    const activityPublic = user.settings?.activityPublic || false;
-    const showAnalytics = isOwnProfile || analyticsPublic;
-    const showGallery = isOwnProfile || galleryPublic;
-    const showActivity = isOwnProfile || activityPublic;
-
-    const [portfolioItems, portfolioCount, recentPosts, listings, listingCount, openJobs] = await Promise.all([
-      showGallery ? PortfolioItem.find({ user: user._id }).sort({ createdAt: -1 }).limit(24) : Promise.resolve([]),
-      showGallery ? PortfolioItem.countDocuments({ user: user._id }) : Promise.resolve(0),
-      showActivity ? Post.find({ author: user._id }).sort({ createdAt: -1 }).limit(5).select('content mediaUrl likes comments createdAt') : Promise.resolve([]),
-      Listing.find({ user: user._id, status: { $ne: 'draft' } }).sort({ createdAt: -1 }).limit(6).lean(),
-      Listing.countDocuments({ user: user._id, status: { $ne: 'draft' } }),
-      Job.find({ postedBy: user._id, status: { $ne: 'closed' } }).sort({ createdAt: -1 }).limit(6)
-        .select('title company location salary employmentType workplace experienceLevel createdAt applicants').lean()
-    ]);
-
-    // Contact details follow the owner's visibility choice
-    const contactVisible = isOwnProfile
-      || user.contact?.visibility === 'everyone'
-      || ((user.contact?.visibility || 'connections') === 'connections' && connectionStatus === 'connected');
-    const contact = contactVisible ? {
-      email: user.contact?.email || '',
-      phone: user.contact?.phone || '',
-      whatsapp: user.contact?.whatsapp || '',
-      website: user.contact?.website || '',
-      address: user.contact?.address || '',
-      visibility: user.contact?.visibility || 'connections'
-    } : null;
-
-    res.json({
-      user: {
-        _id: user._id,
-        name: user.name,
-        username: user.username,
-        profilePic: user.profilePic,
-        coverPhoto: user.coverPhoto,
-        bio: user.bio,
-        pronouns: user.pronouns || '',
-        role: user.role,
-        location: user.location,
-        industries: user.industries || [],
-        skills: user.skills || [],
-        specialization: user.specialization || [],
-        projectTypeFocus: user.projectTypeFocus || [],
-        markets: user.markets || [],
-        experience: user.experience || [],
-        education: user.education || [],
-        careerStage: user.careerStage || '',
-        headline: user.headline || '',
-        socialLinks: user.socialLinks || [],
-        yearsOfExperience: yearsOfExperience(user.experience),
-        languages: user.languages || [],
-        availability: user.availability || [],
-        business: user.business?.name ? user.business : null,
-        connectionCount: active(user.connections).length,
-        memberSince: user.createdAt,
-        analyticsPublic,
-        galleryPublic,
-        activityPublic,
-        // Omitted entirely (not just hidden client-side) unless the owner
-        // has opted in, or the viewer is the owner.
-        profileViews: showAnalytics ? fresh.profileViews : undefined
-      },
-      // Chosen by the owner when set, otherwise their first connections
-      associatedProfessionals: (user.associatedProfessionals
-        ? active(user.associatedProfessionals)
-        : active(user.connections).slice(0, 8)).map(toCard),
-      associatedChosen: Array.isArray(user.associatedProfessionals),
-      connectionStatus,
-      contact,
-      // Tells the viewer why contact info is hidden
-      contactHiddenReason: contact ? null : (user.contact?.visibility === 'only_me' ? 'private' : 'connect'),
-      listings,
-      listingCount,
-      openJobs: openJobs.map(({ applicants, ...j }) => ({ ...j, applicantCount: (applicants || []).length })),
-      portfolioPreview: portfolioItems,
-      portfolioCount,
-      recentActivity: recentPosts.map((p) => ({
-        _id: p._id,
-        content: p.content,
-        mediaUrl: p.mediaUrl,
-        likeCount: p.likes?.length || 0,
-        commentCount: p.comments?.length || 0,
-        createdAt: p.createdAt
-      })),
-      isOwnProfile
-    });
+    const data = await buildProfile(req.params.username, req.userId);
+    if (!data) return res.status(404).json({ error: 'Profile not found' });
+    res.json(data);
   } catch (error) {
     res.status(500).json({ error: 'Failed to load profile', message: error.message });
+  }
+});
+
+// The same profile for anyone with the public link (no sign-in). Hidden when
+// the owner turned their public profile off.
+router.get('/open/:username', async (req, res) => {
+  try {
+    // Link-preview robots (?preview=1) don't count as views; other visitors count once a day
+    const visitor = require('crypto').createHash('sha256').update(`${req.ip}|${process.env.JWT_SECRET || ''}`).digest('hex').slice(0, 24);
+    const data = await buildProfile(req.params.username, null, { visitor, countView: req.query.preview !== '1' });
+    if (!data) return res.status(404).json({ error: 'Profile not found' });
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to load profile', message: error.message });
+  }
+});
+
+// Something happened on a profile that the owner's analytics count: { type: meeting|enquiry, item? }
+router.post('/:userId/event', auth, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const type = ['meeting', 'enquiry'].includes(req.body?.type) ? req.body.type : null;
+    if (!require('mongoose').isValidObjectId(userId) || !type || String(userId) === String(req.userId)) return res.status(400).json({ error: 'Invalid event' });
+    const day = ymd();
+    const dupe = await ProfileEvent.exists({ owner: userId, actor: req.userId, type, day, ...(req.body.item ? { item: req.body.item } : {}) });
+    if (!dupe) await ProfileEvent.create({ owner: userId, actor: req.userId, type, day, item: require('mongoose').isValidObjectId(req.body.item) ? req.body.item : undefined });
+    res.status(201).json({ ok: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to record', message: error.message });
   }
 });
 
@@ -347,10 +428,12 @@ router.get('/activity', auth, async (req, res) => {
     const posts = await Post.find({ author: req.userId })
       .sort({ createdAt: -1 })
       .limit(5)
-      .select('content mediaUrl likes comments createdAt');
+      .select('title kind content mediaUrl likes comments createdAt');
     res.json({
       posts: posts.map((p) => ({
         _id: p._id,
+        title: p.title || '',
+        kind: p.kind || 'update',
         content: p.content,
         mediaUrl: p.mediaUrl,
         likeCount: p.likes?.length || 0,
@@ -435,7 +518,7 @@ router.get('/:userId', auth, async (req, res) => {
 
 router.put('/update', auth, async (req, res) => {
   try {
-    const { name, bio, pronouns, profilePic, coverPhoto, skills, experience, education, location, intent, industries, specialization, projectTypeFocus, markets, analyticsPublic, galleryPublic, activityPublic, readReceipts, careerStage, headline, contact, socialLinks, languages, availability, business, associatedProfessionals } = req.body;
+    const { name, bio, pronouns, profilePic, coverPhoto, skills, experience, education, location, intent, industries, specialization, projectTypeFocus, markets, analyticsPublic, galleryPublic, activityPublic, readReceipts, publicProfile, careerStage, headline, contact, socialLinks, languages, availability, business, associatedProfessionals } = req.body;
     const VALID_INTENT = ['learn', 'network', 'hire', 'get_hired'];
     const VALID_INDUSTRY = ['architecture', 'interiors', 'construction', 'real_estate', 'related'];
     const asTagList = (arr) => arr.map((s) => String(s).trim()).filter(Boolean).slice(0, 20);
@@ -466,6 +549,7 @@ router.put('/update', auth, async (req, res) => {
     if (typeof galleryPublic === 'boolean') updateData['settings.galleryPublic'] = galleryPublic;
     if (typeof activityPublic === 'boolean') updateData['settings.activityPublic'] = activityPublic;
     if (typeof readReceipts === 'boolean') updateData['settings.readReceipts'] = readReceipts;
+    if (typeof publicProfile === 'boolean') updateData['settings.publicProfile'] = publicProfile;
 
     if (Array.isArray(availability) || Array.isArray(associatedProfessionals)) {
       const me = await User.findById(req.userId).select('role careerStage connections');
@@ -653,3 +737,4 @@ router.get('/search/users', auth, async (req, res) => {
 });
 
 module.exports = router;
+module.exports.buildProfile = buildProfile;

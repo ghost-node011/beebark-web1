@@ -22,6 +22,9 @@ const postSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  // Optional heading and type, shown on the profile's activity cards
+  title: { type: String, default: '', trim: true, maxlength: 160 },
+  kind: { type: String, enum: ['update', 'article', 'site_update', 'opinion', 'project'], default: 'update' },
   content: {
     type: String,
     required: true

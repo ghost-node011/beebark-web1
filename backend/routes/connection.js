@@ -7,11 +7,21 @@ const Notification = require('../models/Notification');
 const auth = require('../middleware/auth');
 const { PERSON_FIELDS, isBlockedBetween, uniqueIds } = require('../utils/userRelations');
 
+// A person for the client: whether the signed-in user follows them and how many
+// followers they have, never the raw follower ids
+function withFollow(person, viewerId) {
+  const p = person && person.toObject ? person.toObject() : { ...person };
+  const followers = p.followers || [];
+  delete p.followers;
+  return { ...p, isFollowing: followers.some((f) => String(f) === String(viewerId)), followerCount: followers.length };
+}
+
 // Get connection suggestions
 router.get('/suggestions', auth, async (req, res) => {
   try {
     const { getConnectionSuggestions } = require('../utils/recommendationEngine');
     const suggestions = await getConnectionSuggestions(req.userId, 10);
+    // Each suggestion already carries isFollowing/followerCount (no follower ids)
     res.json({ suggestions });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch suggestions', message: error.message });
@@ -35,8 +45,9 @@ router.get('/search', auth, async (req, res) => {
 // keeps it idempotent, so crossing requests never create duplicate connections.
 async function connect(aId, bId) {
   await Promise.all([
-    User.updateOne({ _id: aId }, { $addToSet: { connections: bId }, $pull: { pendingRequests: bId, sentRequests: bId } }),
-    User.updateOne({ _id: bId }, { $addToSet: { connections: aId }, $pull: { pendingRequests: aId, sentRequests: aId } })
+    // Connections follow each other too, like LinkedIn
+    User.updateOne({ _id: aId }, { $addToSet: { connections: bId, following: bId, followers: bId }, $pull: { pendingRequests: bId, sentRequests: bId } }),
+    User.updateOne({ _id: bId }, { $addToSet: { connections: aId, following: aId, followers: aId }, $pull: { pendingRequests: aId, sentRequests: aId } })
   ]);
 }
 
@@ -162,11 +173,11 @@ async function requestTimes({ recipient, actor }) {
 router.get('/pending', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
-      .populate('pendingRequests', `${PERSON_FIELDS} accountStatus coverPhoto`);
+      .populate('pendingRequests', `${PERSON_FIELDS} accountStatus coverPhoto followers`);
 
     const people = uniqueIds(user.pendingRequests).filter((u) => u && u.accountStatus !== 'deactivated');
     const times = await requestTimes({ recipient: user._id });
-    res.json({ requests: people.map((p) => ({ ...p.toObject(), requestedAt: times.get(String(p._id)) || null })) });
+    res.json({ requests: people.map((p) => ({ ...withFollow(p, req.userId), requestedAt: times.get(String(p._id)) || null })) });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch requests', message: error.message });
   }
@@ -176,11 +187,11 @@ router.get('/pending', auth, async (req, res) => {
 router.get('/sent', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
-      .populate('sentRequests', `${PERSON_FIELDS} accountStatus coverPhoto`);
+      .populate('sentRequests', `${PERSON_FIELDS} accountStatus coverPhoto followers`);
 
     const people = uniqueIds(user.sentRequests).filter((u) => u && u.accountStatus !== 'deactivated');
     const times = await requestTimes({ actor: user._id });
-    res.json({ sent: people.map((p) => ({ ...p.toObject(), requestedAt: times.get(String(p._id)) || null })) });
+    res.json({ sent: people.map((p) => ({ ...withFollow(p, req.userId), requestedAt: times.get(String(p._id)) || null })) });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch sent requests', message: error.message });
   }
@@ -190,7 +201,7 @@ router.get('/sent', auth, async (req, res) => {
 router.get('/list', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
-      .populate('connections', `${PERSON_FIELDS} accountStatus coverPhoto`);
+      .populate('connections', `${PERSON_FIELDS} accountStatus coverPhoto followers`);
 
     // Heal duplicates left by crossing requests (one person, one chat)
     const unique = uniqueIds(user.connections);
@@ -198,7 +209,7 @@ router.get('/list', auth, async (req, res) => {
       await User.updateOne({ _id: user._id }, { $set: { connections: unique.map((c) => c._id) } });
     }
 
-    res.json({ connections: unique.filter((c) => c && c.accountStatus !== 'deactivated') });
+    res.json({ connections: unique.filter((c) => c && c.accountStatus !== 'deactivated').map((c) => withFollow(c, req.userId)) });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch connections', message: error.message });
   }

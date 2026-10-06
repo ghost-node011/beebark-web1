@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { FiCamera, FiX, FiMapPin, FiPlus, FiBriefcase, FiUsers, FiInfo, FiGlobe } from 'react-icons/fi';
+import { FiCamera, FiX, FiMapPin, FiPlus, FiBriefcase, FiInfo, FiGlobe, FiCalendar, FiCheck } from 'react-icons/fi';
 import {
   FaLinkedin, FaInstagram, FaBehance, FaPinterest, FaYoutube, FaXTwitter, FaFacebook, FaGithub, FaHouzz, FaDribbble
 } from 'react-icons/fa6';
+import { FaCrown } from 'react-icons/fa';
 
 // Page background used by both profile pages — a warm off-white rather than
 // plain slate, to match the reference design's editorial tone.
-export const PAGE_BG = 'bg-[#FAF9F6]';
+export const PAGE_BG = 'bg-[#F7F5F2] pf-page';
 
 export const PillFilter = ({ options, active, onChange }) => (
   <div className="flex flex-wrap gap-2">
@@ -15,7 +16,7 @@ export const PillFilter = ({ options, active, onChange }) => (
       <button
         key={o}
         onClick={() => onChange(o)}
-        className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${active === o ? 'bg-black text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+        className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${active === o ? 'bg-[#2b2622] text-white' : 'bg-[#f0ece6] text-[#6f655c] hover:bg-[#e8e2da]'}`}
       >
         {o}
       </button>
@@ -65,7 +66,7 @@ export const ProfileTabs = ({ tabs }) => {
       let current = tabs[0]?.id;
       for (const t of tabs) {
         const el = document.getElementById(t.id);
-        if (el && el.getBoundingClientRect().top < 180) current = t.id;
+        if (el && el.getBoundingClientRect().top < 230) current = t.id;
       }
       setActive(current);
     };
@@ -80,18 +81,18 @@ export const ProfileTabs = ({ tabs }) => {
   };
 
   return (
-    <nav className="sticky top-16 z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-white/95 backdrop-blur border-b border-black/5" aria-label="Profile sections">
-      <div className="max-w-5xl mx-auto flex gap-1 overflow-x-auto">
+    <nav className="sticky top-16 z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-white/95 backdrop-blur border-b border-[#ebe6df]" aria-label="Profile sections">
+      <div className="max-w-6xl mx-auto flex gap-2 overflow-x-auto">
         {tabs.map((t) => (
           <button
             key={t.id}
             onClick={() => go(t.id)}
-            className={`relative px-4 py-3.5 text-sm font-medium whitespace-nowrap transition ${active === t.id ? 'text-black' : 'text-gray-500 hover:text-black'}`}
+            className={`relative px-4 sm:px-5 py-4 text-[15px] whitespace-nowrap transition ${active === t.id ? 'text-[#2b2622] font-semibold' : 'pf-muted hover:text-[#2b2622]'}`}
             aria-current={active === t.id ? 'true' : undefined}
             data-testid={`profile-tab-${t.id}`}
           >
             {t.label}
-            {active === t.id && <span className="absolute left-2 right-2 bottom-0 h-0.5 rounded-full bg-yellow-500" />}
+            {active === t.id && <span className="absolute left-0 right-0 bottom-0 h-[3px] rounded-full bg-[#F2B21B]" />}
           </button>
         ))}
       </div>
@@ -99,93 +100,124 @@ export const ProfileTabs = ({ tabs }) => {
   );
 };
 
-// Full-bleed cover with a large photo overlapping it, then name, headline,
-// meta and actions — shared by the own-profile and public-profile pages so
-// they can't drift apart. `actions` (Connect/Message/Edit…) and `headerExtra`
-// (cover photo control) are the only parts that differ.
+const compact = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1).replace(/\.0$/, '')}M` : n >= 1e4 ? `${Math.round(n / 1e3)}K` : Number(n || 0).toLocaleString('en-IN'));
+
+// Verified tick and Pro badge (set by the BeeBark team only)
+const Badges = ({ badges }) => (
+  <>
+    {badges?.verified && (
+      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#F2B21B] text-[#F2B21B]" title="Verified by BeeBark" aria-label="Verified">
+        <FiCheck className="h-4 w-4" strokeWidth={3} />
+      </span>
+    )}
+    {badges?.pro && (
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-[#F2B21B]/70 bg-black/20 px-3 py-1 text-sm font-semibold text-[#F2B21B] backdrop-blur-sm">
+        <FaCrown className="h-3.5 w-3.5" />BeeBark Pro
+      </span>
+    )}
+  </>
+);
+
+// Full-bleed cover; the photo overlaps its bottom edge and the name sits on
+// the cover beside it (as in the reference design). Shared by the own,
+// in-app and public profile pages, so they can't drift apart.
 export const ProfileHero = ({
   coverPhoto, profilePic, name, roleLabel, headline, pronouns, location, yearsOfExperience,
-  connectionCount, socialLinks, actions, headerExtra, onPhotoEdit, onAddLocation, badges, onContactInfo
+  connectionCount, followerCount, socialLinks, badges, actions, headerExtra, onPhotoEdit, onAddLocation, onContactInfo, onFollowers
 }) => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const parts = String(headline || '').split('|').map((p) => p.trim()).filter(Boolean);
   return (
-    <div className="-mx-4 sm:-mx-6 lg:-mx-8 -mt-4 sm:-mt-6 lg:-mt-8 bg-white">
+    <div className="-mx-4 sm:-mx-6 lg:-mx-8 -mt-4 sm:-mt-6 lg:-mt-8">
       <div
-        className="h-44 sm:h-64 lg:h-72 relative"
+        className="relative h-56 sm:h-72 lg:h-80"
         style={coverPhoto
           ? { backgroundImage: `url(${coverPhoto})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-          : { background: 'linear-gradient(135deg, #5a4a35 0%, #2a2219 55%, #15120d 100%)' }}
+          : { background: 'linear-gradient(120deg, #c89a5b 0%, #8a6136 38%, #3b2a1c 75%, #1f1812 100%)' }}
       >
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(0,0,0,0.45) 100%)' }} />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(20,15,10,0) 35%, rgba(20,15,10,0.55) 100%)' }} />
         {headerExtra}
+        <div className="absolute inset-x-0 bottom-0">
+          <div className="max-w-6xl mx-auto px-4 sm:px-8 flex items-end gap-5 sm:gap-8">
+            <div className="relative shrink-0 translate-y-1/2 sm:translate-y-[45%]">
+              <button
+                type="button"
+                onClick={() => profilePic && setLightboxOpen(true)}
+                className={`block rounded-full ${profilePic ? 'cursor-zoom-in' : 'cursor-default'}`}
+                aria-label={profilePic ? 'View profile photo' : undefined}
+              >
+                <Avatar className="w-28 h-28 sm:w-40 sm:h-40 lg:w-44 lg:h-44 border-[5px] border-white shadow-[0_10px_30px_-10px_rgba(0,0,0,0.45)]">
+                  <AvatarImage src={profilePic} className="object-cover" />
+                  <AvatarFallback className="bg-[#F2B21B] text-[#2b2622] text-5xl font-bold pf-serif">{name?.charAt(0)}</AvatarFallback>
+                </Avatar>
+              </button>
+              {onPhotoEdit && (
+                <label className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-[#2b2622] text-white border-2 border-white cursor-pointer hover:bg-[#F2B21B] hover:text-black transition" aria-label="Change profile photo">
+                  <FiCamera className="w-4 h-4" />
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && onPhotoEdit(e.target.files[0])} />
+                </label>
+              )}
+            </div>
+            <div className="min-w-0 pb-4 sm:pb-6">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                <h1 className="pf-serif text-3xl sm:text-5xl font-bold leading-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.35)] break-words">{name}</h1>
+                <Badges badges={badges} />
+                {pronouns && <span className="text-sm text-white/80">({pronouns})</span>}
+              </div>
+              {parts.length > 0 && (
+                <p className="mt-1 hidden sm:block text-lg lg:text-xl text-white/85 drop-shadow-[0_1px_6px_rgba(0,0,0,0.35)]" data-testid="profile-headline">
+                  {parts.map((p, i) => <React.Fragment key={i}>{i > 0 && <span className="mx-2.5 text-white/50">|</span>}{p}</React.Fragment>)}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6">
-        <div className="flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-6 -mt-16 sm:-mt-20">
-          <div className="relative shrink-0 self-start">
-            <button
-              type="button"
-              onClick={() => profilePic && setLightboxOpen(true)}
-              className={`block rounded-full ${profilePic ? 'cursor-zoom-in' : 'cursor-default'}`}
-              aria-label={profilePic ? 'View profile photo' : undefined}
-            >
-              <Avatar className="w-32 h-32 sm:w-40 sm:h-40 border-4 border-white shadow-xl">
-                <AvatarImage src={profilePic} className="object-cover" />
-                <AvatarFallback className="bg-yellow-400 text-black text-5xl font-bold font-serif">{name?.charAt(0)}</AvatarFallback>
-              </Avatar>
-            </button>
-            {onPhotoEdit && (
-              <label className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-black text-white border-2 border-white cursor-pointer hover:bg-yellow-500 hover:text-black transition" aria-label="Change profile photo">
-                <FiCamera className="w-4 h-4" />
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && onPhotoEdit(e.target.files[0])} />
-              </label>
+      <div className="max-w-6xl mx-auto px-4 sm:px-8">
+        <div className="pl-[8rem] sm:pl-[12.5rem] lg:pl-[13.5rem] pt-3 min-h-[4.5rem] sm:min-h-[5.5rem]">
+          {parts.length > 0 && <p className="sm:hidden text-sm pf-muted leading-snug" data-testid="profile-headline-mobile">{parts.join(' | ')}</p>}
+          <div className="mt-1 flex flex-wrap items-center gap-x-6 gap-y-1.5 text-[15px] pf-muted">
+            {location ? (
+              <span className="inline-flex items-center gap-1.5"><FiMapPin className="w-4 h-4" />{location}</span>
+            ) : onAddLocation && (
+              <button type="button" onClick={onAddLocation} className="inline-flex items-center gap-1 hover:text-[#2b2622] hover:underline"><FiPlus className="w-4 h-4" />Add location</button>
             )}
+            {yearsOfExperience > 0 && <span className="inline-flex items-center gap-1.5"><FiCalendar className="w-4 h-4" />{yearsOfExperience} year{yearsOfExperience === 1 ? '' : 's'} experience</span>}
+            {roleLabel && !yearsOfExperience && <span className="inline-flex items-center gap-1.5"><FiBriefcase className="w-4 h-4" />{roleLabel}</span>}
           </div>
-
-          <div className="min-w-0 flex-1 sm:pb-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-3xl sm:text-4xl font-bold text-black font-serif leading-tight break-words">{name}</h1>
-              {pronouns && <span className="text-base text-gray-500">({pronouns})</span>}
-              {roleLabel && <span className="rounded-full border border-yellow-400/60 bg-yellow-50 px-2.5 py-0.5 text-xs font-semibold text-yellow-800">{roleLabel}</span>}
-            </div>
-            {headline && <p className="text-base sm:text-lg text-gray-700 mt-1 break-words" data-testid="profile-headline">{headline}</p>}
+          <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-1.5 text-[15px] pf-muted">
+            <span><b className="font-semibold text-[#2b2622]">{compact(connectionCount)}</b> connection{connectionCount === 1 ? '' : 's'}</span>
+            <button type="button" onClick={onFollowers} className={onFollowers ? 'hover:underline' : 'cursor-default'} data-testid="follower-count">
+              <b className="font-semibold text-[#2b2622]">{compact(followerCount || 0)}</b> follower{followerCount === 1 ? '' : 's'}
+            </button>
+            {onContactInfo && (
+              <button type="button" onClick={onContactInfo} className="inline-flex items-center gap-1.5 font-semibold text-[#2b2622] hover:underline" data-testid="contact-info-button">
+                <FiInfo className="w-4 h-4" />Contact info
+              </button>
+            )}
+            <SocialIcons links={socialLinks} size="w-4 h-4" />
           </div>
         </div>
-
-        <div className="mt-3 sm:mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-gray-600">
-          {location ? (
-            <span className="inline-flex items-center gap-1.5"><FiMapPin className="w-4 h-4" />{location}</span>
-          ) : onAddLocation && (
-            <button type="button" onClick={onAddLocation} className="inline-flex items-center gap-1 text-gray-500 hover:text-black hover:underline">
-              <FiPlus className="w-4 h-4" />Add location
-            </button>
-          )}
-          {yearsOfExperience > 0 && (
-            <span className="inline-flex items-center gap-1.5"><FiBriefcase className="w-4 h-4" />{yearsOfExperience} year{yearsOfExperience === 1 ? '' : 's'} experience</span>
-          )}
-          <span className="inline-flex items-center gap-1.5"><FiUsers className="w-4 h-4" /><b className="text-black font-semibold">{connectionCount}</b> connection{connectionCount === 1 ? '' : 's'}</span>
-          {onContactInfo && (
-            <button type="button" onClick={onContactInfo} className="inline-flex items-center gap-1.5 font-semibold text-black hover:underline" data-testid="contact-info-button">
-              <FiInfo className="w-4 h-4" />Contact info
-            </button>
-          )}
-          <SocialIcons links={socialLinks} size="w-4 h-4" />
-        </div>
-        {badges && <div className="mt-3">{badges}</div>}
-
-        <div className="flex flex-wrap gap-2 py-5">{actions}</div>
+        <div className="flex flex-wrap items-center gap-3 pt-5 pb-6">{actions}</div>
       </div>
 
       {lightboxOpen && (
         <div className="fixed inset-0 z-[100] bg-black/85 flex items-center justify-center p-6" onClick={() => setLightboxOpen(false)}>
-          <button onClick={() => setLightboxOpen(false)} className="absolute top-5 right-5 text-white/80 hover:text-white p-2" aria-label="Close">
-            <FiX className="w-7 h-7" />
-          </button>
+          <button onClick={() => setLightboxOpen(false)} className="absolute top-5 right-5 text-white/80 hover:text-white p-2" aria-label="Close"><FiX className="w-7 h-7" /></button>
           <img src={profilePic} alt={name} className="max-w-full max-h-full rounded-lg object-contain" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
     </div>
   );
+};
+
+// Hero buttons in the reference style
+export const heroBtn = {
+  dark: 'inline-flex items-center gap-2 rounded-xl bg-[#2b2622] px-6 py-3 text-[15px] font-semibold text-white hover:bg-black transition disabled:opacity-60',
+  honey: 'inline-flex items-center gap-2 rounded-xl bg-[#F6D46B] px-6 py-3 text-[15px] font-semibold text-[#2b2622] hover:bg-[#F2C744] transition disabled:opacity-60',
+  outline: 'inline-flex items-center gap-2 rounded-xl border border-[#e3ddd5] bg-white px-6 py-3 text-[15px] font-medium text-[#2b2622] hover:border-[#cfc6bb] transition disabled:opacity-60',
+  ghost: 'inline-flex items-center gap-1.5 rounded-xl px-3 py-3 text-[15px] font-medium pf-muted hover:text-[#2b2622] transition'
 };
 
 // Per-section Public/Private badge — clickable to toggle when the owner is

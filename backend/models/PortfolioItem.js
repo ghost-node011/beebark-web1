@@ -26,6 +26,11 @@ const portfolioItemSchema = new mongoose.Schema({
   // free-text rather than a fixed enum since this app spans many professions
   location: { type: String, default: '' },
   projectStatus: { type: String, default: '' },
+  // What the owner did on it ("Lead Architect") and when
+  role: { type: String, default: '', trim: true },
+  year: { type: String, default: '' },
+  // People who bookmarked it; drives "Project saves" on the owner's analytics
+  savedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   category: {
     type: String,
     default: ''

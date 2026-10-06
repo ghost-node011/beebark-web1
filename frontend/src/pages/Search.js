@@ -13,6 +13,7 @@ import { AVAILABILITY_LABELS } from '../config/profileOptions';
 import { personHeadline } from '../utils/personHeadline';
 import Highlight, { searchWords } from '../components/Highlight';
 import { useAuth } from '../context/AuthContext';
+import FollowButton, { followersLabel } from '../components/FollowButton';
 
 const FILTERS = {
   network: [{ v: '', l: 'Anyone' }, { v: 'connected', l: 'My connections' }, { v: 'not', l: 'Not connected' }],
@@ -72,7 +73,8 @@ const Search = () => {
   }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { load(1); }, [load]);
 
-  const setStatus = (id, status) => setData((d) => ({ ...d, people: d.people.map((p) => (p._id === id ? { ...p, status } : p)) }));
+  const patchPerson = (id, changes) => setData((d) => ({ ...d, people: d.people.map((p) => (p._id === id ? { ...p, ...changes } : p)) }));
+  const setStatus = (id, status) => patchPerson(id, { status });
   const connect = async (p) => {
     setBusy((b) => ({ ...b, [p._id]: true }));
     try {
@@ -180,6 +182,7 @@ const Search = () => {
                     <p className="text-xs text-gray-500 flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
                       {p.location && <span className="inline-flex items-center gap-1"><FiMapPin className="w-3 h-3" /><Highlight text={p.location} words={words} /></span>}
                       {p.mutualConnectionsCount > 0 && <span>{p.mutualConnectionsCount} mutual connection{p.mutualConnectionsCount > 1 ? 's' : ''}</span>}
+                      {typeof p.followerCount === 'number' && <span data-testid={`follower-count-${p._id}`}>{followersLabel(p.followerCount)}</span>}
                     </p>
                     {p.matchedOn && <p className="text-xs text-gray-500 mt-1"><Highlight text={p.matchedOn} words={words} /></p>}
                     {p.availability?.length > 0 && (
@@ -188,7 +191,7 @@ const Search = () => {
                       </div>
                     )}
                   </div>
-                  <div className="shrink-0">
+                  <div className="shrink-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                     {p.status === 'connected' ? (
                       <Button variant="outline" size="sm" onClick={() => navigate(`/chat?with=${p._id}`)} className="rounded-full"><FiMessageCircle className="mr-1.5" />Message</Button>
                     ) : p.status === 'sent' ? (
@@ -198,6 +201,13 @@ const Search = () => {
                         {p.status === 'received' ? <><FiUserCheck className="mr-1.5" />Accept</> : <><FiUserPlus className="mr-1.5" />Connect</>}
                       </Button>
                     )}
+                    <FollowButton
+                      userId={p._id}
+                      name={p.name}
+                      isFollowing={p.isFollowing}
+                      followerCount={p.followerCount || 0}
+                      onChange={(changes) => patchPerson(p._id, changes)}
+                    />
                   </div>
                 </div>
               ))}

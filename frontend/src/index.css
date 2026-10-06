@@ -154,3 +154,12 @@ body {
 
 /* The people search has its own clear button */
 input[name="beebark-people-search"]::-webkit-search-cancel-button { display: none; }
+
+/* ---------- Profile pages ---------- */
+.pf-page { font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif; color: #2b2622; }
+.pf-serif { font-family: 'Playfair Display', Georgia, serif; }
+.pf-card { background: #fff; border: 1px solid #ebe6df; border-radius: 1.25rem; }
+.pf-soft { background: #f6f3ef; }
+.pf-muted { color: #7a7067; }
+.pf-hover { transition: border-color .2s, box-shadow .2s, transform .2s; }
+.pf-hover:hover { border-color: #f3d27a; box-shadow: 0 6px 20px -12px rgba(120, 90, 30, .35); }

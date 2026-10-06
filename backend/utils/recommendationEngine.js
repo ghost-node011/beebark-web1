@@ -1,6 +1,6 @@
 const User = require('../models/User');
 
-const PUBLIC_FIELDS = 'name username profilePic role bio location skills industries experience careerStage connections isDemo';
+const PUBLIC_FIELDS = 'name username profilePic role bio location skills industries experience careerStage connections followers isDemo';
 
 const getConnectionSuggestions = async (userId, limit = 10) => {
   try {
@@ -51,8 +51,12 @@ const getConnectionSuggestions = async (userId, limit = 10) => {
       const sharedIndustries = (user.industries || []).filter((i) => (currentUser.industries || []).includes(i));
       score += sharedIndustries.length * 4;
 
+      // Follower ids never leave the server, only the count and whether you follow them
+      const { followers, ...rest } = user;
       return {
-        ...user,
+        ...rest,
+        isFollowing: (followers || []).some((f) => String(f) === String(userId)),
+        followerCount: (followers || []).length,
         suggestionScore: score,
         mutualConnectionsCount: mutualConnections.length,
         mutualConnections: mutualConnections.slice(0, 3),

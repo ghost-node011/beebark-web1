@@ -4,7 +4,7 @@ const User = require('../models/User');
 // the person (name, headline, job title, company, skills, specialisation,
 // place, industry); results are ranked by how strongly and where they match.
 
-const CARD_FIELDS = 'name username profilePic headline role careerStage specialization industries location experience skills availability business.name connections';
+const CARD_FIELDS = 'name username profilePic headline role careerStage specialization industries location experience skills availability business.name connections followers';
 const INDUSTRY_WORDS = { architecture: 'architecture architect', interiors: 'interiors interior design designer', construction: 'construction contractor', real_estate: 'real estate realtor property', related: 'related' };
 
 const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -106,9 +106,11 @@ async function searchPeople(userId, params = {}) {
   const slice = ranked.slice((page - 1) * limit, page * limit);
   const people = slice.map(({ u, mutual }) => {
     const id = String(u._id);
-    const { connections, ...rest } = u;
+    const { connections, followers, ...rest } = u;
     return {
       ...rest,
+      isFollowing: (followers || []).some((f) => String(f) === String(userId)),
+      followerCount: (followers || []).length,
       status: myConnections.has(id) ? 'connected' : sent.has(id) ? 'sent' : received.has(id) ? 'received' : 'none',
       isConnected: myConnections.has(id),
       requestSent: sent.has(id),

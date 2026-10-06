@@ -21,7 +21,7 @@ import { exportPortfolioPdf } from '../utils/exportPortfolioPdf';
 import { SkeletonCards } from '../components/Skeletons';
 import { getCopy } from '../config/roleDomainCopy';
 
-const emptyForm = { title: '', description: '', images: [], category: '', location: '', projectStatus: '' };
+const emptyForm = { title: '', description: '', images: [], category: '', location: '', projectStatus: '', role: '', year: '' };
 // Photos are uploaded a few at a time so any number can be added to a project
 const UPLOAD_BATCH = 5;
 
@@ -183,7 +183,9 @@ const Portfolio = () => {
       images: item.images || [],
       category: item.category || '',
       location: item.location || '',
-      projectStatus: item.projectStatus || ''
+      projectStatus: item.projectStatus || '',
+      role: item.role || '',
+      year: item.year || ''
     });
     setShowAddDialog(true);
   };
@@ -641,6 +643,16 @@ const Portfolio = () => {
               <div>
                 <Label htmlFor="pf-status">Status</Label>
                 <Input id="pf-status" value={form.projectStatus} onChange={(e) => setForm({ ...form, projectStatus: e.target.value })} placeholder="e.g. Completed, 2026" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-[2fr_1fr]">
+              <div>
+                <Label htmlFor="pf-role">Your role</Label>
+                <Input id="pf-role" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} maxLength={80} placeholder="e.g. Lead Architect" data-testid="pf-role" />
+              </div>
+              <div>
+                <Label htmlFor="pf-year">Year</Label>
+                <Input id="pf-year" value={form.year} onChange={(e) => setForm({ ...form, year: e.target.value.replace(/\D/g, '').slice(0, 4) })} inputMode="numeric" placeholder="e.g. 2024" data-testid="pf-year" />
               </div>
             </div>
             <div>

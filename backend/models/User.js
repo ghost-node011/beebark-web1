@@ -124,6 +124,14 @@ const userSchema = new mongoose.Schema({
     address: { type: String, default: '' },
     about: { type: String, default: '' }
   },
+  // Followers see someone's updates without being connected; connecting also follows both ways
+  followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  // Set by the BeeBark team only (identity checked / paid plan)
+  badges: {
+    verified: { type: Boolean, default: false },
+    pro: { type: Boolean, default: false }
+  },
   // One line under the name, e.g. "Real Estate Developer | Architect"
   headline: { type: String, default: '', trim: true, maxlength: 140 },
   // Contact details; `visibility` decides who sees them (connections by default)
@@ -266,7 +274,9 @@ const userSchema = new mongoose.Schema({
     galleryPublic: { type: Boolean, default: true },
     activityPublic: { type: Boolean, default: false },
     // Off: others don't see when you've read their messages, and you don't see theirs
-    readReceipts: { type: Boolean, default: true }
+    readReceipts: { type: Boolean, default: true },
+    // Public profile at /in/:username that anyone can open without signing in
+    publicProfile: { type: Boolean, default: true }
   },
   resetPasswordToken: String,
   resetPasswordExpires: Date

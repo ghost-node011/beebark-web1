@@ -74,6 +74,8 @@ function App() {
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/portfolio/:username" element={<PublicPortfolio />} />
+            {/* Public profile anyone can open (shared on LinkedIn etc.); signed-in people get the in-app one */}
+            <Route path="/in/:username" element={<PublicProfile open />} />
             <Route element={<PrivateRoute />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/feed" element={<Feed />} />

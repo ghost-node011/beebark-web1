@@ -6,16 +6,19 @@ const auth = require('../middleware/auth');
 
 router.post('/create', auth, async (req, res) => {
   try {
-    const { content, mediaUrl } = req.body;
+    const { content, mediaUrl, title, kind } = req.body;
 
     if (!content || content.trim().length === 0) {
       return res.status(400).json({ error: 'Content is required' });
     }
 
+    const KINDS = ['update', 'article', 'site_update', 'opinion', 'project'];
     const post = new Post({
       author: req.userId,
-      content,
-      mediaUrl: mediaUrl || ''
+      content: String(content).trim().slice(0, 5000),
+      title: String(title || '').trim().slice(0, 160),
+      kind: KINDS.includes(kind) ? kind : 'update',
+      mediaUrl: typeof mediaUrl === 'string' && /^(https:\/\/|\/uploads\/)/.test(mediaUrl) ? mediaUrl : ''
     });
 
     await post.save();

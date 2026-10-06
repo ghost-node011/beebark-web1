@@ -11,6 +11,7 @@ import TopBar from '../components/TopBar';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config/api';
 import { STAGES, INDUSTRY_LABEL, getVariant, unsplash } from '../config/dashboardVariants';
+import FollowButton, { followersLabel } from '../components/FollowButton';
 
 const STAGE_ICONS = { GraduationCap, Users, BriefcaseBusiness, Building2, Briefcase, UserRound, Store };
 
@@ -126,6 +127,12 @@ const Dashboard = () => {
       setStage(previous);
     }
   };
+
+  // Follow state and count for one suggested person
+  const patchPerson = (id, changes) => setData((d) => ({
+    ...d,
+    connections: (d?.connections || []).map((p) => (p.id === id ? { ...p, ...changes } : p))
+  }));
 
   const connect = async (personId) => {
     setRequested((r) => ({ ...r, [personId]: 'sending' }));
@@ -290,17 +297,28 @@ const Dashboard = () => {
                     <div className="min-w-0 flex-1">
                       <Link to={`/profile/${p.username}`} className="font-display font-bold text-black hover:underline">{p.name}</Link>
                       <p className="text-sm text-slate-600">{p.headline}</p>
+                      {typeof p.followerCount === 'number' && <p className="text-xs text-slate-500" data-testid={`follower-count-${p.id}`}>{followersLabel(p.followerCount)}</p>}
                       <p className="text-xs text-slate-500">{[p.company, p.location].filter(Boolean).join(' · ')}</p>
                       {p.tags.length > 0 && <Tags items={p.tags} />}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => connect(p.id)}
-                      disabled={!!requested[p.id]}
-                      className="h-fit shrink-0 rounded-lg bg-yellow-400 px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-500 disabled:bg-slate-100 disabled:text-slate-500"
-                    >
-                      {requested[p.id] === 'sent' ? 'Requested' : requested[p.id] === 'sending' ? 'Sending…' : 'Connect'}
-                    </button>
+                    <div className="flex h-fit shrink-0 flex-col items-stretch gap-2">
+                      <button
+                        type="button"
+                        onClick={() => connect(p.id)}
+                        disabled={!!requested[p.id]}
+                        className="rounded-lg bg-yellow-400 px-4 py-2 text-sm font-semibold text-black hover:bg-yellow-500 disabled:bg-slate-100 disabled:text-slate-500"
+                      >
+                        {requested[p.id] === 'sent' ? 'Requested' : requested[p.id] === 'sending' ? 'Sending…' : 'Connect'}
+                      </button>
+                      <FollowButton
+                        userId={p.id}
+                        name={p.name}
+                        isFollowing={p.isFollowing}
+                        followerCount={p.followerCount || 0}
+                        onChange={(changes) => patchPerson(p.id, changes)}
+                        className="rounded-lg"
+                      />
+                    </div>
                   </li>
                 ))}
               </ul>

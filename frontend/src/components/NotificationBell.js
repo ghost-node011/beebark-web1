@@ -1,18 +1,20 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { FiBell, FiUserPlus, FiUserCheck } from 'react-icons/fi';
+import { FiBell, FiUserPlus, FiUserCheck, FiRss } from 'react-icons/fi';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { API_URL } from '../config/api';
 
 const MESSAGES = {
   connection_request: (name) => `${name} sent you a connection request`,
-  connection_accepted: (name) => `${name} accepted your connection request`
+  connection_accepted: (name) => `${name} accepted your connection request`,
+  follow: (name) => `${name} started following you`
 };
 
 const ICONS = {
   connection_request: FiUserPlus,
-  connection_accepted: FiUserCheck
+  connection_accepted: FiUserCheck,
+  follow: FiRss
 };
 
 export const notificationText = (n) => MESSAGES[n.type]?.(n.actor?.name || 'Someone') || 'New notification';

@@ -11,7 +11,7 @@ import ShareMenu from '../components/ShareMenu';
 import ReportDialog from '../components/ReportDialog';
 import { exportPortfolioPdf } from '../utils/exportPortfolioPdf';
 import BeeLoader from '../components/BeeLoader';
-import { FiArrowLeft, FiDownload, FiShare2, FiFlag } from 'react-icons/fi';
+import { FiArrowLeft, FiDownload, FiShare2, FiFlag, FiBookmark } from 'react-icons/fi';
 
 const PublicPortfolio = () => {
   const { username } = useParams();
@@ -34,6 +34,17 @@ const PublicPortfolio = () => {
   // The open project lives in the URL (?project=<id>) so it can be shared
   const projectId = searchParams.get('project');
   const items = data?.items || [];
+  // Bookmark a project (counts towards the owner's "Project saves")
+  const toggleSave = async (item) => {
+    const saved = !item.isSaved;
+    const patch = (value) => setData((d) => ({ ...d, items: d.items.map((i) => (i._id === item._id ? { ...i, isSaved: value } : i)) }));
+    patch(saved);
+    try {
+      await axios.post(`${API_URL}/api/portfolio/items/${item._id}/save`, { saved });
+    } catch {
+      patch(!saved);
+    }
+  };
   const viewingIndex = projectId ? items.findIndex((i) => i._id === projectId) : -1;
   const viewingItem = viewingIndex >= 0 ? items[viewingIndex] : null;
 
@@ -126,6 +137,11 @@ const PublicPortfolio = () => {
               onClose={() => setProject(null)}
               actions={(
                 <>
+                  {canReport && (
+                    <button type="button" onClick={() => toggleSave(viewingItem)} className={`${pillBtn} ${viewingItem.isSaved ? 'text-[#E0A21A]' : ''}`} data-testid="project-viewer-save" aria-pressed={!!viewingItem.isSaved} aria-label={viewingItem.isSaved ? 'Saved' : 'Save project'}>
+                      <FiBookmark className={`h-4 w-4 ${viewingItem.isSaved ? 'fill-current' : ''}`} /><span className="hidden sm:inline">{viewingItem.isSaved ? 'Saved' : 'Save'}</span>
+                    </button>
+                  )}
                   {canReport && (
                     <button type="button" onClick={() => setReportOpen(true)} className={`${pillBtn} text-red-600`} data-testid="project-viewer-report" aria-label="Report project">
                       <FiFlag className="h-4 w-4" /><span className="hidden sm:inline">Report</span>

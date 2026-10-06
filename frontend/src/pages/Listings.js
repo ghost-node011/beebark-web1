@@ -24,6 +24,7 @@ const TYPES = [
 ];
 const STATUSES = [
   { value: 'active', label: 'Active', chip: 'bg-green-100 text-green-700' },
+  { value: 'pre_launch', label: 'Pre-launch', chip: 'bg-amber-50 text-amber-700' },
   { value: 'under_offer', label: 'Under offer', chip: 'bg-yellow-100 text-yellow-800' },
   { value: 'sold', label: 'Sold', chip: 'bg-gray-200 text-gray-700' },
   { value: 'rented', label: 'Rented', chip: 'bg-gray-200 text-gray-700' },
@@ -45,7 +46,7 @@ const formatPrice = (n) => {
 };
 
 const EMPTY = {
-  title: '', description: '', purpose: 'sale', propertyType: 'apartment', price: '', priceUnit: 'total',
+  title: '', description: '', purpose: 'sale', propertyType: 'apartment', price: '', priceTo: '', subtitle: '', priceUnit: 'total',
   area: '', areaUnit: 'sqft', bedrooms: '', bathrooms: '', location: '', images: [], amenities: [], status: 'active'
 };
 
@@ -120,7 +121,7 @@ const Listings = () => {
   };
 
   const set = (patch) => setDraft((d) => ({ ...d, ...patch }));
-  const toForm = (l) => ({ ...EMPTY, ...l, price: l.price ?? '', area: l.area ?? '', bedrooms: l.bedrooms ?? '', bathrooms: l.bathrooms ?? '' });
+  const toForm = (l) => ({ ...EMPTY, ...l, price: l.price ?? '', priceTo: l.priceTo ?? '', area: l.area ?? '', bedrooms: l.bedrooms ?? '', bathrooms: l.bathrooms ?? '' });
   const showRooms = form && !['plot', 'warehouse', 'retail'].includes(form.propertyType);
 
   return (
@@ -240,7 +241,15 @@ const Listings = () => {
                       {PRICE_UNITS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
                     </select>
                   </div>
-                  {form.price !== '' && <p className="text-xs text-gray-500">{formatPrice(Number(form.price))}</p>}
+                  {form.price !== '' && <p className="text-xs text-gray-500">{formatPrice(Number(form.price))}{form.priceTo !== '' ? ` – ${formatPrice(Number(form.priceTo))}` : ''}</p>}
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="l-price-to">Up to (₹, for a range)</Label>
+                  <Input id="l-price-to" type="number" min="0" value={form.priceTo} onChange={(e) => set({ priceTo: e.target.value })} placeholder="Optional" data-testid="listing-price-to" />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="l-subtitle">Availability line</Label>
+                  <Input id="l-subtitle" value={form.subtitle} onChange={(e) => set({ subtitle: e.target.value })} maxLength={80} placeholder="e.g. 24 units available" data-testid="listing-subtitle" />
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="l-area">Area</Label>

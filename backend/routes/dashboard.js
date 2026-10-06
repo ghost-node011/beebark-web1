@@ -33,7 +33,9 @@ const personCard = (u) => {
     company: current.company || '',
     location: u.location || '',
     tags: (u.skills || []).slice(0, 3),
-    mutualConnectionsCount: u.mutualConnectionsCount || 0
+    mutualConnectionsCount: u.mutualConnectionsCount || 0,
+    isFollowing: !!u.isFollowing,
+    followerCount: u.followerCount || 0
   };
 };
 

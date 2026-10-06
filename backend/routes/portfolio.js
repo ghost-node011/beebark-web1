@@ -101,7 +101,15 @@ router.get('/:username', async (req, res) => {
       .populate('connections', '_id');
     if (!user) return res.status(404).json({ error: 'Portfolio not found' });
 
-    const items = await PortfolioItem.find({ user: user._id }).sort(ITEM_ORDER);
+    // Optional sign-in: lets a signed-in visitor see which projects they've saved
+    let viewerId = null;
+    try {
+      const token = (req.get('Authorization') || '').replace('Bearer ', '');
+      if (token) viewerId = String(require('jsonwebtoken').verify(token, process.env.JWT_SECRET).userId);
+    } catch { /* anonymous visitor */ }
+    const items = (await PortfolioItem.find({ user: user._id }).sort(ITEM_ORDER).lean()).map(({ savedBy, ...i }) => ({
+      ...i, saveCount: (savedBy || []).length, isSaved: Boolean(viewerId && (savedBy || []).some((id) => String(id) === viewerId))
+    }));
 
     res.json({
       user: {
@@ -130,7 +138,7 @@ router.get('/:username', async (req, res) => {
 
 router.post('/items', auth, async (req, res) => {
   try {
-    const { title, description, images, tags, category, location, projectStatus } = req.body;
+    const { title, description, images, tags, category, location, projectStatus, role, year } = req.body;
     if (!title?.trim()) {
       return res.status(400).json({ error: 'Title is required' });
     }
@@ -152,6 +160,8 @@ router.post('/items', auth, async (req, res) => {
       category: category || '',
       location: location || '',
       projectStatus: projectStatus || '',
+      role: String(role || '').trim().slice(0, 80),
+      year: /^\d{4}$/.test(String(year || '')) ? String(year) : '',
       aiFeedback: review?.feedback || ''
     });
     await item.save();
@@ -163,6 +173,21 @@ router.post('/items', auth, async (req, res) => {
 });
 
 // Save the owner's project order: ids listed top to bottom
+// Save (bookmark) someone's project, or remove the save: { saved: true|false }
+router.post('/items/:id/save', auth, async (req, res) => {
+  try {
+    if (!require('mongoose').isValidObjectId(req.params.id)) return res.status(404).json({ error: 'Project not found' });
+    const item = await PortfolioItem.findById(req.params.id).select('user savedBy');
+    if (!item) return res.status(404).json({ error: 'Project not found' });
+    if (String(item.user) === String(req.userId)) return res.status(400).json({ error: 'You can\'t save your own project' });
+    const save = req.body?.saved !== false;
+    await PortfolioItem.updateOne({ _id: item._id }, save ? { $addToSet: { savedBy: req.userId } } : { $pull: { savedBy: req.userId } });
+    res.json({ saved: save });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to save project', message: error.message });
+  }
+});
+
 router.put('/order', auth, async (req, res) => {
   try {
     const { ids } = req.body;
@@ -213,10 +238,12 @@ router.put('/items/:id', auth, async (req, res) => {
     const item = await PortfolioItem.findOne({ _id: req.params.id, user: req.userId });
     if (!item) return res.status(404).json({ error: 'Portfolio item not found' });
 
-    const { title, description, images, tags, category, location, projectStatus } = req.body;
+    const { title, description, images, tags, category, location, projectStatus, role, year } = req.body;
     if (title !== undefined) item.title = title;
     if (location !== undefined) item.location = location;
     if (projectStatus !== undefined) item.projectStatus = projectStatus;
+    if (role !== undefined) item.role = String(role).trim().slice(0, 80);
+    if (year !== undefined) item.year = /^\d{4}$/.test(String(year)) ? String(year) : '';
     if (description !== undefined) item.description = description;
     if (images !== undefined) item.images = images;
     if (tags !== undefined) item.tags = tags;

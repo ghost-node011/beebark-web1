@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 import {
   FiSearch, FiUserPlus, FiUserCheck, FiMessageCircle, FiX, FiUsers, FiMoreHorizontal, FiUser,
   FiShare2, FiUserMinus, FiFlag, FiSlash, FiMapPin, FiClock, FiSend, FiCheck,
-  FiSliders,
+  FiSliders, FiUserX,
 } from 'react-icons/fi';
 import { API_URL } from '../config/api';
 import { getCopy } from '../config/roleDomainCopy';
@@ -24,6 +24,7 @@ import { useAuth } from '../context/AuthContext';
 import { personHeadline } from '../utils/personHeadline';
 import { SkeletonCards } from '../components/Skeletons';
 import Highlight, { searchWords } from '../components/Highlight';
+import FollowButton, { toggleFollow, followersLabel } from '../components/FollowButton';
 
 // "3d ago" style label for a date, or '' when there isn't one
 const timeAgo = (date) => {
@@ -71,6 +72,9 @@ const CardIdentity = ({ person, words }) => (
       <Highlight text={person.name} words={words} />
     </Link>
     <p className="text-sm text-gray-600 line-clamp-2 min-h-[2.5rem]"><Highlight text={personHeadline(person)} words={words} /></p>
+    {typeof person.followerCount === 'number' && (
+      <p className="text-xs text-gray-500" data-testid={`follower-count-${person._id}`}>{followersLabel(person.followerCount)}</p>
+    )}
     {person.location && (
       <p className="mt-1 text-xs text-gray-500 flex items-center justify-center gap-1 truncate">
         <FiMapPin className="w-3 h-3 shrink-0" /><span className="truncate"><Highlight text={person.location} words={words} /></span>
@@ -174,6 +178,28 @@ const Connections = () => {
     setSuggestions((list) => list.map((s) => (s._id === id ? { ...s, ...changes } : s)));
     setSearchResults((list) => list.map((s) => (s._id === id ? { ...s, ...changes } : s)));
   };
+
+  // Follow state and count change wherever this person is listed on the page
+  const patchFollow = (id, changes) => {
+    const apply = (list) => list.map((p) => (p._id === id ? { ...p, ...changes } : p));
+    setSuggestions(apply);
+    setSearchResults(apply);
+    setConnections(apply);
+    setPendingRequests(apply);
+    setSentRequests(apply);
+  };
+
+  const followButton = (p) => (
+    <FollowButton
+      userId={p._id}
+      name={p.name}
+      isFollowing={p.isFollowing}
+      followerCount={p.followerCount || 0}
+      onChange={(changes) => patchFollow(p._id, changes)}
+      size="default"
+      className="shrink-0 px-3"
+    />
+  );
 
   // Results update as you type (name, role, company, skills, city)
   const searchSeq = useRef(0);
@@ -328,7 +354,7 @@ const Connections = () => {
     if (p.isConnected) {
       return (
         <Button variant="outline" onClick={() => navigate(`/chat?with=${p._id}`)} className="w-full rounded-full border-green-200 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800">
-          <FiUserCheck className="w-4 h-4 mr-1.5" />Connected · Message
+          <FiUserCheck className="w-4 h-4 mr-1.5" /><span className="truncate">Connected · Message</span>
         </Button>
       );
     }
@@ -567,6 +593,14 @@ const Connections = () => {
                                 <DropdownMenuItem onClick={() => navigate(`/chat?with=${c._id}`)}>
                                   <FiMessageCircle className="mr-2" />Message
                                 </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => toggleFollow({ userId: c._id, name: c.name, isFollowing: c.isFollowing, followerCount: c.followerCount || 0, onChange: (changes) => patchFollow(c._id, changes) })}
+                                  data-testid={`follow-${c._id}`}
+                                >
+                                  {c.isFollowing
+                                    ? <><FiUserX className="mr-2" />Unfollow</>
+                                    : <><FiUserPlus className="mr-2" />Follow</>}
+                                </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={() => handleRemoveConnection(c)} data-testid={`remove-connection-${c._id}`}>
                                   <FiUserMinus className="mr-2" />Remove connection
@@ -649,8 +683,9 @@ const Connections = () => {
                           <span className="truncate">Shared skills: {s.commonSkills.slice(0, 3).join(', ')}</span>
                         ) : null}
                       </div>
-                      <div className="mt-auto p-4">
-                        {relationAction(s, `connect-btn-${s._id}`)}
+                      <div className="mt-auto p-4 flex gap-2">
+                        <div className="flex-1 min-w-0">{relationAction(s, `connect-btn-${s._id}`)}</div>
+                        {followButton(s)}
                       </div>
                     </div>
                   ))}
@@ -703,8 +738,9 @@ const Connections = () => {
                     <div key={p._id} className="bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col hover:shadow-md transition-shadow" data-testid={`search-result-${p._id}`}>
                       <CardTop person={p} />
                       <CardIdentity person={p} words={searchWords(searchQuery)} />
-                      <div className="mt-auto p-4">
-                        {relationAction(p, `connect-search-btn-${p._id}`)}
+                      <div className="mt-auto p-4 flex gap-2">
+                        <div className="flex-1 min-w-0">{relationAction(p, `connect-search-btn-${p._id}`)}</div>
+                        {followButton(p)}
                       </div>
                     </div>
                   ))}

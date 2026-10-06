@@ -25,7 +25,17 @@ const clearStoredToken = () => {
 };
 
 // Single source of truth for where a just-authenticated user should land.
-export const postAuthPath = (user) => (user?.onboardingCompleted ? '/dashboard' : '/onboarding');
+// Where to go after signing in: back to the page that asked (?next=/profile/x,
+// in-app paths only), otherwise the dashboard; onboarding always comes first.
+const safeNext = () => {
+  try {
+    const next = new URLSearchParams(window.location.search).get('next') || '';
+    return /^\/(?!\/)[\w\-./?=&%]*$/.test(next) ? next : '';
+  } catch {
+    return '';
+  }
+};
+export const postAuthPath = (user) => (user?.onboardingCompleted ? safeNext() || '/dashboard' : '/onboarding');
 
 export const useAuth = () => {
   const context = useContext(AuthContext);

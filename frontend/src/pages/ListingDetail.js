@@ -126,7 +126,10 @@ const ListingDetail = () => {
                 <Link to="/listings"><Button className="w-full bg-black text-white hover:bg-gray-800"><FiEdit2 className="mr-2" />Manage listing</Button></Link>
               ) : (
                 <Button
-                  onClick={() => navigate(`/chat?with=${owner._id}&draft=${encodeURIComponent(`Hi ${owner.name.split(' ')[0]}, I'm interested in "${listing.title}". Is it still available?`)}`)}
+                  onClick={() => {
+                    axios.post(`${API_URL}/api/profile/${owner._id}/event`, { type: 'enquiry', item: listing._id }, { silent: true }).catch(() => {});
+                    navigate(`/chat?with=${owner._id}&draft=${encodeURIComponent(`Hi ${owner.name.split(' ')[0]}, I'm interested in "${listing.title}". Is it still available?`)}`);
+                  }}
                   className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-semibold"
                   data-testid="listing-enquire"
                 >

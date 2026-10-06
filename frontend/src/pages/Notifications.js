@@ -7,13 +7,14 @@ import TopBar from '../components/TopBar';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { FiBell, FiUserPlus, FiUserCheck, FiCheck, FiTrash2 } from 'react-icons/fi';
+import { FiBell, FiUserPlus, FiUserCheck, FiCheck, FiTrash2, FiRss } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config/api';
 import { SkeletonRows } from '../components/Skeletons';
 import { notificationText, timeAgo } from '../components/NotificationBell';
+import FollowButton from '../components/FollowButton';
 
-const ICONS = { connection_request: FiUserPlus, connection_accepted: FiUserCheck };
+const ICONS = { connection_request: FiUserPlus, connection_accepted: FiUserCheck, follow: FiRss };
 
 const groupOf = (d) => {
   const date = new Date(d);
@@ -33,6 +34,22 @@ const Notifications = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [handled, setHandled] = useState({}); // actorId -> 'accepted' | 'declined'
+  // Ids of people you follow (null until loaded), for "Follow back" on follow notifications
+  const [followingIds, setFollowingIds] = useState(null);
+  const myId = user?.id || user?._id;
+
+  useEffect(() => {
+    if (!myId) return;
+    axios.get(`${API_URL}/api/follow/${myId}/list`, { params: { type: 'following' }, silent: true })
+      .then((res) => setFollowingIds(new Set((res.data.people || []).map((p) => String(p._id)))))
+      .catch(() => setFollowingIds(null));
+  }, [myId]);
+
+  const setFollowing = (id, following) => setFollowingIds((ids) => {
+    const next = new Set(ids || []);
+    if (following) next.add(id); else next.delete(id);
+    return next;
+  });
 
   const load = useCallback(async (nextPage = 1) => {
     setLoading(true);
@@ -145,6 +162,26 @@ const Notifications = () => {
                           <Button size="sm" onClick={() => respond(n, true)} className="bg-yellow-400 hover:bg-yellow-500 text-black h-8">Accept</Button>
                           <Button size="sm" variant="outline" onClick={() => respond(n, false)} className="h-8">Decline</Button>
                         </div>
+                      )}
+                      {n.type === 'follow' && actorId && (
+                        followingIds ? (
+                          !followingIds.has(actorId) && (
+                            <div className="mt-2">
+                              <FollowButton
+                                userId={actorId}
+                                name={n.actor?.name}
+                                isFollowing={false}
+                                label="Follow back"
+                                onChange={({ isFollowing }) => { setFollowing(actorId, isFollowing); if (isFollowing) markRead(n); }}
+                                className="h-8"
+                              />
+                            </div>
+                          )
+                        ) : n.actor?.username && (
+                          <Link to={`/profile/${n.actor.username}`} onClick={() => markRead(n)} className="inline-block mt-1 text-xs font-medium text-gray-600 hover:text-black hover:underline">
+                            View profile
+                          </Link>
+                        )
                       )}
                       {handled[actorId] && n.type === 'connection_request' && (
                         <p className="text-xs font-medium text-gray-500 mt-1">{handled[actorId] === 'accepted' ? 'Accepted' : 'Declined'}</p>

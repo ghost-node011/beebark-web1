@@ -14,10 +14,11 @@ import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 import {
   FiEdit2, FiPlus, FiTrash2, FiBriefcase, FiImage, FiZap,
-  FiEye, FiUsers, FiTarget, FiLayers, FiGlobe, FiCamera, FiHeart,
+  FiEye, FiUsers, FiTarget, FiLayers, FiGlobe, FiCamera,
   FiMessageSquare, FiBookOpen, FiUpload, FiFileText, FiExternalLink,
-  FiGlobe as FiLanguage, FiHome, FiCheckCircle, FiX
+  FiGlobe as FiLanguage, FiHome, FiCheckCircle, FiX, FiShare2, FiBookmark, FiCalendar, FiLink
 } from 'react-icons/fi';
+import { FaLinkedin } from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 import { API_URL } from '../config/api';
 import { INTENTS, INDUSTRIES, intentsFor } from '../config/onboarding';
@@ -26,7 +27,9 @@ import { SuggestChip, useSuggestChip } from '../components/ai/SuggestChip';
 import { InfoBlock } from '../components/profile/ProfileWidgets';
 import { ProfileHero, ProfileTabs, VisibilityPill, PillFilter, PAGE_BG, SOCIAL } from '../components/profile/ProfileShell';
 import ShareMenu from '../components/ShareMenu';
-import { sortExperience, AvailabilityChips, LanguagesList, BusinessDetails, PeopleStrip, AnalyticsCards, ProjectGrid, ExperienceCard, ListingCards, JobRows, ContactInfoDialog } from '../components/profile/ProfileSections';
+import { sortExperience, AvailabilityChips, LanguagesList, BusinessDetails, PeopleGrid, AnalyticsCards, ProjectGrid, ExperienceCard, ListingCards, JobRows, ContactInfoDialog, ActivityCards, ReadMore } from '../components/profile/ProfileSections';
+import { heroBtn } from '../components/profile/ProfileShell';
+import { Switch } from '../components/ui/switch';
 import { AutocompleteInput, LocationInput } from '../components/AutocompleteInput';
 import { AVAILABILITY_LABELS, PROFICIENCY, EMPLOYMENT_TYPES, BUSINESS_TYPES, TEAM_SIZES } from '../config/profileOptions';
 import { personHeadline } from '../utils/personHeadline';
@@ -46,6 +49,8 @@ const EMPTY_BUSINESS = { name: '', type: '', website: '', founded: '', teamSize:
 const EMPTY_EXPERIENCE = { title: '', company: '', employmentType: '', location: '', startDate: '', endDate: '', current: false, description: '' };
 const EMPTY_EDUCATION = { school: '', degree: '', field: '', duration: '', description: '' };
 const selectClass = 'w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400';
+
+const weekTrend = (pct) => (pct === undefined ? '' : pct > 0 ? `+${pct}% this week` : pct < 0 ? `${pct}% this week` : 'Same as last week');
 
 const emptyFormFromUser = (user) => ({
   name: user?.name || '',
@@ -151,14 +156,15 @@ const Profile = () => {
         associatedProfessionals: res.data.associatedProfessionals || [],
         listings: res.data.listings || [],
         listingCount: res.data.listingCount || 0,
-        openJobs: res.data.openJobs || []
+        openJobs: res.data.openJobs || [],
+        analytics: res.data.analytics || null
       }))
       .catch(() => {});
   }, [user?.username]);
 
   useEffect(() => {
     fetchGalleryPreview();
-    axios.get(`${API_URL}/api/profile/activity`)
+    axios.get(`${API_URL}/api/profile/activity`, { silent: true })
       .then((res) => setActivity(res.data.posts || []))
       .catch(() => {});
   }, [fetchGalleryPreview]);
@@ -348,6 +354,54 @@ const Profile = () => {
     if (await saveFields()) fetchGalleryPreview();
   };
 
+  const [postDraft, setPostDraft] = useState(null);
+  const [posting, setPosting] = useState(false);
+  const loadActivity = useCallback(() => {
+    axios.get(`${API_URL}/api/profile/activity`).then((res) => setActivity(res.data.posts || [])).catch(() => {});
+  }, []);
+  const uploadPostImage = async (file) => {
+    const body = new FormData();
+    body.append('image', file);
+    try {
+      const res = await axios.post(`${API_URL}/api/upload/image`, body, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setPostDraft((d) => ({ ...d, mediaUrl: res.data.url }));
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Could not upload photo');
+    }
+  };
+  const publishPost = async () => {
+    setPosting(true);
+    try {
+      await axios.post(`${API_URL}/api/posts/create`, postDraft);
+      setPostDraft(null);
+      loadActivity();
+      toast.success('Posted');
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Could not post');
+    } finally {
+      setPosting(false);
+    }
+  };
+  const deletePost = async (post) => {
+    if (!window.confirm('Delete this update?')) return;
+    try {
+      await axios.delete(`${API_URL}/api/posts/${post._id}`);
+      setActivity((list) => list.filter((p) => p._id !== post._id));
+    } catch {
+      toast.error('Could not delete');
+    }
+  };
+  const togglePublicProfile = async (value) => {
+    setUser((u) => ({ ...u, publicProfile: value }));
+    try {
+      await axios.put(`${API_URL}/api/profile/update`, { publicProfile: value });
+      toast.success(value ? 'Your public profile is on' : 'Your public profile is off');
+    } catch {
+      setUser((u) => ({ ...u, publicProfile: !value }));
+      toast.error('Could not change this');
+    }
+  };
+
   const removeResume = async () => {
     if (!window.confirm('Remove your résumé from your profile? Your skills stay.')) return;
     setRemovingResume(true);
@@ -424,17 +478,19 @@ const Profile = () => {
             yearsOfExperience={user?.yearsOfExperience}
             connectionCount={user?.connections?.length || 0}
             socialLinks={user?.socialLinks}
+            followerCount={user?.followerCount || 0}
+            badges={user?.badges}
             onContactInfo={() => setContactOpen(true)}
             onPhotoEdit={uploadingAvatar ? undefined : handleAvatarFile}
             onAddLocation={() => edit('header')}
-            badges={<AvailabilityChips values={user?.availability} />}
             actions={
               <>
-                <Button onClick={() => edit('header')} className="bg-black text-white hover:bg-gray-800" data-testid="edit-header-button">
-                  <FiEdit2 className="mr-2 w-4 h-4" /> Edit intro
-                </Button>
-                <ShareMenu path={`/profile/${user?.username}`} title={`${user?.name} on BeeBark`} text={user?.headline || personHeadline(user)} align="start" testId="profile-share" />
-                <Link to={`/profile/${user?.username}`}><Button variant="outline">View as others</Button></Link>
+                <button type="button" onClick={() => edit('header')} className={heroBtn.dark} data-testid="edit-header-button">
+                  <FiEdit2 className="w-4 h-4" />Edit intro
+                </button>
+                <ShareMenu path={`/in/${user?.username}`} title={`${user?.name} on BeeBark`} text={user?.headline || personHeadline(user)} align="start" testId="profile-share"
+                  trigger={<button type="button" className={heroBtn.honey} data-testid="profile-share"><FiShare2 className="w-4 h-4" />Share profile</button>} />
+                <Link to={`/profile/${user?.username}`} className={heroBtn.outline}>View as others</Link>
               </>
             }
             headerExtra={
@@ -455,6 +511,30 @@ const Profile = () => {
             ...(galleryPreview.listingCount ? [{ id: 'section-listings', label: 'Listings' }] : []),
             ...(galleryPreview.openJobs.length ? [{ id: 'section-hiring', label: 'Hiring' }] : [])
           ]} />
+
+          <div className="pf-card flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between" data-testid="public-link-card">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-[#2b2622]">Public profile &amp; URL</p>
+              <p className="mt-0.5 truncate text-[15px] pf-muted">
+                {user?.publicProfile !== false ? <a href={`/in/${user?.username}`} target="_blank" rel="noopener noreferrer" className="hover:underline">{window.location.host}/in/{user?.username}</a> : 'Your profile is only visible to signed-in BeeBark members'}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-4">
+              {user?.publicProfile !== false && (
+                <>
+                  <button type="button" onClick={() => navigator.clipboard?.writeText(`${window.location.origin}/in/${user?.username}`).then(() => toast.success('Link copied'), () => {})} className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#2b2622] hover:underline" data-testid="copy-public-link">
+                    <FiLink className="w-4 h-4" />Copy link
+                  </button>
+                  <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`${window.location.origin}/in/${user?.username}`)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#0A66C2] hover:underline">
+                    <FaLinkedin className="w-4 h-4" />Share on LinkedIn
+                  </a>
+                </>
+              )}
+              <label className="inline-flex items-center gap-2 text-sm pf-muted">
+                <Switch checked={user?.publicProfile !== false} onCheckedChange={(v) => togglePublicProfile(v)} data-testid="public-profile-toggle" />Public
+              </label>
+            </div>
+          </div>
 
           {editingSection === 'header' && (
             <Card className="p-5 sm:p-8 space-y-5 rounded-2xl" id="intro-editor" data-testid="intro-editor">
@@ -550,12 +630,10 @@ const Profile = () => {
                   <VisibilityPill isPublic={formData.analyticsPublic} editable onToggle={(v) => handleVisibilityToggle('analyticsPublic', v)} />
                 </div>
                 <AnalyticsCards items={[
-                  { icon: FiEye, value: (user?.profileViews ?? 0).toLocaleString('en-IN'), label: 'Profile views' },
-                  { icon: FiUsers, value: user?.connections?.length || 0, label: 'Connections' },
-                  { icon: FiImage, value: galleryPreview.count, label: 'Projects' },
-                  galleryPreview.listingCount
-                    ? { icon: FiHome, value: galleryPreview.listingCount, label: 'Listings' }
-                    : { icon: FiBriefcase, value: galleryPreview.openJobs.length, label: 'Open jobs' }
+                  { icon: FiEye, value: (galleryPreview.analytics?.viewsWeek ?? 0).toLocaleString('en-IN'), label: 'Profile Views', note: weekTrend(galleryPreview.analytics?.viewsChange) },
+                  { icon: FiBookmark, value: (galleryPreview.analytics?.saves ?? 0).toLocaleString('en-IN'), label: 'Project Saves', note: 'All time' },
+                  { icon: FiCalendar, value: (galleryPreview.analytics?.meetingsMonth ?? 0).toLocaleString('en-IN'), label: 'Meeting Requests', note: 'This month' },
+                  { icon: FiMessageSquare, value: (galleryPreview.analytics?.enquiriesMonth ?? 0).toLocaleString('en-IN'), label: 'Enquiries', note: 'This month' }
                 ]} />
                 <p className="text-xs text-slate-400 mt-3">Private by default — only visible to you until you switch it to Public above.</p>
               </Card>
@@ -581,7 +659,7 @@ const Profile = () => {
                   </div>
                 }
               >
-                <p className="text-slate-700 whitespace-pre-line">{formData.bio || 'No bio yet'}</p>
+                {formData.bio ? <ReadMore text={formData.bio} /> : <p className="text-slate-500">No bio yet</p>}
               </SectionCard>
 
               {availabilityOptions.length > 0 && (
@@ -1025,23 +1103,47 @@ const Profile = () => {
           <div id="section-activity" className="space-y-6 scroll-mt-24">
               <SectionCard
                 title="Recent Activity" sectionKey="activity-noop" editingSection={editingSection} editable={false}
-                action={<VisibilityPill isPublic={formData.activityPublic} editable onToggle={(v) => handleVisibilityToggle('activityPublic', v)} />}
+                action={
+                  <>
+                    <VisibilityPill isPublic={formData.activityPublic} editable onToggle={(v) => handleVisibilityToggle('activityPublic', v)} />
+                    <button type="button" onClick={() => setPostDraft({ kind: 'update', title: '', content: '', mediaUrl: '' })} className="inline-flex items-center gap-1.5 rounded-lg bg-[#2b2622] px-3 py-1.5 text-sm font-semibold text-white hover:bg-black" data-testid="post-update">
+                      <FiPlus className="w-4 h-4" />Post an update
+                    </button>
+                  </>
+                }
               >
-                {activity.length > 0 ? (
-                  <div className="space-y-3">
-                    {activity.map((post) => (
-                      <Card key={post._id} className="p-4">
-                        <p className="text-gray-800 text-sm">{post.content}</p>
-                        {post.mediaUrl && <img src={post.mediaUrl} alt="" className="mt-2 rounded-lg max-h-48 object-cover" />}
-                        <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
-                          <span className="flex items-center gap-1"><FiHeart className="w-3.5 h-3.5" />{post.likeCount}</span>
-                          <span className="flex items-center gap-1"><FiMessageSquare className="w-3.5 h-3.5" />{post.commentCount}</span>
-                          <span>{new Date(post.createdAt).toLocaleDateString()}</span>
-                        </div>
-                      </Card>
-                    ))}
+                {postDraft && (
+                  <div className="mb-5 space-y-3 rounded-2xl border border-[#f3d27a] bg-[#fffbeb] p-4" data-testid="post-form">
+                    <div className="flex flex-wrap gap-2">
+                      {[['update', 'Update'], ['article', 'Article'], ['site_update', 'Site Update'], ['opinion', 'Opinion'], ['project', 'Project']].map(([v, l]) => (
+                        <button key={v} type="button" onClick={() => setPostDraft((d) => ({ ...d, kind: v }))} className={`rounded-full px-3 py-1 text-sm ${postDraft.kind === v ? 'bg-[#2b2622] text-white' : 'bg-white border border-[#e3ddd5] text-[#6f655c]'}`}>{l}</button>
+                      ))}
+                    </div>
+                    <Input value={postDraft.title} onChange={(e) => setPostDraft((d) => ({ ...d, title: e.target.value }))} placeholder="Title (optional)" maxLength={160} spellCheck data-testid="post-title" />
+                    <Textarea value={postDraft.content} onChange={(e) => setPostDraft((d) => ({ ...d, content: e.target.value }))} placeholder="Share a project milestone, an idea or news" rows={4} maxLength={5000} spellCheck data-testid="post-content" />
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <label className="inline-flex cursor-pointer items-center gap-1.5 text-sm pf-muted hover:text-[#2b2622]">
+                        <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && uploadPostImage(e.target.files[0])} />
+                        <FiImage className="w-4 h-4" />{postDraft.mediaUrl ? 'Change photo' : 'Add a photo'}
+                      </label>
+                      <div className="flex gap-2">
+                        <Button variant="outline" onClick={() => setPostDraft(null)}>Cancel</Button>
+                        <Button onClick={publishPost} disabled={posting || !postDraft.content.trim()} className="bg-[#2b2622] text-white hover:bg-black" data-testid="post-submit">{posting ? 'Posting…' : 'Post'}</Button>
+                      </div>
+                    </div>
+                    {postDraft.mediaUrl && <img src={postDraft.mediaUrl} alt="" className="max-h-48 rounded-xl object-cover" />}
                   </div>
-                ) : <p className="text-slate-500">No activity yet.</p>}
+                )}
+                {activity.length > 0 ? (
+                  <ActivityCards
+                    posts={activity}
+                    onDelete={deletePost}
+                    renderShare={(post) => (
+                      <ShareMenu path={`/in/${user?.username}`} title={post.title || `${user?.name} on BeeBark`} text={post.content?.slice(0, 140)} align="start"
+                        trigger={<button type="button" className="inline-flex items-center gap-1.5 hover:text-[#2b2622]"><FiShare2 className="w-4 h-4" />Share</button>} />
+                    )}
+                  />
+                ) : !postDraft && <p className="text-slate-500">No activity yet. Post an update about your work.</p>}
               </SectionCard>
 
               <SectionCard
@@ -1080,7 +1182,7 @@ const Profile = () => {
                 }
               >
                 {galleryPreview.associatedProfessionals.length > 0
-                  ? <PeopleStrip people={galleryPreview.associatedProfessionals} />
+                  ? <PeopleGrid people={galleryPreview.associatedProfessionals} />
                   : <p className="text-slate-500">No one added yet. Use the pencil to add people you've worked with.</p>}
               </SectionCard>
           </div>
@@ -1089,7 +1191,7 @@ const Profile = () => {
             <div id="section-listings" className="scroll-mt-32">
               <Card className="p-5 sm:p-8 rounded-2xl border-black/5 shadow-sm">
                 <div className="flex items-center justify-between mb-5 gap-3">
-                  <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 font-serif">Listings</h3>
+                  <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 font-serif">Property Listings</h3>
                   <Link to="/listings" className="text-sm font-medium text-black hover:underline">Manage listings →</Link>
                 </div>
                 <ListingCards listings={galleryPreview.listings} />
@@ -1101,10 +1203,10 @@ const Profile = () => {
             <div id="section-hiring" className="scroll-mt-32">
               <Card className="p-5 sm:p-8 rounded-2xl border-black/5 shadow-sm">
                 <div className="flex items-center justify-between mb-5 gap-3">
-                  <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 font-serif">Hiring</h3>
+                  <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 font-serif">Open Positions</h3>
                   <Link to="/jobs" className="text-sm font-medium text-black hover:underline">Manage jobs →</Link>
                 </div>
-                <JobRows jobs={galleryPreview.openJobs} />
+                <JobRows jobs={galleryPreview.openJobs} own />
               </Card>
             </div>
           )}

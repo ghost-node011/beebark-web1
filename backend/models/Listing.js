@@ -16,7 +16,11 @@ const listingSchema = new mongoose.Schema({
   location: { type: String, default: '' },
   images: [{ type: String }],
   amenities: [{ type: String }],
-  status: { type: String, enum: ['active', 'under_offer', 'sold', 'rented', 'draft'], default: 'active', index: true }
+  // Upper end of a price range ("₹3.2 Cr – ₹8.5 Cr"); empty for a single price
+  priceTo: { type: Number, default: null },
+  // Short line under the title, e.g. "24 units available" or "Coming Q3 2026"
+  subtitle: { type: String, default: '' },
+  status: { type: String, enum: ['active', 'pre_launch', 'under_offer', 'sold', 'rented', 'draft'], default: 'active', index: true }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Listing', listingSchema);
