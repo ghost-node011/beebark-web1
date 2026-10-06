@@ -1,3 +1,4 @@
+import { useInLayout } from '../context/LayoutContext';
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -9,8 +10,9 @@ import {
 } from 'react-icons/fi';
 import { getCopy } from '../config/roleDomainCopy';
 import { personHeadline } from '../utils/personHeadline';
+import { preloadPath } from '../lib/pages';
 
-const Sidebar = () => {
+const SidebarFrame = () => {
   const { user } = useAuth();
   const { sidebarOpen, setSidebarOpen } = useUI();
   const close = () => setSidebarOpen(false);
@@ -77,6 +79,8 @@ const Sidebar = () => {
                 key={item.path}
                 to={item.path}
                 onClick={close}
+                onMouseEnter={() => preloadPath(item.path)}
+                onFocus={() => preloadPath(item.path)}
                 className={({ isActive }) =>
                   `sidebar-item ${isActive ? 'active' : ''}`
                 }
@@ -107,5 +111,8 @@ const Sidebar = () => {
     </>
   );
 };
+
+// Pages inside AppLayout get nothing here: the layout already shows the frame
+const Sidebar = ({ layout = false }) => (useInLayout() && !layout ? null : <SidebarFrame />);
 
 export default Sidebar;

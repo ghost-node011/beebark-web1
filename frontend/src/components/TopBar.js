@@ -1,3 +1,4 @@
+import { useInLayout } from '../context/LayoutContext';
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useUI } from '../context/UIContext';
@@ -16,19 +17,19 @@ import NotificationBell from './NotificationBell';
 import PeopleSearchBox from './PeopleSearchBox';
 import { personHeadline } from '../utils/personHeadline';
 
-const TopBar = () => {
+const TopBarFrame = () => {
   const { user, logout, logoutAll } = useAuth();
   const { setSidebarOpen } = useUI();
   const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/login', { replace: true });
   };
 
   const handleLogoutAll = async () => {
     await logoutAll();
-    navigate('/login');
+    navigate('/login', { replace: true });
   };
 
   return (
@@ -92,5 +93,8 @@ const TopBar = () => {
     </div>
   );
 };
+
+// Pages inside AppLayout get nothing here: the layout already shows the frame
+const TopBar = ({ layout = false }) => (useInLayout() && !layout ? null : <TopBarFrame />);
 
 export default TopBar;

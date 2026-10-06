@@ -127,7 +127,7 @@ const Onboarding = () => {
     try {
       await updateOnboarding({ role, intent: intent.filter((v) => intentsFor({ role }).some((i) => i.value === v)), industries, industriesOther, bio, location, skills, profilePic, name, complete: true });
       toast.success("You're all set!");
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
     } catch (error) {
       toast.error(error.response?.data?.error || 'Could not save. Please try again.');
     } finally {

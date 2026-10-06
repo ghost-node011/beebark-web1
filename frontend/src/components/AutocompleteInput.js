@@ -91,7 +91,7 @@ const SuggestingInput = ({ value, onChange, fetchSuggestions, minChars = 1, icon
 // school, degree, field, company, title, language, skill
 export const AutocompleteInput = ({ field, ...props }) => {
   const fetcher = React.useCallback(
-    (q) => axios.get(`${API_URL}/api/profile/suggest`, { params: { field, q } }).then((r) => r.data.suggestions || []),
+    (q) => axios.get(`${API_URL}/api/profile/suggest`, { params: { field, q }, silent: true }).then((r) => r.data.suggestions || []),
     [field]
   );
   return <SuggestingInput {...props} fetchSuggestions={fetcher} />;

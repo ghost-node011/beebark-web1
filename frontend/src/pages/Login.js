@@ -21,7 +21,7 @@ const Login = () => {
     try {
       const data = await login(email.trim(), password, remember);
       toast.success(data.user.onboardingCompleted ? 'Welcome back!' : 'Welcome to BeeBark!');
-      navigate(postAuthPath(data.user));
+      navigate(postAuthPath(data.user), { replace: true });
     } catch (error) {
       const data = error.response?.data;
       if (error.response?.status === 403 && data?.requiresVerification) {
@@ -39,7 +39,7 @@ const Login = () => {
     try {
       const data = await googleLogin(credential);
       toast.success(data.user.onboardingCompleted ? 'Welcome back!' : 'Welcome to BeeBark!');
-      navigate(postAuthPath(data.user));
+      navigate(postAuthPath(data.user), { replace: true });
     } catch (error) {
       toast.error(error.response?.data?.error || 'Google sign-in failed');
     }

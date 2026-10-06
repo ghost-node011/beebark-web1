@@ -1,95 +1,57 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { Suspense, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import { UIProvider } from './context/UIContext';
 import { Toaster } from './components/ui/sonner';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import VerifyEmail from './pages/VerifyEmail';
-import Onboarding from './pages/Onboarding';
-import ForgotPassword from './pages/ForgotPassword';
-import LinkedInCallback from './pages/LinkedInCallback';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import PhoneLogin from './pages/PhoneLogin';
-import Dashboard from './pages/Dashboard';
-import Feed from './pages/Feed';
-import Portfolio from './pages/Portfolio';
-import PublicPortfolio from './pages/PublicPortfolio';
-import Profile from './pages/Profile';
-import PublicProfile from './pages/PublicProfile';
-import Connections from './pages/Connections';
-import Chat from './pages/Chat';
-import Jobs from './pages/Jobs';
-import News from './pages/News';
-import Official from './pages/Official';
-import Meetings from './pages/Meetings';
-import MeetingRoom from './pages/MeetingRoom';
-import Settings from './pages/Settings';
-import Notifications from './pages/Notifications';
-import CalendarPage from './pages/Calendar';
-import Listings from './pages/Listings';
-import ListingDetail from './pages/ListingDetail';
-import Search from './pages/Search';
+import AppLayout from './components/AppLayout';
+import BeeLoader from './components/BeeLoader';
+import TopProgressBar from './components/TopProgressBar';
+import { Pages, warmUp } from './lib/pages';
+import { installAxiosProgress } from './lib/progress';
 import './App.css';
 
-const PrivateRoute = ({ children }) => {
+installAxiosProgress();
+
+const {
+  Login, Register, VerifyEmail, Onboarding, ForgotPassword, LinkedInCallback, PrivacyPolicy, PhoneLogin,
+  Dashboard, Feed, Portfolio, PublicPortfolio, Profile, PublicProfile, Connections, Chat, Jobs, News,
+  Official, Meetings, MeetingRoom, Settings, Notifications, CalendarPage, Listings, ListingDetail, Search
+} = Pages;
+
+// Redirects replace the current history entry, so Back never bounces into a redirect loop
+const Go = ({ to }) => <Navigate to={to} replace />;
+
+// Signed-in pages. The bee loader covers the screen only while the session is
+// first checked; after that, pages load inside the layout.
+const PrivateRoute = ({ bare = false }) => {
   const { user, loading } = useAuth();
-  
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mx-auto"></div>
-          <p className="mt-4 text-slate-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-  
-  if (!user) return <Navigate to="/login" />;
-  // Safety net: onboardingCompleted is now the single source of truth for
-  // gating onboarding (see postAuthPath in AuthContext) and is backfilled for
-  // legacy accounts, so this can no longer wrongly catch returning users.
-  if (user.onboardingCompleted === false) return <Navigate to="/onboarding" />;
-  return children;
+  useEffect(() => { if (user) warmUp(); }, [user]);
+  if (loading) return <BeeLoader size="full" />;
+  if (!user) return <Go to="/login" />;
+  // Safety net: onboardingCompleted is the single source of truth for gating
+  // onboarding (see postAuthPath in AuthContext).
+  if (user.onboardingCompleted === false) return <Go to="/onboarding" />;
+  // `bare`: signed-in pages without the frame (the full-screen meeting room)
+  return bare ? <Suspense fallback={<BeeLoader size="full" />}><Outlet /></Suspense> : <AppLayout />;
 };
 
 const OnboardingRoute = () => {
   const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mx-auto"></div>
-          <p className="mt-4 text-slate-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) return <Navigate to="/login" />;
-  if (user.onboardingCompleted) return <Navigate to="/dashboard" />;
+  if (loading) return <BeeLoader size="full" />;
+  if (!user) return <Go to="/login" />;
+  if (user.onboardingCompleted) return <Go to="/dashboard" />;
   return <Onboarding />;
 };
 
 const PublicRoute = ({ children }) => {
   const { user, loading } = useAuth();
-  
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mx-auto"></div>
-          <p className="mt-4 text-slate-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-  
-  return user ? <Navigate to="/dashboard" /> : children;
+  if (loading) return <BeeLoader size="full" />;
+  return user ? <Go to="/dashboard" /> : children;
 };
+
+// Pages outside the app frame (sign-in, public portfolio) show the loader on their own
+const Standalone = ({ children }) => <Suspense fallback={<BeeLoader size="full" />}>{children}</Suspense>;
 
 function App() {
   return (
@@ -98,8 +60,10 @@ function App() {
         <SocketProvider>
           <UIProvider>
           <Toaster position="top-right" richColors />
+          <TopProgressBar />
+          <Standalone>
           <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" />} />
+            <Route path="/" element={<Go to="/dashboard" />} />
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
             <Route path="/verify-email" element={<PublicRoute><VerifyEmail /></PublicRoute>} />
@@ -110,32 +74,34 @@ function App() {
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/portfolio/:username" element={<PublicPortfolio />} />
-            <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-            <Route path="/feed" element={<PrivateRoute><Feed /></PrivateRoute>} />
-            <Route path="/portfolio" element={<PrivateRoute><Portfolio /></PrivateRoute>} />
-            <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
-            <Route path="/profile/:username" element={<PrivateRoute><PublicProfile /></PrivateRoute>} />
-            <Route path="/connections" element={<PrivateRoute><Connections /></PrivateRoute>} />
-            <Route path="/chat" element={<PrivateRoute><Chat /></PrivateRoute>} />
-            <Route path="/jobs" element={<PrivateRoute><Jobs /></PrivateRoute>} />
-            <Route path="/news" element={<PrivateRoute><News /></PrivateRoute>} />
-            <Route path="/official" element={<PrivateRoute><Official /></PrivateRoute>} />
-            <Route path="/meetings" element={<PrivateRoute><Meetings /></PrivateRoute>} />
-            <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
-            <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
-            <Route path="/calendar" element={<PrivateRoute><CalendarPage /></PrivateRoute>} />
-            <Route path="/listings" element={<PrivateRoute><Listings /></PrivateRoute>} />
-            <Route path="/listing/:id" element={<PrivateRoute><ListingDetail /></PrivateRoute>} />
-            <Route path="/search" element={<PrivateRoute><Search /></PrivateRoute>} />
-            <Route path="/meeting-room/:meetingId" element={<PrivateRoute><MeetingRoom /></PrivateRoute>} />
-            <Route path="/reels" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-            <Route path="/projects" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-            <Route path="/store" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-            <Route path="/rent" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-            <Route path="/events" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-            <Route path="/memories" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-            <Route path="/wallet" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+            <Route element={<PrivateRoute />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/feed" element={<Feed />} />
+              <Route path="/portfolio" element={<Portfolio />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/profile/:username" element={<PublicProfile />} />
+              <Route path="/connections" element={<Connections />} />
+              <Route path="/chat" element={<Chat />} />
+              <Route path="/jobs" element={<Jobs />} />
+              <Route path="/news" element={<News />} />
+              <Route path="/official" element={<Official />} />
+              <Route path="/meetings" element={<Meetings />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/notifications" element={<Notifications />} />
+              <Route path="/calendar" element={<CalendarPage />} />
+              <Route path="/listings" element={<Listings />} />
+              <Route path="/listing/:id" element={<ListingDetail />} />
+              <Route path="/search" element={<Search />} />
+              {['/reels', '/projects', '/store', '/rent', '/events', '/memories', '/wallet'].map((p) => (
+                <Route key={p} path={p} element={<Go to="/dashboard" />} />
+              ))}
+            </Route>
+            <Route element={<PrivateRoute bare />}>
+              <Route path="/meeting-room/:meetingId" element={<MeetingRoom />} />
+            </Route>
+            <Route path="*" element={<Go to="/dashboard" />} />
           </Routes>
+          </Standalone>
           </UIProvider>
         </SocketProvider>
       </AuthProvider>

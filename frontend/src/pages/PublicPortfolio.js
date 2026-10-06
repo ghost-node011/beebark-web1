@@ -10,6 +10,7 @@ import { resolveTemplate, ProjectViewer, PROJECT_VIEWER_DIALOG_CLASS } from '../
 import ShareMenu from '../components/ShareMenu';
 import ReportDialog from '../components/ReportDialog';
 import { exportPortfolioPdf } from '../utils/exportPortfolioPdf';
+import BeeLoader from '../components/BeeLoader';
 import { FiArrowLeft, FiDownload, FiShare2, FiFlag } from 'react-icons/fi';
 
 const PublicPortfolio = () => {
@@ -80,7 +81,7 @@ const PublicPortfolio = () => {
   }
 
   if (!data) {
-    return <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-500">Loading...</div>;
+    return <BeeLoader size="full" label="Opening the portfolio…" />;
   }
 
   const Template = resolveTemplate(data.theme);

@@ -21,7 +21,7 @@ const ProfileCompletionBadge = () => {
   const [completion, setCompletion] = useState(null);
 
   useEffect(() => {
-    axios.get(`${API_URL}/api/profile/completion`)
+    axios.get(`${API_URL}/api/profile/completion`, { silent: true })
       .then((res) => setCompletion(res.data))
       .catch(() => setCompletion(null));
   }, []);

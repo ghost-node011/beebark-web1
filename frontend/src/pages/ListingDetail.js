@@ -7,6 +7,7 @@ import { Button } from '../components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { FiArrowLeft, FiChevronLeft, FiChevronRight, FiFlag, FiHome, FiMapPin, FiMaximize, FiMessageCircle, FiEdit2 } from 'react-icons/fi';
 import ShareMenu from '../components/ShareMenu';
+import BeeLoader from '../components/BeeLoader';
 import ReportDialog from '../components/ReportDialog';
 import { API_URL } from '../config/api';
 import { personHeadline } from '../utils/personHeadline';
@@ -46,7 +47,11 @@ const ListingDetail = () => {
       </div>
     );
   }
-  if (!data) return <div className="min-h-screen flex items-center justify-center text-gray-400">Loading...</div>;
+  if (!data) {
+    return (
+      <div className="lg:ml-64 mt-16 flex min-h-[calc(100vh-4rem)] items-center justify-center p-8"><BeeLoader size="section" label="Opening the listing…" /></div>
+    );
+  }
 
   const { listing, isOwner } = data;
   const owner = listing.user;

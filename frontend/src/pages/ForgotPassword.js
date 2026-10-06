@@ -69,7 +69,7 @@ const ForgotPassword = () => {
     try {
       await axios.post(`${API_URL}/api/auth/reset-password`, { email: email.trim(), otp, password });
       toast.success('Password reset successful — please log in');
-      navigate('/login');
+      navigate('/login', { replace: true });
     } catch (error) {
       toast.error(error.response?.data?.error || 'Reset failed');
     } finally {

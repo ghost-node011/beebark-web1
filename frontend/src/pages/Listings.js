@@ -13,6 +13,7 @@ import { FiPlus, FiMapPin, FiEdit2, FiTrash2, FiSearch, FiHome, FiUpload, FiX, F
 import { Link } from 'react-router-dom';
 import { LocationInput } from '../components/AutocompleteInput';
 import ShareMenu from '../components/ShareMenu';
+import { SkeletonCards } from '../components/Skeletons';
 import { API_URL } from '../config/api';
 
 const PURPOSES = [{ value: 'sale', label: 'For sale' }, { value: 'rent', label: 'For rent' }, { value: 'lease', label: 'For lease' }];
@@ -154,7 +155,7 @@ const Listings = () => {
           </div>
 
           {loading ? (
-            <p className="text-gray-400 text-center py-12">Loading...</p>
+            <SkeletonCards count={6} />
           ) : listings.length === 0 ? (
             <Card className="py-16 text-center">
               <FiHome className="w-12 h-12 mx-auto text-gray-300 mb-3" />

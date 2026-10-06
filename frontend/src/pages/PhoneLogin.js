@@ -70,7 +70,7 @@ const PhoneLogin = () => {
       const idToken = await cred.user.getIdToken();
       const data = await firebaseLogin(idToken);
       toast.success(data.user.onboardingCompleted ? 'Welcome back!' : 'Welcome to BeeBark!');
-      navigate(postAuthPath(data.user));
+      navigate(postAuthPath(data.user), { replace: true });
     } catch (err) {
       toast.error(err.response?.data?.error || err.message || 'Verification failed');
     } finally {

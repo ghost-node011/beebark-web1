@@ -18,6 +18,7 @@ import { THEME_META, FONT_META, ACCENT_PRESETS, COLOUR_PRESETS, PALETTE_DEFAULTS
 import ShareMenu from '../components/ShareMenu';
 import { PillFilter } from '../components/profile/ProfileShell';
 import { exportPortfolioPdf } from '../utils/exportPortfolioPdf';
+import { SkeletonCards } from '../components/Skeletons';
 import { getCopy } from '../config/roleDomainCopy';
 
 const emptyForm = { title: '', description: '', images: [], category: '', location: '', projectStatus: '' };
@@ -502,7 +503,7 @@ const Portfolio = () => {
           <PillFilter options={['All', ...existingCategories]} active={activeCategory} onChange={setActiveCategory} />
         </div>
       )}
-      {loading && <p className="text-gray-500">Loading...</p>}
+      {loading && <SkeletonCards count={3} />}
       {!loading && items.length === 0 && (
         <div className="rounded-2xl border border-dashed border-gray-300 bg-white py-16 text-center">
           <FiImage className="mx-auto mb-4 h-14 w-14 text-gray-300" />

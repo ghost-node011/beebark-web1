@@ -22,6 +22,7 @@ import { API_URL } from '../config/api';
 import { getCopy } from '../config/roleDomainCopy';
 import { useAuth } from '../context/AuthContext';
 import { personHeadline } from '../utils/personHeadline';
+import { SkeletonCards } from '../components/Skeletons';
 import Highlight, { searchWords } from '../components/Highlight';
 
 // "3d ago" style label for a date, or '' when there isn't one
@@ -88,13 +89,6 @@ const EmptyState = ({ icon: Icon, title, text, action }) => (
     <p className="font-semibold text-black">{title}</p>
     {text && <p className="text-sm text-gray-500 mt-1 max-w-sm mx-auto">{text}</p>}
     {action && <div className="mt-4">{action}</div>}
-  </div>
-);
-
-const Spinner = ({ label }) => (
-  <div className="text-center py-12">
-    <div className="spinner mx-auto mb-4"></div>
-    <p className="text-gray-500">{label}</p>
   </div>
 );
 
@@ -190,7 +184,7 @@ const Connections = () => {
       const seq = ++searchSeq.current;
       setSearching(true);
       try {
-        const response = await axios.get(`${API_URL}/api/people/search`, { params: { q: term, limit: 30 } });
+        const response = await axios.get(`${API_URL}/api/people/search`, { params: { q: term, limit: 30 }, silent: true });
         if (seq !== searchSeq.current) return; // a newer search has started
         setSearchResults(response.data.people || []);
         setHasSearched(true);
@@ -506,7 +500,7 @@ const Connections = () => {
             {/* My connections */}
             <TabsContent value="connections" className="mt-0">
               {connectionsLoading ? (
-                <Spinner label="Loading connections..." />
+                <SkeletonCards count={6} media="h-28" />
               ) : connections.length === 0 ? (
                 <EmptyState
                   icon={FiUsers}
@@ -622,7 +616,7 @@ const Connections = () => {
             {/* Suggestions */}
             <TabsContent value="suggestions" className="mt-0">
               {loading ? (
-                <Spinner label="Loading suggestions..." />
+                <SkeletonCards count={6} media="h-28" />
               ) : suggestions.length === 0 ? (
                 <EmptyState icon={FiUsers} title="No suggestions right now" text="Try searching for people by name, username or email." />
               ) : (

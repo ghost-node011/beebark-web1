@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { FiBell, FiUserPlus, FiUserCheck, FiCheck, FiTrash2 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config/api';
+import { SkeletonRows } from '../components/Skeletons';
 import { notificationText, timeAgo } from '../components/NotificationBell';
 
 const ICONS = { connection_request: FiUserPlus, connection_accepted: FiUserCheck };
@@ -159,7 +160,7 @@ const Notifications = () => {
                 </React.Fragment>
               );
             })}
-            {loading && <p className="py-6 text-center text-sm text-gray-400">Loading...</p>}
+            {loading && <SkeletonRows rows={items.length ? 2 : 6} />}
           </Card>
 
           {page < pages && !loading && (

@@ -37,7 +37,7 @@ const NotificationBell = () => {
   const containerRef = useRef(null);
 
   const fetchNotifications = useCallback(() => {
-    axios.get(`${API_URL}/api/notifications`, { params: { limit: 15 } })
+    axios.get(`${API_URL}/api/notifications`, { params: { limit: 15 }, silent: true })
       .then((res) => {
         setNotifications(res.data.notifications || []);
         setUnreadCount(res.data.unreadCount || 0);

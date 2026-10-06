@@ -37,7 +37,7 @@ const PeopleSearchBox = () => {
     if (!term) { setResults([]); setTotal(0); return undefined; }
     setLoading(true);
     const t = setTimeout(() => {
-      axios.get(`${API_URL}/api/people/search`, { params: { q: term, limit: 7 } })
+      axios.get(`${API_URL}/api/people/search`, { params: { q: term, limit: 7 }, silent: true })
         .then((res) => { setResults(res.data.people || []); setTotal(res.data.total || 0); setActive(-1); })
         .catch(() => {})
         .finally(() => setLoading(false));

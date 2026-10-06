@@ -249,7 +249,7 @@ const Jobs = () => {
 
   const openJob = useCallback((job) => {
     setDetailJob(job);
-    setSearchParams((p) => { p.set('job', job._id); return p; });
+    setSearchParams((p) => { p.set('job', job._id); return p; }, { replace: true });
   }, [setSearchParams]);
 
   const closeJob = () => {

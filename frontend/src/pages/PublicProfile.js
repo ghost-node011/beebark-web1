@@ -92,7 +92,7 @@ const PublicProfile = () => {
 
   if (notFound) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="lg:ml-64 mt-16 flex min-h-[calc(100vh-4rem)] items-center justify-center p-8">
         <div className="text-center">
           <p className="text-gray-600 mb-4">Profile not found.</p>
           <Link to="/dashboard" className="text-black font-semibold hover:underline">Back to BeeBark</Link>

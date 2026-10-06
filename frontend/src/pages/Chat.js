@@ -17,6 +17,7 @@ import {
 } from 'react-icons/fi';
 import { API_URL } from '../config/api';
 import ReportDialog from '../components/ReportDialog';
+import { SkeletonRows } from '../components/Skeletons';
 import { personHeadline } from '../utils/personHeadline';
 
 const FILTERS = [
@@ -315,7 +316,7 @@ const Chat = () => {
     if (!selected || socket?.connected) return undefined;
     const id = selected.person._id;
     const t = setInterval(() => {
-      axios.get(`${API_URL}/api/messages/${id}`).then((res) => setMessages(res.data.messages || [])).catch(() => {});
+      axios.get(`${API_URL}/api/messages/${id}`, { silent: true }).then((res) => setMessages(res.data.messages || [])).catch(() => {});
     }, 4000);
     return () => clearInterval(t);
   }, [selected, socket]);
@@ -553,7 +554,7 @@ const Chat = () => {
           </div>
           <div className="flex-1 overflow-y-auto">
             {loadingList ? (
-              <p className="p-8 text-center text-sm text-gray-400">Loading...</p>
+              <SkeletonRows rows={7} />
             ) : conversations.length > 0 ? conversations.map((row) => {
               const active = selected?.person._id === row.person._id;
               return (

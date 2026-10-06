@@ -37,7 +37,7 @@ const VerifyEmail = () => {
 
   return (
     <AuthShell headline="Almost there" subline="Verify your email to access your account.">
-      <OtpVerification email={email} onVerified={(data) => navigate(postAuthPath(data.user))} />
+      <OtpVerification email={email} onVerified={(data) => navigate(postAuthPath(data.user), { replace: true })} />
       <p className="mt-6 text-center text-sm text-gray-600">
         <Link to="/login" className="font-semibold text-black hover:underline">Back to login</Link>
       </p>

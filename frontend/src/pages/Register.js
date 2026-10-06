@@ -46,7 +46,7 @@ const Register = () => {
     try {
       const data = await googleLogin(credential);
       toast.success(data.user.onboardingCompleted ? 'Welcome back!' : 'Welcome to BeeBark!');
-      navigate(postAuthPath(data.user));
+      navigate(postAuthPath(data.user), { replace: true });
     } catch (error) {
       toast.error(error.response?.data?.error || 'Google sign-in failed');
     }
@@ -151,7 +151,7 @@ const Register = () => {
       {step === 1 && (
         <OtpVerification
           email={form.email.trim()}
-          onVerified={(data) => navigate(postAuthPath(data.user))}
+          onVerified={(data) => navigate(postAuthPath(data.user), { replace: true })}
           onBack={() => setStep(0)}
         />
       )}

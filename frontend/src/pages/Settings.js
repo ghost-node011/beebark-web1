@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { FiUser, FiLock, FiSlash, FiLogOut, FiPauseCircle, FiTrash2, FiChevronRight, FiBell, FiCalendar } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
+import { SkeletonRows } from '../components/Skeletons';
 import { API_URL } from '../config/api';
 
 const PRIVACY = [
@@ -74,7 +75,7 @@ const Settings = () => {
       await axios.post(`${API_URL}/api/account/deactivate`);
       toast.success('Your account is deactivated. Sign in again any time to come back.');
       logout();
-      navigate('/login');
+      navigate('/login', { replace: true });
     } catch (error) {
       toast.error(error.response?.data?.error || 'Could not deactivate');
       setBusy(false);
@@ -87,7 +88,7 @@ const Settings = () => {
       await axios.post(`${API_URL}/api/account/delete`, { confirm: confirmText, password });
       toast.success('Your account has been deleted');
       logout();
-      navigate('/login');
+      navigate('/login', { replace: true });
     } catch (error) {
       toast.error(error.response?.data?.error || 'Could not delete account');
       setBusy(false);
@@ -96,7 +97,7 @@ const Settings = () => {
 
   const signOutEverywhere = async () => {
     await logoutAll();
-    navigate('/login');
+    navigate('/login', { replace: true });
   };
 
   return (
@@ -151,7 +152,7 @@ const Settings = () => {
 
           <Section icon={FiSlash} title="Blocked people">
             {blocked === null ? (
-              <p className="text-sm text-gray-400">Loading...</p>
+              <SkeletonRows rows={2} className="-mx-4" />
             ) : blocked.length === 0 ? (
               <p className="text-sm text-gray-500">You haven't blocked anyone. You can block someone from their profile or a chat.</p>
             ) : (
@@ -172,7 +173,7 @@ const Settings = () => {
 
           <Section icon={FiLogOut} title="Sign out">
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" onClick={() => { logout(); navigate('/login'); }}>Log out</Button>
+              <Button variant="outline" onClick={() => { logout(); navigate('/login', { replace: true }); }}>Log out</Button>
               <Button variant="outline" onClick={signOutEverywhere}>Log out from all devices</Button>
             </div>
           </Section>

@@ -48,7 +48,7 @@ const LinkedInCallback = () => {
           <>
             <h2 className="text-xl font-bold text-black">Sign-in failed</h2>
             <p className="mt-2 text-sm text-gray-600">{error}</p>
-            <button onClick={() => navigate('/login')} className="auth-yellow-btn mt-6">Back to login</button>
+            <button onClick={() => navigate('/login', { replace: true })} className="auth-yellow-btn mt-6">Back to login</button>
           </>
         ) : (
           <>
