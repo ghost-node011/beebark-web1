@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const router = express.Router();
 const User = require('../models/User');
 const Notification = require('../models/Notification');
@@ -28,6 +29,7 @@ router.get('/search', auth, async (req, res) => {
     const currentUser = await User.findById(req.userId);
     const connectionIds = currentUser.connections.map(id => id.toString());
     const sentRequestIds = (currentUser.sentRequests || []).map(id => id.toString());
+    const receivedRequestIds = (currentUser.pendingRequests || []).map(id => id.toString());
 
     const users = await User.find({
       $and: [
@@ -51,7 +53,8 @@ router.get('/search', auth, async (req, res) => {
     const usersWithStatus = users.map(user => ({
       ...user.toObject(),
       isConnected: connectionIds.includes(user._id.toString()),
-      requestSent: sentRequestIds.includes(user._id.toString())
+      requestSent: sentRequestIds.includes(user._id.toString()),
+      requestReceived: receivedRequestIds.includes(user._id.toString())
     }));
 
     res.json({ users: usersWithStatus });
@@ -173,15 +176,45 @@ router.post('/reject-request/:requesterId', auth, async (req, res) => {
   }
 });
 
+// When each connection request was sent, from its notification (requests
+// themselves are bare ids). Returns a Map of other-person id -> Date.
+async function requestTimes({ recipient, actor }) {
+  const notes = await Notification.find({ type: 'connection_request', ...(recipient ? { recipient } : {}), ...(actor ? { actor } : {}) })
+    .select('recipient actor createdAt')
+    .lean();
+  const times = new Map();
+  notes.forEach((n) => {
+    const key = String(recipient ? n.actor : n.recipient);
+    if (!times.has(key) || times.get(key) < n.createdAt) times.set(key, n.createdAt);
+  });
+  return times;
+}
+
 // Get pending requests
 router.get('/pending', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
-      .populate('pendingRequests', `${PERSON_FIELDS} accountStatus`);
+      .populate('pendingRequests', `${PERSON_FIELDS} accountStatus coverPhoto`);
 
-    res.json({ requests: uniqueIds(user.pendingRequests).filter((u) => u && u.accountStatus !== 'deactivated') });
+    const people = uniqueIds(user.pendingRequests).filter((u) => u && u.accountStatus !== 'deactivated');
+    const times = await requestTimes({ recipient: user._id });
+    res.json({ requests: people.map((p) => ({ ...p.toObject(), requestedAt: times.get(String(p._id)) || null })) });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch requests', message: error.message });
+  }
+});
+
+// Get requests the current user has sent and that are still waiting
+router.get('/sent', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId)
+      .populate('sentRequests', `${PERSON_FIELDS} accountStatus coverPhoto`);
+
+    const people = uniqueIds(user.sentRequests).filter((u) => u && u.accountStatus !== 'deactivated');
+    const times = await requestTimes({ actor: user._id });
+    res.json({ sent: people.map((p) => ({ ...p.toObject(), requestedAt: times.get(String(p._id)) || null })) });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch sent requests', message: error.message });
   }
 });
 
@@ -189,7 +222,7 @@ router.get('/pending', auth, async (req, res) => {
 router.get('/list', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
-      .populate('connections', `${PERSON_FIELDS} accountStatus`);
+      .populate('connections', `${PERSON_FIELDS} accountStatus coverPhoto`);
 
     // Heal duplicates left by crossing requests (one person, one chat)
     const unique = uniqueIds(user.connections);
@@ -200,6 +233,26 @@ router.get('/list', auth, async (req, res) => {
     res.json({ connections: unique.filter((c) => c && c.accountStatus !== 'deactivated') });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch connections', message: error.message });
+  }
+});
+
+// Withdraw a connection request you sent
+router.delete('/cancel-request/:targetUserId', auth, async (req, res) => {
+  try {
+    const { targetUserId } = req.params;
+    if (!mongoose.isValidObjectId(targetUserId)) {
+      return res.status(400).json({ error: 'Invalid user' });
+    }
+
+    await Promise.all([
+      User.updateOne({ _id: req.userId }, { $pull: { sentRequests: targetUserId } }),
+      User.updateOne({ _id: targetUserId }, { $pull: { pendingRequests: req.userId } }),
+      Notification.deleteMany({ recipient: targetUserId, actor: req.userId, type: 'connection_request' })
+    ]);
+
+    res.json({ message: 'Request withdrawn' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to withdraw request', message: error.message });
   }
 });
 

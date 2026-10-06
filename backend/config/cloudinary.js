@@ -74,8 +74,13 @@ const uploadToCloudinary = async (filePath, folder = 'social-network') => {
     
     fs.unlinkSync(filePath);
     
+    // Photos are delivered as JPEG/WebP (f_auto) at a sensible size: iPhone
+    // HEIC files otherwise show as broken images in most browsers
+    const url = result.resource_type === 'image'
+      ? result.secure_url.replace('/image/upload/', '/image/upload/f_auto,q_auto,c_limit,w_2400/').replace(/\.(heic|heif)$/i, '.jpg')
+      : result.secure_url;
     return {
-      url: result.secure_url,
+      url,
       publicId: result.public_id
     };
   } catch (error) {

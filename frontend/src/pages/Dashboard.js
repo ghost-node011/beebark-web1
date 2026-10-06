@@ -3,8 +3,9 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import {
   Check, ArrowRight, Zap, MapPin, GraduationCap, Users, BriefcaseBusiness, Building2,
-  Briefcase, UserRound, Store, ChevronRight, Megaphone, Image as ImageIcon
+  Briefcase, UserRound, Store, ChevronRight, Megaphone, Image as ImageIcon, FileText, ExternalLink
 } from 'lucide-react';
+import ResumeImport from '../components/ResumeImport';
 import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar';
 import { useAuth } from '../context/AuthContext';
@@ -225,6 +226,38 @@ const Dashboard = () => {
             <Link to={v.secondary.to} className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl border border-white/70 px-5 py-3 font-semibold text-white hover:bg-white/10">
               {v.secondary.label}
             </Link>
+          </div>
+        </section>
+
+        {/* Résumé: see it, open it, replace it */}
+        <section className="mt-6 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center" data-testid="dashboard-resume">
+          <div className="flex min-w-0 flex-1 items-center gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-yellow-50"><FileText className="h-6 w-6 text-yellow-600" /></div>
+            {user?.resume?.url ? (
+              <div className="min-w-0">
+                <p className="text-xs uppercase tracking-widest text-slate-500">Your résumé</p>
+                <p className="truncate font-semibold text-black">{user.resume.fileName || 'Résumé'}</p>
+                <p className="text-xs text-slate-500">
+                  {user.resume.uploadedAt ? `Updated ${new Date(user.resume.uploadedAt).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}` : 'Uploaded'}
+                  {typeof user.resume.score === 'number' ? ` · Score ${user.resume.score}/100` : ''}
+                  {' · only you can see it'}
+                </p>
+              </div>
+            ) : (
+              <div className="min-w-0">
+                <p className="font-semibold text-black">Add your résumé</p>
+                <p className="text-sm text-slate-500">Fill your skills automatically and apply to jobs faster. Only you can see it.</p>
+              </div>
+            )}
+          </div>
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {user?.resume?.url && (
+              <a href={user.resume.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-black hover:bg-slate-50" data-testid="dashboard-resume-view">
+                View <ExternalLink className="h-4 w-4" />
+              </a>
+            )}
+            <ResumeImport onImported={() => refreshUser?.()} />
+            {user?.resume?.url && <Link to="/profile" className="text-sm font-medium text-slate-600 hover:text-black">Manage</Link>}
           </div>
         </section>
 

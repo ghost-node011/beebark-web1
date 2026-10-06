@@ -57,13 +57,28 @@ const jobSchema = new mongoose.Schema({
     enum: ['internship', 'graduate', 'full_time', 'part_time', 'contract', 'freelance', ''],
     default: ''
   },
+  workplace: {
+    type: String,
+    enum: ['onsite', 'remote', 'hybrid', ''],
+    default: ''
+  },
+  experienceLevel: {
+    type: String,
+    enum: ['fresher', 'junior', 'mid', 'senior', ''],
+    default: ''
+  },
+  skills: [{ type: String }],
+  applyBy: { type: Date, default: null },
   tags: [{ type: String }],
   imageUrl: { type: String, default: '' },
   isDemo: { type: Boolean, default: false },
+  // 'active' is the open state (autoApply/dashboard query it); 'open' is accepted
+  // from the API and stored as 'active' so existing queries keep working
   status: {
     type: String,
     enum: ['active', 'closed'],
-    default: 'active'
+    default: 'active',
+    index: true
   }
 }, {
   timestamps: true

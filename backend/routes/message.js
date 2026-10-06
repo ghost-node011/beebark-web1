@@ -170,17 +170,22 @@ router.put('/conversations/:otherId/read', auth, async (req, res) => {
 // Report someone (from a chat or their profile): { userId, reason, details, context, messageId, archive }
 router.post('/report', auth, async (req, res) => {
   try {
-    const { userId, reason, details, context, messageId } = req.body;
+    const { userId, reason, details, context, messageId, itemId } = req.body;
     if (!isId(userId) || String(userId) === String(req.userId)) return res.status(400).json({ error: 'Invalid user' });
-    const reasons = ['spam', 'harassment', 'fake_profile', 'inappropriate', 'scam', 'other'];
+    const reasons = ['spam', 'harassment', 'fake_profile', 'inappropriate', 'scam', 'misleading', 'copyright', 'other'];
+    const contexts = ['chat', 'profile', 'post', 'job', 'portfolio', 'listing'];
+    // One open report per person per item is enough
+    const already = await Report.findOne({ reporter: req.userId, reportedUser: userId, context, itemId: isId(itemId) ? itemId : undefined, status: 'open', reason });
+    if (already) return res.status(201).json({ message: 'Thanks, we\'ll review this report' });
     if (!reasons.includes(reason)) return res.status(400).json({ error: 'Choose a reason' });
     await Report.create({
       reporter: req.userId,
       reportedUser: userId,
       reason,
       details: String(details || '').slice(0, 1000),
-      context: ['chat', 'profile', 'post'].includes(context) ? context : 'other',
-      messageId: isId(messageId) ? messageId : undefined
+      context: contexts.includes(context) ? context : 'other',
+      messageId: isId(messageId) ? messageId : undefined,
+      itemId: isId(itemId) ? itemId : undefined
     });
     // Reporting a chat as spam also moves it out of the inbox
     if (context === 'chat' && (reason === 'spam' || req.body.archive === true)) {

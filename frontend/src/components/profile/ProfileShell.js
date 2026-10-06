@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
-import { toast } from 'sonner';
+import React, { useEffect, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { Badge } from '../ui/badge';
-import { FiCamera, FiX, FiShare2, FiMapPin, FiPlus } from 'react-icons/fi';
-
-export const TABS = ['Overview', 'Portfolio', 'Experience', 'Activity'];
+import { FiCamera, FiX, FiMapPin, FiPlus, FiBriefcase, FiUsers, FiInfo, FiGlobe } from 'react-icons/fi';
+import {
+  FaLinkedin, FaInstagram, FaBehance, FaPinterest, FaYoutube, FaXTwitter, FaFacebook, FaGithub, FaHouzz, FaDribbble
+} from 'react-icons/fa6';
 
 // Page background used by both profile pages — a warm off-white rather than
 // plain slate, to match the reference design's editorial tone.
@@ -24,147 +23,173 @@ export const PillFilter = ({ options, active, onChange }) => (
   </div>
 );
 
-export const TAB_TO_SECTION_ID = {
-  Overview: 'section-overview',
-  Portfolio: 'section-portfolio',
-  Experience: 'section-experience',
-  Activity: 'section-activity'
+export const SOCIAL = {
+  linkedin: { label: 'LinkedIn', icon: FaLinkedin, colour: 'text-[#0A66C2]' },
+  instagram: { label: 'Instagram', icon: FaInstagram, colour: 'text-[#E4405F]' },
+  behance: { label: 'Behance', icon: FaBehance, colour: 'text-[#1769FF]' },
+  pinterest: { label: 'Pinterest', icon: FaPinterest, colour: 'text-[#E60023]' },
+  youtube: { label: 'YouTube', icon: FaYoutube, colour: 'text-[#FF0000]' },
+  x: { label: 'X', icon: FaXTwitter, colour: 'text-black' },
+  facebook: { label: 'Facebook', icon: FaFacebook, colour: 'text-[#1877F2]' },
+  github: { label: 'GitHub', icon: FaGithub, colour: 'text-black' },
+  houzz: { label: 'Houzz', icon: FaHouzz, colour: 'text-[#4DBC15]' },
+  dribbble: { label: 'Dribbble', icon: FaDribbble, colour: 'text-[#EA4C89]' },
+  website: { label: 'Website', icon: FiGlobe, colour: 'text-gray-700' }
 };
 
-// Full-bleed banner + overlapping avatar + name/role/meta + a tab bar, shared
-// verbatim between the own-profile and public-profile pages so they can
-// never visually drift apart — only the `actions` slot (Connect/Message vs
-// nothing) and `headerExtra` slot (cover-photo control) differ between the
-// two. The avatar is absolutely positioned over the banner so it can overlap
-// it without ever dragging the name/email text up into the dark banner —
-// that was a real bug (name text was black-on-black and invisible).
-// The tab bar is a scroll-to-section nav, not a content gate — every section
-// always renders on the page; clicking a tab just scrolls to it, so nothing
-// can ever go missing behind an unclicked tab.
-export const ProfileHero = ({ coverPhoto, profilePic, name, username, roleLabel, subtitle, pronouns, location, connectionCount, actions, headerExtra, onPhotoEdit, onAddLocation, badges }) => {
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const scrollToSection = (tab) => {
-    document.getElementById(TAB_TO_SECTION_ID[tab])?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-  const handleShare = async () => {
-    const url = `${window.location.origin}/profile/${username}`;
-    try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(url);
-      } else {
-        throw new Error('Clipboard API unavailable');
+export const SocialIcons = ({ links, size = 'w-5 h-5' }) => (
+  links?.length ? (
+    <div className="flex flex-wrap items-center gap-1">
+      {links.map((l) => {
+        const s = SOCIAL[l.platform] || SOCIAL.website;
+        const Icon = s.icon;
+        return (
+          <a key={l.url} href={l.url} target="_blank" rel="noopener noreferrer me" title={s.label} aria-label={s.label}
+            className={`p-1.5 rounded-full hover:bg-gray-100 transition ${s.colour}`}>
+            <Icon className={size} />
+          </a>
+        );
+      })}
+    </div>
+  ) : null
+);
+
+/**
+ * Sticky section nav under the hero. Clicking scrolls to a section; the
+ * underline follows whichever section is on screen.
+ */
+export const ProfileTabs = ({ tabs }) => {
+  const [active, setActive] = useState(tabs[0]?.id);
+  useEffect(() => {
+    const onScroll = () => {
+      let current = tabs[0]?.id;
+      for (const t of tabs) {
+        const el = document.getElementById(t.id);
+        if (el && el.getBoundingClientRect().top < 180) current = t.id;
       }
-      toast.success('Profile link copied!');
-    } catch {
-      toast.error(url); // surfaces the raw link so it can still be copied manually
-    }
+      setActive(current);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [tabs]);
+
+  const go = (id) => {
+    const el = document.getElementById(id);
+    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 128, behavior: 'smooth' });
   };
+
   return (
-    <div className="rounded-2xl overflow-hidden bg-white shadow-sm border border-black/5">
+    <nav className="sticky top-16 z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-white/95 backdrop-blur border-b border-black/5" aria-label="Profile sections">
+      <div className="max-w-5xl mx-auto flex gap-1 overflow-x-auto">
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => go(t.id)}
+            className={`relative px-4 py-3.5 text-sm font-medium whitespace-nowrap transition ${active === t.id ? 'text-black' : 'text-gray-500 hover:text-black'}`}
+            aria-current={active === t.id ? 'true' : undefined}
+            data-testid={`profile-tab-${t.id}`}
+          >
+            {t.label}
+            {active === t.id && <span className="absolute left-2 right-2 bottom-0 h-0.5 rounded-full bg-yellow-500" />}
+          </button>
+        ))}
+      </div>
+    </nav>
+  );
+};
+
+// Full-bleed cover with a large photo overlapping it, then name, headline,
+// meta and actions — shared by the own-profile and public-profile pages so
+// they can't drift apart. `actions` (Connect/Message/Edit…) and `headerExtra`
+// (cover photo control) are the only parts that differ.
+export const ProfileHero = ({
+  coverPhoto, profilePic, name, roleLabel, headline, pronouns, location, yearsOfExperience,
+  connectionCount, socialLinks, actions, headerExtra, onPhotoEdit, onAddLocation, badges, onContactInfo
+}) => {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  return (
+    <div className="-mx-4 sm:-mx-6 lg:-mx-8 -mt-4 sm:-mt-6 lg:-mt-8 bg-white">
       <div
-        className="h-40 sm:h-52 relative"
+        className="h-44 sm:h-64 lg:h-72 relative"
         style={coverPhoto
           ? { backgroundImage: `url(${coverPhoto})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-          : { background: 'linear-gradient(135deg, #3a3025 0%, #1a1712 100%)' }}
+          : { background: 'linear-gradient(135deg, #5a4a35 0%, #2a2219 55%, #15120d 100%)' }}
       >
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.05) 40%, rgba(0,0,0,0.55) 100%)' }} />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(0,0,0,0.45) 100%)' }} />
         {headerExtra}
-        <div className="absolute -bottom-12 sm:-bottom-14 left-6">
-          <div className="relative">
+      </div>
+
+      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+        <div className="flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-6 -mt-16 sm:-mt-20">
+          <div className="relative shrink-0 self-start">
             <button
               type="button"
               onClick={() => profilePic && setLightboxOpen(true)}
               className={`block rounded-full ${profilePic ? 'cursor-zoom-in' : 'cursor-default'}`}
               aria-label={profilePic ? 'View profile photo' : undefined}
             >
-              <Avatar className="w-24 h-24 sm:w-28 sm:h-28 border-4 border-white shadow-lg">
-                <AvatarImage src={profilePic} />
-                <AvatarFallback className="bg-yellow-400 text-black text-3xl font-bold">{name?.charAt(0)}</AvatarFallback>
+              <Avatar className="w-32 h-32 sm:w-40 sm:h-40 border-4 border-white shadow-xl">
+                <AvatarImage src={profilePic} className="object-cover" />
+                <AvatarFallback className="bg-yellow-400 text-black text-5xl font-bold font-serif">{name?.charAt(0)}</AvatarFallback>
               </Avatar>
             </button>
             {onPhotoEdit && (
-              <label className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-black text-white border-2 border-white cursor-pointer hover:bg-yellow-500 hover:text-black transition" aria-label="Change profile photo">
-                <FiCamera className="w-3.5 h-3.5" />
+              <label className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-black text-white border-2 border-white cursor-pointer hover:bg-yellow-500 hover:text-black transition" aria-label="Change profile photo">
+                <FiCamera className="w-4 h-4" />
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && onPhotoEdit(e.target.files[0])} />
               </label>
             )}
           </div>
+
+          <div className="min-w-0 flex-1 sm:pb-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-3xl sm:text-4xl font-bold text-black font-serif leading-tight break-words">{name}</h1>
+              {pronouns && <span className="text-base text-gray-500">({pronouns})</span>}
+              {roleLabel && <span className="rounded-full border border-yellow-400/60 bg-yellow-50 px-2.5 py-0.5 text-xs font-semibold text-yellow-800">{roleLabel}</span>}
+            </div>
+            {headline && <p className="text-base sm:text-lg text-gray-700 mt-1 break-words" data-testid="profile-headline">{headline}</p>}
+          </div>
         </div>
+
+        <div className="mt-3 sm:mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-gray-600">
+          {location ? (
+            <span className="inline-flex items-center gap-1.5"><FiMapPin className="w-4 h-4" />{location}</span>
+          ) : onAddLocation && (
+            <button type="button" onClick={onAddLocation} className="inline-flex items-center gap-1 text-gray-500 hover:text-black hover:underline">
+              <FiPlus className="w-4 h-4" />Add location
+            </button>
+          )}
+          {yearsOfExperience > 0 && (
+            <span className="inline-flex items-center gap-1.5"><FiBriefcase className="w-4 h-4" />{yearsOfExperience} year{yearsOfExperience === 1 ? '' : 's'} experience</span>
+          )}
+          <span className="inline-flex items-center gap-1.5"><FiUsers className="w-4 h-4" /><b className="text-black font-semibold">{connectionCount}</b> connection{connectionCount === 1 ? '' : 's'}</span>
+          {onContactInfo && (
+            <button type="button" onClick={onContactInfo} className="inline-flex items-center gap-1.5 font-semibold text-black hover:underline" data-testid="contact-info-button">
+              <FiInfo className="w-4 h-4" />Contact info
+            </button>
+          )}
+          <SocialIcons links={socialLinks} size="w-4 h-4" />
+        </div>
+        {badges && <div className="mt-3">{badges}</div>}
+
+        <div className="flex flex-wrap gap-2 py-5">{actions}</div>
       </div>
 
       {lightboxOpen && (
-        <div
-          className="fixed inset-0 z-[100] bg-black/85 flex items-center justify-center p-6"
-          onClick={() => setLightboxOpen(false)}
-        >
-          <button
-            onClick={() => setLightboxOpen(false)}
-            className="absolute top-5 right-5 text-white/80 hover:text-white p-2"
-            aria-label="Close"
-          >
+        <div className="fixed inset-0 z-[100] bg-black/85 flex items-center justify-center p-6" onClick={() => setLightboxOpen(false)}>
+          <button onClick={() => setLightboxOpen(false)} className="absolute top-5 right-5 text-white/80 hover:text-white p-2" aria-label="Close">
             <FiX className="w-7 h-7" />
           </button>
           <img src={profilePic} alt={name} className="max-w-full max-h-full rounded-lg object-contain" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
-
-      <div className="px-6 pt-16 sm:pt-[4.5rem] pb-4">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-black font-serif truncate">
-              {name}
-              {pronouns && <span className="text-base font-normal text-gray-500 ml-2">({pronouns})</span>}
-            </h1>
-            {subtitle && <p className="text-base text-gray-700 mt-1 break-words">{subtitle}</p>}
-            {badges && <div className="mt-2">{badges}</div>}
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-gray-600">
-              <Badge className="bg-slate-900 text-yellow-400 capitalize">{roleLabel}</Badge>
-              {location ? (
-                <span className="inline-flex items-center gap-1"><FiMapPin className="w-3.5 h-3.5" />{location}</span>
-              ) : onAddLocation && (
-                <button type="button" onClick={onAddLocation} className="inline-flex items-center gap-1 text-gray-500 hover:text-black underline-offset-2 hover:underline">
-                  <FiPlus className="w-3.5 h-3.5" />Add location
-                </button>
-              )}
-              <span>{connectionCount} connection{connectionCount === 1 ? '' : 's'}</span>
-            </div>
-          </div>
-          <div className="flex gap-2 shrink-0 flex-wrap justify-end">
-            {username && (
-              <button
-                type="button"
-                onClick={handleShare}
-                className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-black hover:bg-gray-50 transition"
-                title="Copy link to this profile"
-              >
-                <FiShare2 className="w-4 h-4" />Share
-              </button>
-            )}
-            {actions}
-          </div>
-        </div>
-      </div>
-      <div className="border-t border-black/5 px-6">
-        <div className="flex gap-6 overflow-x-auto">
-          {TABS.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => scrollToSection(tab)}
-              className="py-3 text-sm font-medium whitespace-nowrap border-b-2 border-transparent text-gray-500 hover:text-black hover:border-gray-300 transition"
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-      </div>
     </div>
   );
 };
 
 // Per-section Public/Private badge — clickable to toggle when the owner is
-// viewing their own profile, read-only elsewhere. Used identically for
-// Analytics, Work Gallery, and Activity so all three sections get the same
-// visibility control.
+// viewing their own profile, read-only elsewhere.
 export const VisibilityPill = ({ isPublic, editable, onToggle }) => (
   editable ? (
     <button

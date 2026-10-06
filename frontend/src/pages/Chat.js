@@ -70,7 +70,15 @@ const ago = (d, now) => {
   return `${listTime(d)}, ${clock(d)}`;
 };
 
-const fileUrl = (url) => (url && url.startsWith('/') ? `${API_URL}${url}` : url);
+const fileUrl = (url) => {
+  if (!url) return url;
+  if (url.startsWith('/')) return `${API_URL}${url}`;
+  // Photos sent before the HEIC fix: ask Cloudinary for a browser-friendly copy
+  if (/res\.cloudinary\.com\/.+\/image\/upload\/(?!f_auto)/.test(url) && /\.(heic|heif)$/i.test(url)) {
+    return url.replace('/image/upload/', '/image/upload/f_auto,q_auto,c_limit,w_2400/').replace(/\.(heic|heif)$/i, '.jpg');
+  }
+  return url;
+};
 const fileSize = (n) => (n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 const MAX_FILE = 18 * 1024 * 1024;
 const ACCEPT = 'image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.dwg,.dxf,.skp,.rvt';
@@ -229,6 +237,8 @@ const Chat = () => {
   useEffect(() => {
     const withId = searchParams.get('with');
     if (!withId || loadingList) return;
+    const draft = searchParams.get('draft');
+    if (draft) setNewMessage(draft.slice(0, 5000));
     const found = conversations.find((c) => c.person._id === withId);
     if (found) {
       openConversation(found);

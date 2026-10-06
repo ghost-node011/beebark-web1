@@ -97,8 +97,8 @@ const Sidebar = () => {
                 {user?.name?.charAt(0)}
               </AvatarFallback>
             </Avatar>
-            <div className="flex-1">
-              <p className="font-semibold text-sm text-black">{user?.name}</p>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-sm text-black truncate">{user?.name}</p>
               <p className="text-xs text-slate-500 truncate">{personHeadline(user)}</p>
             </div>
           </NavLink>

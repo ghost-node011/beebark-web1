@@ -58,6 +58,24 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+// One listing (drafts only for their owner), with who listed it
+router.get('/:id', auth, async (req, res) => {
+  try {
+    if (!validId(req.params.id)) return res.status(404).json({ error: 'Listing not found' });
+    const listing = await Listing.findById(req.params.id)
+      .populate('user', 'name username profilePic headline role accountStatus blockedUsers').lean();
+    const isOwner = listing && String(listing.user?._id) === String(req.userId);
+    const hidden = !listing || !listing.user || listing.user.accountStatus === 'deactivated'
+      || (listing.status === 'draft' && !isOwner)
+      || (listing.user.blockedUsers || []).some((id) => String(id) === String(req.userId));
+    if (hidden) return res.status(404).json({ error: 'Listing not found' });
+    const { blockedUsers, accountStatus, ...owner } = listing.user;
+    res.json({ listing: { ...listing, user: owner }, isOwner });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to load listing', message: error.message });
+  }
+});
+
 router.post('/', auth, async (req, res) => {
   try {
     const data = clean(req.body || {});

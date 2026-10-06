@@ -23,9 +23,10 @@ import { API_URL } from '../config/api';
 import { INTENTS, INDUSTRIES, intentsFor } from '../config/onboarding';
 import ResumeImport from '../components/ResumeImport';
 import { SuggestChip, useSuggestChip } from '../components/ai/SuggestChip';
-import { StatCard, InfoBlock } from '../components/profile/ProfileWidgets';
-import { ProfileHero, VisibilityPill, PillFilter, PAGE_BG } from '../components/profile/ProfileShell';
-import { ExperienceItem, sortExperience, AvailabilityChips, LanguagesList, BusinessDetails, PeopleStrip } from '../components/profile/ProfileSections';
+import { InfoBlock } from '../components/profile/ProfileWidgets';
+import { ProfileHero, ProfileTabs, VisibilityPill, PillFilter, PAGE_BG, SOCIAL } from '../components/profile/ProfileShell';
+import ShareMenu from '../components/ShareMenu';
+import { sortExperience, AvailabilityChips, LanguagesList, BusinessDetails, PeopleStrip, AnalyticsCards, ProjectGrid, ExperienceCard, ListingCards, JobRows, ContactInfoDialog } from '../components/profile/ProfileSections';
 import { AutocompleteInput, LocationInput } from '../components/AutocompleteInput';
 import { AVAILABILITY_LABELS, PROFICIENCY, EMPLOYMENT_TYPES, BUSINESS_TYPES, TEAM_SIZES } from '../config/profileOptions';
 import { personHeadline } from '../utils/personHeadline';
@@ -65,6 +66,9 @@ const emptyFormFromUser = (user) => ({
   availability: user?.availability || [],
   business: { ...EMPTY_BUSINESS, ...(user?.business || {}) },
   associatedProfessionals: user?.associatedProfessionals || [],
+  headline: user?.headline || '',
+  contact: { email: '', phone: '', whatsapp: '', website: '', address: '', visibility: 'connections', ...(user?.contact || {}) },
+  socialLinks: user?.socialLinks || [],
   analyticsPublic: user?.analyticsPublic || false,
   galleryPublic: user?.galleryPublic ?? true,
   activityPublic: user?.activityPublic || false
@@ -76,9 +80,9 @@ const emptyFormFromUser = (user) => ({
 const SectionCard = ({ title, icon: Icon, sectionKey, editingSection, onEditClick, onCancel, onSave, saving, editable = true, children, editContent, action }) => {
   const isEditing = editingSection === sectionKey;
   return (
-    <Card className="p-6">
-      <div className="flex items-center justify-between mb-4 gap-3">
-        <h3 className="text-lg font-semibold text-slate-900 font-serif flex items-center gap-2">
+    <Card className="p-5 sm:p-8 rounded-2xl border-black/5 shadow-sm">
+      <div className="flex items-center justify-between mb-5 gap-3">
+        <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 font-serif flex items-center gap-2">
           {Icon && <Icon className="w-4 h-4 shrink-0" />}{title}
         </h3>
         <div className="flex items-center gap-2 shrink-0">
@@ -126,7 +130,8 @@ const Profile = () => {
   const projectTypeSuggest = useSuggestChip('project type focus for a professional profile');
   const marketsSuggest = useSuggestChip('market / region a professional works in');
   const tagSuggesters = { specialization: specializationSuggest, projectTypeFocus: projectTypeSuggest, markets: marketsSuggest };
-  const [galleryPreview, setGalleryPreview] = useState({ items: [], count: 0, associatedProfessionals: [] });
+  const [galleryPreview, setGalleryPreview] = useState({ items: [], count: 0, associatedProfessionals: [], listings: [], listingCount: 0, openJobs: [] });
+  const [contactOpen, setContactOpen] = useState(false);
   const [galleryCategory, setGalleryCategory] = useState('All');
   const [activity, setActivity] = useState([]);
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -143,7 +148,10 @@ const Profile = () => {
       .then((res) => setGalleryPreview({
         items: res.data.portfolioPreview || [],
         count: res.data.portfolioCount || 0,
-        associatedProfessionals: res.data.associatedProfessionals || []
+        associatedProfessionals: res.data.associatedProfessionals || [],
+        listings: res.data.listings || [],
+        listingCount: res.data.listingCount || 0,
+        openJobs: res.data.openJobs || []
       }))
       .catch(() => {});
   }, [user?.username]);
@@ -404,24 +412,30 @@ const Profile = () => {
       <Sidebar />
       <TopBar />
       <div className="lg:ml-64 mt-16 p-4 sm:p-6 lg:p-8">
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div className="max-w-5xl mx-auto space-y-6">
           <ProfileHero
             coverPhoto={formData.coverPhoto}
             profilePic={formData.profilePic}
             name={user?.name}
-            username={user?.username}
             roleLabel={roleLabel}
-            subtitle={user?.email}
+            headline={user?.headline || personHeadline(user)}
             pronouns={formData.pronouns}
             location={formData.location}
+            yearsOfExperience={user?.yearsOfExperience}
             connectionCount={user?.connections?.length || 0}
+            socialLinks={user?.socialLinks}
+            onContactInfo={() => setContactOpen(true)}
             onPhotoEdit={uploadingAvatar ? undefined : handleAvatarFile}
             onAddLocation={() => edit('header')}
             badges={<AvailabilityChips values={user?.availability} />}
             actions={
-              <Button onClick={() => edit('header')} variant="outline" data-testid="edit-header-button">
-                <FiEdit2 className="mr-2 w-4 h-4" /> Edit
-              </Button>
+              <>
+                <Button onClick={() => edit('header')} className="bg-black text-white hover:bg-gray-800" data-testid="edit-header-button">
+                  <FiEdit2 className="mr-2 w-4 h-4" /> Edit intro
+                </Button>
+                <ShareMenu path={`/profile/${user?.username}`} title={`${user?.name} on BeeBark`} text={user?.headline || personHeadline(user)} align="start" testId="profile-share" />
+                <Link to={`/profile/${user?.username}`}><Button variant="outline">View as others</Button></Link>
+              </>
             }
             headerExtra={
               <label className="absolute bottom-3 right-3 cursor-pointer" data-testid="cover-photo-upload">
@@ -433,11 +447,27 @@ const Profile = () => {
             }
           />
 
+          <ProfileTabs tabs={[
+            { id: 'section-overview', label: 'Overview' },
+            { id: 'section-portfolio', label: 'Portfolio' },
+            { id: 'section-experience', label: 'Experience' },
+            { id: 'section-activity', label: 'Activity' },
+            ...(galleryPreview.listingCount ? [{ id: 'section-listings', label: 'Listings' }] : []),
+            ...(galleryPreview.openJobs.length ? [{ id: 'section-hiring', label: 'Hiring' }] : [])
+          ]} />
+
           {editingSection === 'header' && (
-            <Card className="p-6 space-y-4">
+            <Card className="p-5 sm:p-8 space-y-5 rounded-2xl" id="intro-editor" data-testid="intro-editor">
+              <h3 className="text-xl font-semibold font-serif">Edit intro</h3>
               <div className="space-y-2">
                 <Label>Name</Label>
                 <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} data-testid="name-input" />
+              </div>
+              <div className="space-y-2">
+                <Label>Headline</Label>
+                <Input value={formData.headline} onChange={(e) => setFormData({ ...formData, headline: e.target.value })} maxLength={140} spellCheck
+                  placeholder={`e.g. ${personHeadline(user) || 'Architect | Interior Designer | Urban Planner'}`} data-testid="headline-input" />
+                <p className="text-xs text-gray-400">Shown under your name. Leave empty to use your current role.</p>
               </div>
               <div className="space-y-2">
                 <Label>Location</Label>
@@ -460,7 +490,52 @@ const Profile = () => {
                 </datalist>
                 <p className="text-xs text-gray-400">Shown next to your name — leave blank to hide it.</p>
               </div>
-              <p className="text-xs text-gray-400 -mt-2">Use the camera icon on your profile photo to change it.</p>
+              <div className="space-y-3 border-t border-gray-100 pt-5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <Label className="text-base">Contact info</Label>
+                  <select value={formData.contact.visibility} onChange={(e) => setFormData((f) => ({ ...f, contact: { ...f.contact, visibility: e.target.value } }))} className="h-9 rounded-md border border-input bg-background px-2 text-sm" aria-label="Who can see your contact info" data-testid="contact-visibility">
+                    <option value="connections">Visible to connections</option>
+                    <option value="everyone">Visible to everyone</option>
+                    <option value="only_me">Only me</option>
+                  </select>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[
+                    { k: 'email', label: 'Email', type: 'email', ph: user?.email || 'you@example.com' },
+                    { k: 'phone', label: 'Phone', type: 'tel', ph: '+91 98765 43210' },
+                    { k: 'whatsapp', label: 'WhatsApp', type: 'tel', ph: '+91 98765 43210' },
+                    { k: 'website', label: 'Website', type: 'url', ph: 'yourstudio.com' }
+                  ].map(({ k, label, type, ph }) => (
+                    <div key={k} className="space-y-1">
+                      <Label className="text-xs text-gray-500">{label}</Label>
+                      <Input type={type} value={formData.contact[k]} onChange={(e) => setFormData((f) => ({ ...f, contact: { ...f.contact, [k]: e.target.value } }))} placeholder={ph} data-testid={`contact-${k}`} />
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-gray-500">Address</Label>
+                  <LocationInput value={formData.contact.address} onChange={(v) => setFormData((f) => ({ ...f, contact: { ...f.contact, address: v } }))} placeholder="Office or studio address" />
+                </div>
+              </div>
+
+              <div className="space-y-3 border-t border-gray-100 pt-5">
+                <Label className="text-base">Social links</Label>
+                {formData.socialLinks.map((l, i) => (
+                  <div key={i} className="flex gap-2">
+                    <select value={l.platform} onChange={(e) => setFormData((f) => ({ ...f, socialLinks: f.socialLinks.map((x, j) => (j === i ? { ...x, platform: e.target.value } : x)) }))} className="h-10 w-36 shrink-0 rounded-md border border-input bg-background px-2 text-sm" aria-label="Platform">
+                      {Object.entries(SOCIAL).map(([v, o]) => <option key={v} value={v}>{o.label}</option>)}
+                    </select>
+                    <Input value={l.url} onChange={(e) => setFormData((f) => ({ ...f, socialLinks: f.socialLinks.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)) }))} placeholder="https://" data-testid={`social-url-${i}`} />
+                    <button type="button" onClick={() => setFormData((f) => ({ ...f, socialLinks: f.socialLinks.filter((_, j) => j !== i) }))} className="p-2 text-gray-400 hover:text-red-600" aria-label="Remove link"><FiTrash2 /></button>
+                  </div>
+                ))}
+                {formData.socialLinks.length < 12 && (
+                  <Button type="button" variant="outline" size="sm" onClick={() => setFormData((f) => ({ ...f, socialLinks: [...f.socialLinks, { platform: f.socialLinks.length ? 'instagram' : 'linkedin', url: '' }] }))} data-testid="add-social-link">
+                    <FiPlus className="mr-1" />Add link
+                  </Button>
+                )}
+              </div>
+              <p className="text-xs text-gray-400">Use the camera icon on your profile photo to change it.</p>
               <div className="flex gap-2">
                 <Button onClick={cancelSection} variant="outline">Cancel</Button>
                 <Button onClick={saveSection} disabled={saving} className="bg-black text-white hover:bg-gray-800">{saving ? 'Saving...' : 'Save'}</Button>
@@ -469,16 +544,19 @@ const Profile = () => {
           )}
 
           <div id="section-overview" className="space-y-6 scroll-mt-24">
-              <Card className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-slate-900 font-serif">Analytics</h3>
+              <Card className="p-5 sm:p-8 rounded-2xl border-black/5 shadow-sm">
+                <div className="flex items-center justify-between mb-5">
+                  <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 font-serif">Analytics</h3>
                   <VisibilityPill isPublic={formData.analyticsPublic} editable onToggle={(v) => handleVisibilityToggle('analyticsPublic', v)} />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <StatCard icon={FiEye} value={user?.profileViews ?? 0} label="Profile Views" />
-                  <StatCard icon={FiUsers} value={user?.connections?.length || 0} label="Connections" />
-                  <StatCard icon={FiImage} value={galleryPreview.count} label="Work Gallery Entries" />
-                </div>
+                <AnalyticsCards items={[
+                  { icon: FiEye, value: (user?.profileViews ?? 0).toLocaleString('en-IN'), label: 'Profile views' },
+                  { icon: FiUsers, value: user?.connections?.length || 0, label: 'Connections' },
+                  { icon: FiImage, value: galleryPreview.count, label: 'Projects' },
+                  galleryPreview.listingCount
+                    ? { icon: FiHome, value: galleryPreview.listingCount, label: 'Listings' }
+                    : { icon: FiBriefcase, value: galleryPreview.openJobs.length, label: 'Open jobs' }
+                ]} />
                 <p className="text-xs text-slate-400 mt-3">Private by default — only visible to you until you switch it to Public above.</p>
               </Card>
 
@@ -672,7 +750,7 @@ const Profile = () => {
 
           <div id="section-portfolio" className="space-y-6 scroll-mt-24">
             <SectionCard
-              title="Work Gallery" sectionKey="gallery-noop" editingSection={editingSection} editable={false}
+              title="Portfolio" sectionKey="gallery-noop" editingSection={editingSection} editable={false}
               action={
                 <>
                   <VisibilityPill isPublic={formData.galleryPublic} editable onToggle={(v) => handleVisibilityToggle('galleryPublic', v)} />
@@ -692,21 +770,7 @@ const Profile = () => {
                 </div>
               )}
               {visibleGalleryItems.length > 0 ? (
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                  {visibleGalleryItems.map((item) => (
-                    <Link key={item._id} to="/portfolio" className="relative rounded-lg overflow-hidden bg-gray-100 aspect-square group">
-                      {item.images?.[0] ? (
-                        <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xs text-gray-400 p-2 text-center">{item.title}</div>
-                      )}
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition flex flex-col justify-end p-2 opacity-0 group-hover:opacity-100">
-                        <p className="text-white text-xs font-medium truncate">{item.title}</p>
-                        {item.location && <p className="text-white/80 text-[10px] truncate">{item.location}</p>}
-                      </div>
-                    </Link>
-                  ))}
-                </div>
+                <ProjectGrid items={visibleGalleryItems} linkFor={(item) => `/portfolio/${user?.username}?project=${item._id}`} />
               ) : (
                 <p className="text-slate-500">Nothing here yet — add your first work photo above</p>
               )}
@@ -714,9 +778,9 @@ const Profile = () => {
           </div>
 
           <div id="section-experience" className="space-y-6 scroll-mt-24">
-              <Card className="p-6" data-testid="experience-section">
+              <Card className="p-5 sm:p-8 rounded-2xl border-black/5 shadow-sm" data-testid="experience-section">
                 <div className="flex items-center justify-between mb-4 gap-3">
-                  <h3 className="text-lg font-semibold text-slate-900 font-serif flex items-center gap-2"><FiBriefcase className="w-4 h-4" />Experience</h3>
+                  <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 font-serif flex items-center gap-2"><FiBriefcase className="w-4 h-4" />Experience</h3>
                   {!expDraft && (
                     <Button size="sm" onClick={() => setExpDraft({ index: -1, ...EMPTY_EXPERIENCE })} className="bg-yellow-400 hover:bg-yellow-500 text-black" data-testid="add-experience">
                       <FiPlus className="mr-1" />Add
@@ -772,21 +836,20 @@ const Profile = () => {
                 {sortedExperience.length > 0 ? (
                   <div className="space-y-4">
                     {sortedExperience.map((exp) => (
-                      <div key={exp._index} className="group relative border-l-4 border-yellow-500 pl-4 pr-16">
-                        <ExperienceItem exp={exp} />
-                        <div className="absolute top-0 right-0 flex gap-1">
+                      <ExperienceCard key={exp._index} exp={exp} actions={(
+                        <>
                           <button onClick={() => setExpDraft({ ...EMPTY_EXPERIENCE, ...exp, index: exp._index })} className="p-1.5 text-gray-400 hover:text-black" aria-label={`Edit ${exp.title}`}><FiEdit2 className="w-4 h-4" /></button>
                           <button onClick={() => removeExperience(exp._index)} className="p-1.5 text-gray-400 hover:text-red-600" aria-label={`Remove ${exp.title}`}><FiTrash2 className="w-4 h-4" /></button>
-                        </div>
-                      </div>
+                        </>
+                      )} />
                     ))}
                   </div>
                 ) : !expDraft && <p className="text-slate-500">No experience added yet</p>}
               </Card>
 
-              <Card className="p-6" data-testid="education-section">
+              <Card className="p-5 sm:p-8 rounded-2xl border-black/5 shadow-sm" data-testid="education-section">
                 <div className="flex items-center justify-between mb-4 gap-3">
-                  <h3 className="text-lg font-semibold text-slate-900 font-serif flex items-center gap-2"><FiBookOpen className="w-4 h-4" />Education</h3>
+                  <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 font-serif flex items-center gap-2"><FiBookOpen className="w-4 h-4" />Education</h3>
                   {!eduDraft && (
                     <Button size="sm" onClick={() => setEduDraft({ index: -1, ...EMPTY_EDUCATION })} className="bg-yellow-400 hover:bg-yellow-500 text-black" data-testid="add-education">
                       <FiPlus className="mr-1" />Add
@@ -925,9 +988,9 @@ const Profile = () => {
                 </SectionCard>
               )}
 
-              <Card className="p-6" data-testid="resume-section">
+              <Card className="p-5 sm:p-8 rounded-2xl border-black/5 shadow-sm" data-testid="resume-section">
                 <div className="flex items-center justify-between mb-4 gap-3">
-                  <h3 className="text-lg font-semibold text-slate-900 font-serif flex items-center gap-2"><FiFileText className="w-4 h-4" />Résumé</h3>
+                  <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 font-serif flex items-center gap-2"><FiFileText className="w-4 h-4" />Résumé</h3>
                   <span className="text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-700">Only you</span>
                 </div>
                 {user?.resume?.url ? (
@@ -1021,8 +1084,46 @@ const Profile = () => {
                   : <p className="text-slate-500">No one added yet. Use the pencil to add people you've worked with.</p>}
               </SectionCard>
           </div>
+
+          {galleryPreview.listingCount > 0 && (
+            <div id="section-listings" className="scroll-mt-32">
+              <Card className="p-5 sm:p-8 rounded-2xl border-black/5 shadow-sm">
+                <div className="flex items-center justify-between mb-5 gap-3">
+                  <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 font-serif">Listings</h3>
+                  <Link to="/listings" className="text-sm font-medium text-black hover:underline">Manage listings →</Link>
+                </div>
+                <ListingCards listings={galleryPreview.listings} />
+              </Card>
+            </div>
+          )}
+
+          {galleryPreview.openJobs.length > 0 && (
+            <div id="section-hiring" className="scroll-mt-32">
+              <Card className="p-5 sm:p-8 rounded-2xl border-black/5 shadow-sm">
+                <div className="flex items-center justify-between mb-5 gap-3">
+                  <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 font-serif">Hiring</h3>
+                  <Link to="/jobs" className="text-sm font-medium text-black hover:underline">Manage jobs →</Link>
+                </div>
+                <JobRows jobs={galleryPreview.openJobs} />
+              </Card>
+            </div>
+          )}
         </div>
       </div>
+
+      <ContactInfoDialog
+        open={contactOpen}
+        onOpenChange={setContactOpen}
+        name={user?.name}
+        username={user?.username}
+        contact={{ ...(user?.contact || {}), email: user?.contact?.email || '' }}
+        socialLinks={user?.socialLinks}
+        onEdit={() => {
+          setContactOpen(false);
+          edit('header');
+          setTimeout(() => document.getElementById('intro-editor')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+        }}
+      />
 
       <Dialog open={!!nameMismatch} onOpenChange={(open) => !open && confirmNameChange(false)}>
         <DialogContent className="max-w-md">

@@ -28,4 +28,15 @@ function availabilityOptionsFor(user) {
 const PROFICIENCY = ['basic', 'conversational', 'professional', 'native'];
 const EMPLOYMENT_TYPES = ['full_time', 'part_time', 'internship', 'freelance', 'contract', 'self_employed'];
 
-module.exports = { AVAILABILITY, availabilityOptionsFor, PROFICIENCY, EMPLOYMENT_TYPES };
+const SOCIAL_PLATFORMS = ['linkedin', 'instagram', 'behance', 'pinterest', 'youtube', 'x', 'facebook', 'github', 'houzz', 'dribbble', 'website'];
+
+// Years since the earliest dated role (only counts structured start dates)
+function yearsOfExperience(experience) {
+  const starts = (experience || []).map((e) => e.startDate).filter((d) => /^\d{4}-\d{2}$/.test(d || '')).sort();
+  if (!starts.length) return 0;
+  const [y, m] = starts[0].split('-').map(Number);
+  const now = new Date();
+  return Math.max(0, Math.floor(((now.getFullYear() - y) * 12 + (now.getMonth() + 1 - m)) / 12));
+}
+
+module.exports = { AVAILABILITY, availabilityOptionsFor, PROFICIENCY, EMPLOYMENT_TYPES, SOCIAL_PLATFORMS, yearsOfExperience };

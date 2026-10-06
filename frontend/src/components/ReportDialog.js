@@ -6,20 +6,34 @@ import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { API_URL } from '../config/api';
 
-const REASONS = [
-  { value: 'spam', label: 'Spam', hint: 'Unwanted promotions or repeated messages' },
-  { value: 'scam', label: 'Scam or fraud', hint: 'Asking for money, fake jobs or deals' },
-  { value: 'harassment', label: 'Harassment', hint: 'Bullying, threats or abuse' },
-  { value: 'inappropriate', label: 'Inappropriate content', hint: 'Offensive or explicit messages' },
-  { value: 'fake_profile', label: 'Fake profile', hint: 'Pretending to be someone else' },
-  { value: 'other', label: 'Something else', hint: '' }
-];
+const ALL = {
+  spam: { label: 'Spam', hint: 'Unwanted promotions or repeated posts' },
+  scam: { label: 'Scam or fraud', hint: 'Asking for money, fake jobs or deals' },
+  misleading: { label: 'Misleading or false', hint: 'Wrong details, fake price or a role that doesn\'t exist' },
+  copyright: { label: 'Not their work', hint: 'Uses someone else\'s photos or projects' },
+  harassment: { label: 'Harassment', hint: 'Bullying, threats or abuse' },
+  inappropriate: { label: 'Inappropriate content', hint: 'Offensive or explicit content' },
+  fake_profile: { label: 'Fake profile', hint: 'Pretending to be someone else' },
+  other: { label: 'Something else', hint: '' }
+};
+// The reasons that make sense for each kind of thing being reported
+const FOR = {
+  chat: ['spam', 'scam', 'harassment', 'inappropriate', 'fake_profile', 'other'],
+  profile: ['fake_profile', 'spam', 'scam', 'harassment', 'inappropriate', 'other'],
+  job: ['scam', 'misleading', 'spam', 'inappropriate', 'other'],
+  listing: ['scam', 'misleading', 'spam', 'inappropriate', 'other'],
+  portfolio: ['copyright', 'inappropriate', 'misleading', 'spam', 'other'],
+  post: ['spam', 'misleading', 'harassment', 'inappropriate', 'other']
+};
+const NOUN = { job: 'job', listing: 'listing', portfolio: 'project', post: 'post' };
 
 /**
  * Report a person, from a chat or their profile. Optionally block them too.
  * onDone({ blocked }) runs after a successful report.
  */
-const ReportDialog = ({ open, onOpenChange, person, context = 'profile', onDone }) => {
+const ReportDialog = ({ open, onOpenChange, person, context = 'profile', itemId, itemTitle, onDone }) => {
+  const REASONS = (FOR[context] || FOR.profile).map((value) => ({ value, ...ALL[value] }));
+  const noun = NOUN[context];
   const [reason, setReason] = useState('');
   const [details, setDetails] = useState('');
   const [alsoBlock, setAlsoBlock] = useState(false);
@@ -31,7 +45,7 @@ const ReportDialog = ({ open, onOpenChange, person, context = 'profile', onDone 
     if (!reason) return toast.error('Choose a reason');
     setSending(true);
     try {
-      await axios.post(`${API_URL}/api/messages/report`, { userId: person._id, reason, details, context });
+      await axios.post(`${API_URL}/api/messages/report`, { userId: person._id, reason, details, context, itemId });
       if (alsoBlock) await axios.post(`${API_URL}/api/account/block/${person._id}`);
       toast.success(alsoBlock ? `Reported and blocked ${person.name}` : 'Thanks, we\'ll review this report');
       onDone?.({ blocked: alsoBlock, reason });
@@ -48,9 +62,11 @@ const ReportDialog = ({ open, onOpenChange, person, context = 'profile', onDone 
     <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Report {person?.name}</DialogTitle>
+          <DialogTitle>{noun ? `Report this ${noun}` : `Report ${person?.name}`}</DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-slate-500 -mt-2">They won't know you reported them.</p>
+        <p className="text-sm text-slate-500 -mt-2">
+          {noun && itemTitle ? <>“{itemTitle}” by {person?.name}. </> : null}They won't know you reported this.
+        </p>
         <div className="space-y-2" role="radiogroup">
           {REASONS.map((r) => (
             <label key={r.value} className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition ${reason === r.value ? 'border-yellow-400 bg-yellow-50' : 'border-slate-200 hover:border-slate-300'}`}>

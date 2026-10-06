@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '../ui/button';
-import { FiEdit2, FiTrash2, FiMail, FiChevronLeft, FiChevronRight, FiArrowRight } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiMail, FiChevronLeft, FiChevronRight, FiArrowRight, FiX, FiImage, FiMapPin, FiFlag, FiCalendar, FiMaximize2 } from 'react-icons/fi';
 
 export const THEME_META = [
   { key: 'editorial', label: 'Editorial', description: 'Refined and light, with a warm serif feel' },
@@ -473,10 +473,23 @@ const visibleAccent = (accent, bg, fg) => {
   return isLight(accent) === isLight(bg) && d(accent, bg) < 0x303030 ? fg : accent;
 };
 
+// Clicking anywhere on a project (except its own buttons and links) opens it in
+// the viewer; a clicked photo opens the viewer at that photo.
+const openOnClick = (onOpen, item) => (onOpen ? (e) => {
+  if (e.target.closest('button, a, input, label')) return;
+  const photo = e.target.closest('[data-photo]');
+  onOpen(item, photo ? Number(photo.dataset.photo) || 0 : 0);
+} : undefined);
+
+// A project title that opens the viewer (keyboard reachable) when the page allows it
+const OpenTitle = ({ item, onOpen }) => (onOpen ? (
+  <button type="button" onClick={() => onOpen(item)} className="text-left hover:underline focus:underline focus:outline-none">{item.title}</button>
+) : item.title);
+
 // ---------- EDITORIAL: light, refined, serif-led; split hero and full galleries ----------
 const editorialSection = (id) => `editorial-${id}`;
 
-export const EditorialTemplate = ({ items, user, headline, editable, onEdit, onDelete, font = 'playfair', accentColor = '#F5C518', look }) => {
+export const EditorialTemplate = ({ items, user, headline, editable, onEdit, onDelete, onOpen, font = 'playfair', accentColor = '#F5C518', look }) => {
   const display = { fontFamily: fontStack(font) };
   const L = resolveLook('editorial', look);
   const accent = visibleAccent(accentColor, L.bg, L.fg);
@@ -499,26 +512,39 @@ export const EditorialTemplate = ({ items, user, headline, editable, onEdit, onD
       )}
 
       {hero && (
-        <header className="grid gap-8 px-6 py-12 sm:px-12 lg:grid-cols-[1fr_1.2fr] lg:items-center lg:py-16">
+        <header className={`grid gap-8 px-6 py-12 sm:px-12 lg:grid-cols-[1fr_1.2fr] lg:items-center lg:py-16 ${onOpen ? 'cursor-pointer' : ''}`} onClick={openOnClick(onOpen, hero)}>
           <div>
             <p className="text-xs uppercase tracking-[0.3em]" style={{ color: L.faint }}>{[hero.category, hero.location].filter(Boolean).join(' · ') || 'Featured project'}</p>
-            <h1 className="mt-4 text-5xl leading-[1.02] sm:text-7xl" style={display}>{hero.title}</h1>
+            <h1 className="mt-4 break-words text-5xl leading-[1.02] sm:text-7xl" style={display}><OpenTitle item={hero} onOpen={onOpen} /></h1>
             {hero.description && <p className="mt-5 max-w-md leading-relaxed" style={{ color: L.muted }}>{hero.description}</p>}
-            <a href={`#${editorialSection(hero._id)}`} className="mt-6 inline-flex items-center gap-2 text-sm font-semibold" data-pdf-ignore>
-              View project <FiArrowRight />
-            </a>
+            {onOpen ? (
+              <button type="button" onClick={() => onOpen(hero)} className="mt-6 inline-flex items-center gap-2 text-sm font-semibold hover:underline" data-pdf-ignore>
+                View project <FiArrowRight />
+              </button>
+            ) : (
+              <a href={`#${editorialSection(hero._id)}`} className="mt-6 inline-flex items-center gap-2 text-sm font-semibold" data-pdf-ignore>
+                View project <FiArrowRight />
+              </a>
+            )}
           </div>
-          {hero.images?.[0] && <img src={hero.images[0]} alt={hero.title} className="h-[420px] w-full object-cover sm:h-[520px]" />}
+          {hero.images?.[0] && <img src={hero.images[0]} alt={hero.title} data-photo="0" className="h-[420px] w-full object-cover sm:h-[520px]" />}
         </header>
       )}
 
       <section id={editorialSection('projects')} className="border-t" style={{ borderColor: L.line }}>
         {items.map((item, i) => (
-          <article key={item._id} id={editorialSection(item._id)} className="border-b px-6 py-14 sm:px-12" style={{ borderColor: L.line }}>
+          <article
+            key={item._id}
+            id={editorialSection(item._id)}
+            className={`border-b px-6 py-14 sm:px-12 ${onOpen ? 'cursor-pointer' : ''}`}
+            style={{ borderColor: L.line }}
+            onClick={openOnClick(onOpen, item)}
+            data-testid={`project-tile-${item._id}`}
+          >
             <div className="grid gap-8 lg:grid-cols-[1fr_2fr]">
               <div>
                 <span className="text-sm" style={{ color: accent }}>{num(i)}</span>
-                <h2 className="mt-2 text-3xl leading-tight sm:text-4xl" style={display}>{item.title}</h2>
+                <h2 className="mt-2 break-words text-3xl leading-tight sm:text-4xl" style={display}><OpenTitle item={item} onOpen={onOpen} /></h2>
                 <p className="mt-2 text-sm" style={{ color: L.faint }}>{[item.category, item.projectStatus, item.location].filter(Boolean).join(' · ')}</p>
                 {item.description && <p className="mt-4 leading-relaxed" style={{ color: L.muted }}>{item.description}</p>}
                 <Tags tags={item.tags} light={L.onDark} />
@@ -526,11 +552,11 @@ export const EditorialTemplate = ({ items, user, headline, editable, onEdit, onD
               </div>
               {item.images?.length > 0 && (
                 <div className="space-y-4">
-                  <img src={item.images[0]} alt={item.title} className="max-h-[560px] w-full object-cover" />
+                  <img src={item.images[0]} alt={item.title} data-photo="0" className="max-h-[560px] w-full object-cover" />
                   {item.images.length > 1 && (
                     <div className="grid grid-cols-2 gap-4">
-                      {item.images.slice(1).map((src) => (
-                        <img key={src} src={src} alt="" className="aspect-[4/3] w-full object-cover" />
+                      {item.images.slice(1).map((src, n) => (
+                        <img key={src} src={src} alt="" data-photo={n + 1} className="aspect-[4/3] w-full object-cover" />
                       ))}
                     </div>
                   )}
@@ -566,7 +592,7 @@ export const EditorialTemplate = ({ items, user, headline, editable, onEdit, onD
 };
 
 // ---------- STUDIO: bold and dark; one project at a time with a thumbnail strip ----------
-export const StudioTemplate = ({ items, user, headline, editable, onEdit, onDelete, onAdd, font = 'playfair', accentColor = '#F5C518', look }) => {
+export const StudioTemplate = ({ items, user, headline, editable, onEdit, onDelete, onAdd, onOpen, font = 'playfair', accentColor = '#F5C518', look }) => {
   const [current, setCurrent] = useState(0);
   const display = { fontFamily: fontStack(font) };
   const L = resolveLook('studio', look);
@@ -594,11 +620,11 @@ export const StudioTemplate = ({ items, user, headline, editable, onEdit, onDele
 
       {item && (
         <section className="px-6 sm:px-12">
-          <div className="overflow-hidden rounded-xl" style={card}>
-            {item.images?.[0] && <img src={item.images[0]} alt={item.title} className="h-[300px] w-full object-cover sm:h-[520px]" />}
+          <div className={`overflow-hidden rounded-xl ${onOpen ? 'cursor-pointer' : ''}`} style={card} onClick={openOnClick(onOpen, item)}>
+            {item.images?.[0] && <img src={item.images[0]} alt={item.title} data-photo="0" className="h-[300px] w-full object-cover sm:h-[520px]" />}
             <div className="flex flex-col gap-4 p-6 sm:flex-row sm:items-end sm:justify-between sm:p-8">
               <div className="min-w-0">
-                <h1 className="text-4xl leading-tight sm:text-5xl" style={display}>{item.title}</h1>
+                <h1 className="break-words text-4xl leading-tight sm:text-5xl" style={display}><OpenTitle item={item} onOpen={onOpen} /></h1>
                 <p className="mt-2" style={{ color: cardMuted }}>{item.description ? item.description.split(/(?<=\.)\s/)[0] : [item.category, item.location].filter(Boolean).join(' · ')}</p>
               </div>
               <div className="flex shrink-0 items-center gap-4" data-pdf-ignore>
@@ -638,16 +664,16 @@ export const StudioTemplate = ({ items, user, headline, editable, onEdit, onDele
         <p className="text-xs uppercase tracking-[0.3em]" style={{ color: L.faint }}>All work</p>
         <div className="mt-6 space-y-14">
           {items.map((it, i) => (
-            <article key={it._id}>
+            <article key={it._id} className={onOpen ? 'cursor-pointer' : ''} onClick={openOnClick(onOpen, it)} data-testid={`project-tile-${it._id}`}>
               <div className="flex flex-wrap items-baseline justify-between gap-3">
-                <h2 className="text-3xl" style={display}><span className="mr-3 text-base" style={{ color: ring }}>{num(i)}</span>{it.title}</h2>
+                <h2 className="min-w-0 break-words text-3xl" style={display}><span className="mr-3 text-base" style={{ color: ring }}>{num(i)}</span><OpenTitle item={it} onOpen={onOpen} /></h2>
                 <p className="text-sm" style={{ color: L.faint }}>{[it.category, it.projectStatus, it.location].filter(Boolean).join(' · ')}</p>
               </div>
               {it.description && <p className="mt-3 max-w-3xl leading-relaxed" style={{ color: L.muted }}>{it.description}</p>}
               {it.images?.length > 0 && (
                 <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-3">
-                  {it.images.map((src) => (
-                    <img key={src} src={src} alt="" className="aspect-[4/3] w-full rounded-lg object-cover" />
+                  {it.images.map((src, n) => (
+                    <img key={src} src={src} alt="" data-photo={n} className="aspect-[4/3] w-full rounded-lg object-cover" />
                   ))}
                 </div>
               )}
@@ -665,6 +691,159 @@ export const StudioTemplate = ({ items, user, headline, editable, onEdit, onDele
         </div>
         <p className="flex items-center gap-2 break-all" style={{ color: L.muted }}><FiMail className="shrink-0" />{contact}</p>
       </footer>
+    </div>
+  );
+};
+
+// ---------- PROJECT VIEWER: one project in full, shown before any editing ----------
+// Wrap it in <DialogContent className={PROJECT_VIEWER_DIALOG_CLASS}>: full screen on
+// phones, a large panel from `sm` up. The dialog's own close button is hidden
+// because the viewer has its own.
+export const PROJECT_VIEWER_DIALOG_CLASS = 'flex h-[100dvh] max-h-[100dvh] w-full max-w-none flex-col gap-0 overflow-hidden rounded-none border-0 bg-[#FAF9F6] p-0 sm:h-[92vh] sm:max-h-[92vh] sm:w-[calc(100vw-2rem)] sm:max-w-6xl sm:rounded-2xl sm:border [&>button:last-child]:hidden';
+
+const viewerDate = (value) => {
+  const d = value ? new Date(value) : null;
+  return d && !Number.isNaN(d.getTime()) ? d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : '';
+};
+
+/**
+ * Read-only view of a project: photo gallery (arrow keys, swipe, thumbnails,
+ * click for full size) and its details. `actions` are extra header buttons
+ * (Edit, Share, Report). Give it `key={item._id}` so the gallery restarts per project.
+ */
+export const ProjectViewer = ({ item, index = 0, total = 1, initialPhoto = 0, onPrev, onNext, onClose, actions }) => {
+  const images = item?.images || [];
+  const [photo, setPhoto] = useState(initialPhoto);
+  const touchX = useRef(null);
+  const current = Math.min(Math.max(photo, 0), Math.max(images.length - 1, 0));
+  const hasPrev = index > 0;
+  const hasNext = index < total - 1;
+
+  const step = (dir) => setPhoto((p) => (Math.min(p, images.length - 1) + dir + images.length) % images.length);
+
+  // Arrow keys move between photos; with one photo or none they move between projects
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+      if (e.target?.closest?.('input, textarea, select, [contenteditable="true"], [role="menu"], [role="radiogroup"]')) return;
+      const dir = e.key === 'ArrowRight' ? 1 : -1;
+      if (images.length > 1) {
+        e.preventDefault();
+        setPhoto((p) => (Math.min(p, images.length - 1) + dir + images.length) % images.length);
+      } else if (dir > 0 && index < total - 1) {
+        onNext?.();
+      } else if (dir < 0 && index > 0) {
+        onPrev?.();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [images.length, index, total, onPrev, onNext]);
+
+  if (!item) return null;
+
+  const onTouchEnd = (e) => {
+    if (touchX.current === null || images.length < 2) return;
+    const dx = e.changedTouches[0].clientX - touchX.current;
+    touchX.current = null;
+    if (Math.abs(dx) > 40) step(dx < 0 ? 1 : -1);
+  };
+
+  const date = viewerDate(item.createdAt);
+  const meta = [
+    item.location && { icon: FiMapPin, label: 'Location', value: item.location },
+    item.projectStatus && { icon: FiFlag, label: 'Status', value: item.projectStatus },
+    date && { icon: FiCalendar, label: 'Added', value: date }
+  ].filter(Boolean);
+  const navBtn = 'inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-black transition hover:bg-gray-50 disabled:opacity-30';
+
+  return (
+    <div className="flex h-full min-h-0 w-full min-w-0 flex-col bg-[#FAF9F6]" data-testid="project-viewer">
+      <header className="flex shrink-0 items-center gap-2 border-b border-gray-200 bg-white px-3 py-2 sm:px-5 sm:py-3">
+        {total > 1 && (
+          <div className="flex items-center gap-1.5">
+            <button type="button" onClick={onPrev} disabled={!hasPrev} className={navBtn} aria-label="Previous project" data-testid="project-viewer-prev"><FiChevronLeft /></button>
+            <span className="hidden text-xs tabular-nums text-gray-500 sm:inline">{index + 1} of {total}</span>
+            <button type="button" onClick={onNext} disabled={!hasNext} className={navBtn} aria-label="Next project" data-testid="project-viewer-next"><FiChevronRight /></button>
+          </div>
+        )}
+        <div className="ml-auto flex min-w-0 items-center gap-2">
+          {actions}
+          <button type="button" onClick={onClose} className={navBtn} aria-label="Close" data-testid="project-viewer-close"><FiX /></button>
+        </div>
+      </header>
+
+      <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden lg:grid lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] lg:overflow-hidden">
+        <section className={`flex min-w-0 flex-col ${images.length ? 'bg-black' : 'bg-gray-100'} lg:min-h-0`} aria-label="Photos">
+          <div
+            className="relative flex h-[52vh] min-h-[240px] items-center justify-center sm:h-[60vh] lg:h-auto lg:min-h-0 lg:flex-1"
+            onTouchStart={(e) => { touchX.current = e.touches[0].clientX; }}
+            onTouchEnd={onTouchEnd}
+          >
+            {images.length > 0 ? (
+              <a href={images[current]} target="_blank" rel="noreferrer" className="group flex h-full w-full items-center justify-center" title="Open full size" data-testid="project-viewer-image">
+                <img src={images[current]} alt={`${item.title} – photo ${current + 1}`} className="max-h-full max-w-full object-contain" />
+                <span className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white opacity-80 group-hover:opacity-100"><FiMaximize2 className="h-4 w-4" /></span>
+              </a>
+            ) : (
+              <div className="text-center text-gray-400">
+                <FiImage className="mx-auto mb-2 h-10 w-10" />
+                <p className="text-sm">No photos yet</p>
+              </div>
+            )}
+            {images.length > 1 && (
+              <>
+                <button type="button" onClick={() => step(-1)} className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-black shadow hover:bg-yellow-400 sm:left-4" aria-label="Previous photo"><FiChevronLeft className="h-5 w-5" /></button>
+                <button type="button" onClick={() => step(1)} className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-black shadow hover:bg-yellow-400 sm:right-4" aria-label="Next photo"><FiChevronRight className="h-5 w-5" /></button>
+                <span className="absolute bottom-3 right-3 rounded-full bg-black/60 px-2.5 py-1 text-xs tabular-nums text-white">{current + 1} / {images.length}</span>
+              </>
+            )}
+          </div>
+          {images.length > 1 && (
+            <div className="flex shrink-0 gap-2 overflow-x-auto p-3" data-testid="project-viewer-thumbs">
+              {images.map((src, n) => (
+                <button
+                  key={src}
+                  type="button"
+                  onClick={() => setPhoto(n)}
+                  aria-label={`Show photo ${n + 1}`}
+                  aria-current={n === current}
+                  className={`h-14 w-20 shrink-0 overflow-hidden rounded-md border-2 transition ${n === current ? 'border-yellow-400' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                >
+                  <img src={src} alt="" className="h-full w-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="min-w-0 p-5 sm:p-8 lg:overflow-y-auto">
+          {item.category && <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">{item.category}</p>}
+          <h2 className="mt-1 break-words font-serif text-3xl leading-tight text-black sm:text-4xl" data-testid="project-viewer-title">{item.title}</h2>
+          {meta.length > 0 && (
+            <dl className="mt-5 space-y-2.5">
+              {meta.map(({ icon: Icon, label, value }) => (
+                <div key={label} className="flex items-start gap-3 text-sm">
+                  <Icon className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" aria-hidden="true" />
+                  <dt className="sr-only">{label}</dt>
+                  <dd className="min-w-0 break-words text-gray-700">{value}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+          {item.description && (
+            <p className="mt-6 whitespace-pre-wrap break-words leading-relaxed text-gray-800" data-testid="project-viewer-description">{item.description}</p>
+          )}
+          {item.tags?.length > 0 && (
+            <div className="mt-6 flex flex-wrap gap-2">
+              {item.tags.map((t, n) => (
+                <span key={`${t}-${n}`} className="rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700">{t}</span>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   );
 };

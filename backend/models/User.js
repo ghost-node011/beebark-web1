@@ -124,6 +124,22 @@ const userSchema = new mongoose.Schema({
     address: { type: String, default: '' },
     about: { type: String, default: '' }
   },
+  // One line under the name, e.g. "Real Estate Developer | Architect"
+  headline: { type: String, default: '', trim: true, maxlength: 140 },
+  // Contact details; `visibility` decides who sees them (connections by default)
+  contact: {
+    email: { type: String, default: '' },
+    phone: { type: String, default: '' },
+    whatsapp: { type: String, default: '' },
+    website: { type: String, default: '' },
+    address: { type: String, default: '' },
+    visibility: { type: String, enum: ['everyone', 'connections', 'only_me'], default: 'connections' }
+  },
+  socialLinks: [{
+    _id: false,
+    platform: { type: String, required: true },
+    url: { type: String, required: true }
+  }],
   // Chosen by the user; undefined means "not set yet" (connections are shown instead)
   associatedProfessionals: {
     type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],

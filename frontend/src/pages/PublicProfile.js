@@ -10,17 +10,21 @@ import { Card, CardContent } from '../components/ui/card';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config/api';
 import { INDUSTRIES } from '../config/onboarding';
-import { StatCard, InfoBlock } from '../components/profile/ProfileWidgets';
-import { ProfileHero, VisibilityPill, PillFilter, PAGE_BG } from '../components/profile/ProfileShell';
+import { InfoBlock } from '../components/profile/ProfileWidgets';
+import { ProfileHero, ProfileTabs, VisibilityPill, PillFilter, PAGE_BG } from '../components/profile/ProfileShell';
 import {
   FiUserPlus, FiMessageCircle, FiEye, FiUsers,
   FiBriefcase, FiImage, FiZap, FiThumbsUp, FiThumbsDown, FiX,
   FiTarget, FiLayers, FiGlobe, FiBookOpen, FiHeart, FiMessageSquare,
-  FiMoreHorizontal, FiFlag, FiSlash, FiUserCheck, FiHome
+  FiMoreHorizontal, FiFlag, FiSlash, FiUserCheck, FiHome, FiCalendar, FiInfo, FiShare2
 } from 'react-icons/fi';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '../components/ui/dropdown-menu';
 import ReportDialog from '../components/ReportDialog';
-import { ExperienceItem, sortExperience, AvailabilityChips, LanguagesList, BusinessDetails, PeopleStrip } from '../components/profile/ProfileSections';
+import ShareMenu from '../components/ShareMenu';
+import {
+  sortExperience, AvailabilityChips, LanguagesList, BusinessDetails, PeopleStrip,
+  Section, AnalyticsCards, ProjectGrid, ExperienceCard, ListingCards, JobRows, ContactInfoDialog
+} from '../components/profile/ProfileSections';
 import { personHeadline } from '../utils/personHeadline';
 
 const ROLE_LABELS = { student: 'Student', professional: 'Professional', firm: 'Firm', recruiter: 'Recruiter', company: 'Firm' };
@@ -54,6 +58,7 @@ const PublicProfile = () => {
 
   const [status, setStatus] = useState(null); // connected | sent | received | none, from the server
   const [reportOpen, setReportOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
   useEffect(() => { setStatus(data?.connectionStatus || null); }, [data]);
 
   const handleConnect = async () => {
@@ -103,35 +108,50 @@ const PublicProfile = () => {
   const { user } = data;
   const industryLabels = labelsFrom(user.industries, INDUSTRIES);
   const bio = user.bio || '';
-  const bioIsLong = bio.length > 220;
+  const bioIsLong = bio.length > 260;
   const showAnalytics = data.isOwnProfile || user.analyticsPublic;
   const showGallery = data.isOwnProfile || user.galleryPublic;
   const showActivity = data.isOwnProfile || user.activityPublic;
   const galleryCategories = [...new Set((data.portfolioPreview || []).map((i) => i.category).filter(Boolean))];
   const visibleGalleryItems = galleryCategory === 'All' ? data.portfolioPreview : (data.portfolioPreview || []).filter((i) => i.category === galleryCategory);
 
+  const firstName = user.name?.split(' ')[0] || '';
+  const tabs = [
+    { id: 'section-overview', label: 'Overview' },
+    { id: 'section-portfolio', label: 'Portfolio' },
+    { id: 'section-experience', label: 'Experience' },
+    { id: 'section-activity', label: 'Activity' },
+    ...(data.listingCount ? [{ id: 'section-listings', label: 'Listings' }] : []),
+    ...(data.openJobs?.length ? [{ id: 'section-hiring', label: 'Hiring' }] : [])
+  ];
+  const requestMeeting = () => navigate(`/chat?with=${user._id}&draft=${encodeURIComponent(`Hi ${firstName}, could we set up a meeting? Let me know a day and time that works for you.`)}`);
+
   return (
     <div className={`min-h-screen ${PAGE_BG}`}>
       <Sidebar />
       <TopBar />
       <div className="lg:ml-64 mt-16 p-4 sm:p-6 lg:p-8">
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div className="max-w-5xl mx-auto space-y-6">
           <ProfileHero
             coverPhoto={user.coverPhoto}
             profilePic={user.profilePic}
             name={user.name}
-            username={user.username}
             roleLabel={ROLE_LABELS[user.role] || 'Professional'}
-            subtitle={personHeadline(user)}
+            headline={user.headline || personHeadline(user)}
             badges={<AvailabilityChips values={user.availability} />}
             pronouns={user.pronouns}
             location={user.location}
+            yearsOfExperience={user.yearsOfExperience}
             connectionCount={user.connectionCount}
+            socialLinks={user.socialLinks}
+            onContactInfo={() => setContactOpen(true)}
             actions={
-              !data.isOwnProfile && (
+              data.isOwnProfile ? (
+                <Link to="/profile"><Button className="bg-black text-white hover:bg-gray-800">Edit your profile</Button></Link>
+              ) : (
                 <>
                   {status === 'connected' ? (
-                    <Button onClick={() => navigate(`/chat?with=${user._id}`)} className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold">
+                    <Button onClick={() => navigate(`/chat?with=${user._id}`)} className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold" data-testid="profile-message">
                       <FiMessageCircle className="mr-2" />Message
                     </Button>
                   ) : status === 'sent' ? (
@@ -143,20 +163,24 @@ const PublicProfile = () => {
                       <FiUserCheck className="mr-2" />{connecting ? 'Accepting...' : 'Accept request'}
                     </Button>
                   ) : (
-                    <Button onClick={handleConnect} disabled={connecting} className="bg-black hover:bg-gray-800 text-white">
+                    <Button onClick={handleConnect} disabled={connecting} className="bg-black hover:bg-gray-800 text-white" data-testid="profile-connect">
                       <FiUserPlus className="mr-2" />{connecting ? 'Sending...' : 'Connect'}
                     </Button>
                   )}
-                  <Link to={`/portfolio/${user.username}`} target="_blank">
-                    <Button variant="outline"><FiImage className="mr-2" />Portfolio</Button>
-                  </Link>
+                  {status === 'connected' && (
+                    <Button variant="outline" onClick={requestMeeting} data-testid="request-meeting"><FiCalendar className="mr-2" />Request meeting</Button>
+                  )}
+                  <ShareMenu path={`/profile/${user.username}`} title={`${user.name} on BeeBark`} text={user.headline || personHeadline(user)} align="start" testId="profile-share" />
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="icon" aria-label="More options" data-testid="profile-more"><FiMoreHorizontal /></Button>
+                      <Button variant="outline" data-testid="profile-more"><FiMoreHorizontal className="mr-1" />More</Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setReportOpen(true)} data-testid="profile-report"><FiFlag className="mr-2" />Report</DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleBlock} className="text-red-600" data-testid="profile-block"><FiSlash className="mr-2" />Block</DropdownMenuItem>
+                    <DropdownMenuContent align="start" className="w-52">
+                      <DropdownMenuItem onClick={() => setContactOpen(true)}><FiInfo className="mr-2" />Contact info</DropdownMenuItem>
+                      <DropdownMenuItem asChild><Link to={`/portfolio/${user.username}`} target="_blank"><FiImage className="mr-2" />Full portfolio</Link></DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => setReportOpen(true)} data-testid="profile-report"><FiFlag className="mr-2" />Report profile</DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleBlock} className="text-red-600" data-testid="profile-block"><FiSlash className="mr-2" />Block {firstName}</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </>
@@ -164,227 +188,185 @@ const PublicProfile = () => {
             }
           />
 
+          <ProfileTabs tabs={tabs} />
+
           {/* AI rating — interactive, viewer-only */}
           {rating && !ratingDismissed && (
-            <Card className="border-2 border-yellow-200 bg-yellow-50">
+            <Card className="border-2 border-yellow-200 bg-yellow-50 rounded-2xl">
               <CardContent className="pt-5 flex items-start gap-3">
                 <FiZap className="text-yellow-500 mt-1 shrink-0" />
                 <div className="flex-1">
                   <p className="text-sm text-black">{rating.message}</p>
                   <div className="flex items-center gap-2 mt-3">
-                    <button
-                      disabled={!!ratingFeedback}
-                      onClick={() => { setRatingFeedback('agree'); toast.success('Thanks for the feedback!'); }}
-                      className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full transition ${
-                        ratingFeedback === 'agree'
-                          ? 'bg-yellow-400 text-black font-semibold'
-                          : ratingFeedback
-                            ? 'text-gray-300 cursor-default'
-                            : 'text-gray-600 hover:bg-yellow-100 hover:text-black'
-                      }`}
-                    >
-                      <FiThumbsUp className="w-3.5 h-3.5" />Agree
-                    </button>
-                    <button
-                      disabled={!!ratingFeedback}
-                      onClick={() => { setRatingFeedback('disagree'); toast.success('Thanks for the feedback!'); }}
-                      className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full transition ${
-                        ratingFeedback === 'disagree'
-                          ? 'bg-yellow-400 text-black font-semibold'
-                          : ratingFeedback
-                            ? 'text-gray-300 cursor-default'
-                            : 'text-gray-600 hover:bg-yellow-100 hover:text-black'
-                      }`}
-                    >
-                      <FiThumbsDown className="w-3.5 h-3.5" />Disagree
-                    </button>
+                    {['agree', 'disagree'].map((v) => (
+                      <button
+                        key={v}
+                        disabled={!!ratingFeedback}
+                        onClick={() => { setRatingFeedback(v); toast.success('Thanks for the feedback!'); }}
+                        className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full transition ${ratingFeedback === v ? 'bg-yellow-400 text-black font-semibold' : ratingFeedback ? 'text-gray-300 cursor-default' : 'text-gray-600 hover:bg-yellow-100 hover:text-black'}`}
+                      >
+                        {v === 'agree' ? <FiThumbsUp className="w-3.5 h-3.5" /> : <FiThumbsDown className="w-3.5 h-3.5" />}{v === 'agree' ? 'Agree' : 'Disagree'}
+                      </button>
+                    ))}
                   </div>
                 </div>
-                <button onClick={() => setRatingDismissed(true)} className="text-gray-400 hover:text-gray-600"><FiX /></button>
+                <button onClick={() => setRatingDismissed(true)} className="text-gray-400 hover:text-gray-600" aria-label="Dismiss"><FiX /></button>
               </CardContent>
             </Card>
           )}
 
-          <div id="section-overview" className="space-y-6 scroll-mt-24">
-              {showAnalytics && (
-                <Card className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-slate-900 font-serif">Analytics</h3>
-                    <VisibilityPill isPublic={user.analyticsPublic} editable={false} />
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <StatCard icon={FiEye} value={user.profileViews ?? 0} label="Profile Views" />
-                    <StatCard icon={FiUsers} value={user.connectionCount} label="Connections" />
-                    <StatCard icon={FiImage} value={data.portfolioCount} label="Work Gallery Entries" />
-                  </div>
-                </Card>
-              )}
+          <div id="section-overview" className="space-y-6 scroll-mt-32">
+            {showAnalytics && (
+              <Section title="Analytics" action={<VisibilityPill isPublic={user.analyticsPublic} editable={false} />}>
+                <AnalyticsCards items={[
+                  { icon: FiEye, value: (user.profileViews ?? 0).toLocaleString('en-IN'), label: 'Profile views' },
+                  { icon: FiUsers, value: user.connectionCount, label: 'Connections' },
+                  { icon: FiImage, value: data.portfolioCount, label: 'Projects' },
+                  data.listingCount
+                    ? { icon: FiHome, value: data.listingCount, label: 'Listings' }
+                    : { icon: FiBriefcase, value: data.openJobs?.length || 0, label: 'Open jobs' }
+                ]} />
+              </Section>
+            )}
 
-              <Card className="p-6">
-                <h3 className="text-lg font-bold text-black mb-2 font-serif">Professional Identity</h3>
-                {bio ? (
-                  <>
-                    <p className="text-gray-700 whitespace-pre-line">{bioIsLong && !bioExpanded ? `${bio.slice(0, 220)}…` : bio}</p>
-                    {bioIsLong && (
-                      <button onClick={() => setBioExpanded((e) => !e)} className="text-sm font-medium text-black hover:underline mt-1">
-                        {bioExpanded ? 'Show less' : 'Read more'}
-                      </button>
-                    )}
-                  </>
-                ) : <p className="text-gray-400">No bio yet</p>}
-
-                {(user.specialization?.length > 0 || user.projectTypeFocus?.length > 0 || user.markets?.length > 0) && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-                    <InfoBlock icon={FiTarget} label="Specialization" values={user.specialization} />
-                    <InfoBlock icon={FiLayers} label="Project Type Focus" values={user.projectTypeFocus} />
-                    <InfoBlock icon={FiGlobe} label="Markets" values={user.markets} />
-                  </div>
-                )}
-              </Card>
-
-              {user.business && (
-                <Card className="p-6">
-                  <h3 className="text-lg font-bold text-black mb-3 flex items-center font-serif"><FiHome className="mr-2" />Business</h3>
-                  <BusinessDetails business={user.business} />
-                </Card>
-              )}
-
-              {industryLabels.length > 0 && (
-                <Card className="p-6">
-                  <h3 className="font-bold text-black mb-2 font-serif">Industry</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {industryLabels.map((l) => <Badge key={l} className="bg-slate-900 text-yellow-400">{l}</Badge>)}
-                  </div>
-                </Card>
-              )}
-
-              <Card className="p-6">
-                <h3 className="font-bold text-black mb-2 font-serif">Skills</h3>
-                {user.skills?.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {user.skills.map((s, i) => <Badge key={i} className="bg-yellow-500 text-gray-900">{s}</Badge>)}
-                  </div>
-                ) : <p className="text-gray-400 text-sm">No skills added yet</p>}
-              </Card>
-          </div>
-
-          <div id="section-portfolio" className="space-y-6 scroll-mt-24">
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-3 gap-2">
-                <h3 className="text-lg font-bold text-black flex items-center font-serif"><FiImage className="mr-2" />Work Gallery</h3>
-                <div className="flex items-center gap-3 shrink-0">
-                  <VisibilityPill isPublic={user.galleryPublic} editable={false} />
-                  {showGallery && (
-                    <Link to={`/portfolio/${user.username}`} target="_blank" className="text-sm font-medium text-black hover:underline whitespace-nowrap">
-                      View full portfolio ({data.portfolioCount})
-                    </Link>
-                  )}
-                </div>
-              </div>
-              {showGallery ? (
+            <Section title="Professional Identity">
+              {bio ? (
                 <>
-                  {galleryCategories.length > 0 && (
-                    <div className="mb-3">
-                      <PillFilter options={['All', ...galleryCategories]} active={galleryCategory} onChange={setGalleryCategory} />
-                    </div>
+                  <p className="text-gray-700 whitespace-pre-line leading-relaxed">{bioIsLong && !bioExpanded ? `${bio.slice(0, 260)}…` : bio}</p>
+                  {bioIsLong && (
+                    <button onClick={() => setBioExpanded((e) => !e)} className="text-sm font-semibold text-black hover:underline mt-1">
+                      {bioExpanded ? 'Show less' : 'Read more'}
+                    </button>
                   )}
-                  {visibleGalleryItems?.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      {visibleGalleryItems.map((item) => (
-                        <div key={item._id} className="relative rounded-lg overflow-hidden bg-gray-100 aspect-square">
-                          {item.images?.[0] ? (
-                            <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-xs text-gray-400 p-2 text-center">{item.title}</div>
-                          )}
-                          {item.category && (
-                            <span className="absolute top-1.5 left-1.5 text-[9px] font-bold uppercase tracking-wide bg-yellow-400 text-black px-1.5 py-0.5 rounded-full">{item.category}</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : <p className="text-gray-400">Nothing here yet</p>}
                 </>
-              ) : <p className="text-gray-400">This member's Work Gallery is private.</p>}
-            </Card>
+              ) : <p className="text-gray-400">No bio yet</p>}
+              {(user.specialization?.length > 0 || user.projectTypeFocus?.length > 0 || user.markets?.length > 0 || industryLabels.length > 0) && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-5">
+                  <InfoBlock icon={FiTarget} label="Specialization" values={user.specialization} />
+                  <InfoBlock icon={FiLayers} label="Project Type Focus" values={user.projectTypeFocus} />
+                  <InfoBlock icon={FiGlobe} label="Markets" values={user.markets} />
+                  <InfoBlock icon={FiBriefcase} label="Industry" values={industryLabels} />
+                </div>
+              )}
+            </Section>
+
+            {user.business && (
+              <Section title="Business"><BusinessDetails business={user.business} /></Section>
+            )}
+
+            {user.skills?.length > 0 && (
+              <Section title="Skills">
+                <div className="flex flex-wrap gap-2">
+                  {user.skills.map((s2, i) => <Badge key={i} className="bg-yellow-400 text-gray-900 hover:bg-yellow-400">{s2}</Badge>)}
+                </div>
+              </Section>
+            )}
           </div>
 
-          <div id="section-experience" className="space-y-6 scroll-mt-24">
-              <Card className="p-6">
-                <h3 className="text-lg font-bold text-black mb-3 flex items-center font-serif"><FiBriefcase className="mr-2" />Experience</h3>
-                {user.experience?.length > 0 ? (
-                  <div className="space-y-4">
-                    {sortExperience(user.experience).map((exp) => (
-                      <div key={exp._index} className="border-l-4 border-yellow-400 pl-4">
-                        <ExperienceItem exp={exp} />
-                      </div>
-                    ))}
-                  </div>
-                ) : <p className="text-gray-400">No experience added yet</p>}
-              </Card>
+          <Section
+            id="section-portfolio"
+            title="Portfolio"
+            action={showGallery && galleryCategories.length > 0
+              ? <div className="hidden md:block"><PillFilter options={['All', ...galleryCategories]} active={galleryCategory} onChange={setGalleryCategory} /></div>
+              : <VisibilityPill isPublic={user.galleryPublic} editable={false} />}
+          >
+            {showGallery ? (
+              <>
+                {galleryCategories.length > 0 && <div className="md:hidden mb-4"><PillFilter options={['All', ...galleryCategories]} active={galleryCategory} onChange={setGalleryCategory} /></div>}
+                {visibleGalleryItems?.length > 0
+                  ? <ProjectGrid items={visibleGalleryItems} linkFor={(item) => `/portfolio/${user.username}?project=${item._id}`} />
+                  : <p className="text-gray-400">Nothing here yet</p>}
+                {data.portfolioCount > (visibleGalleryItems?.length || 0) && (
+                  <Link to={`/portfolio/${user.username}`} target="_blank" className="inline-block mt-4 text-sm font-semibold text-black hover:underline">View all {data.portfolioCount} projects →</Link>
+                )}
+              </>
+            ) : <p className="text-gray-400">{firstName}'s portfolio is private.</p>}
+          </Section>
 
-              {user.education?.length > 0 && (
-                <Card className="p-6">
-                  <h3 className="text-lg font-bold text-black mb-3 flex items-center font-serif"><FiBookOpen className="mr-2" />Education</h3>
-                  <div className="space-y-4">
-                    {user.education.map((edu, idx) => (
-                      <div key={idx} className="border-l-4 border-yellow-400 pl-4">
+          <div id="section-experience" className="space-y-6 scroll-mt-32">
+            <Section title="Experience">
+              {user.experience?.length > 0 ? (
+                <div className="space-y-3">
+                  {sortExperience(user.experience).map((exp) => <ExperienceCard key={exp._index} exp={exp} />)}
+                </div>
+              ) : <p className="text-gray-400">No experience added yet</p>}
+            </Section>
+
+            {user.education?.length > 0 && (
+              <Section title="Education">
+                <div className="space-y-3">
+                  {user.education.map((edu, idx) => (
+                    <div key={idx} className="flex items-start gap-4 rounded-xl border border-gray-200 p-4 sm:p-5">
+                      <div className="w-11 h-11 rounded-lg bg-[#F6F4EF] flex items-center justify-center shrink-0"><FiBookOpen className="w-5 h-5 text-gray-600" /></div>
+                      <div className="min-w-0">
                         <h4 className="font-semibold text-black">{edu.degree}{edu.field ? ` — ${edu.field}` : ''}</h4>
                         <p className="text-gray-700 text-sm">{edu.school}</p>
                         <p className="text-xs text-gray-500">{edu.duration}</p>
                         {edu.description && <p className="text-sm text-gray-600 mt-1">{edu.description}</p>}
                       </div>
-                    ))}
-                  </div>
-                </Card>
-              )}
-
-              {user.languages?.length > 0 && (
-                <Card className="p-6">
-                  <h3 className="text-lg font-bold text-black mb-3 flex items-center font-serif"><FiGlobe className="mr-2" />Languages</h3>
-                  <LanguagesList languages={user.languages} />
-                </Card>
-              )}
-          </div>
-
-          <div id="section-activity" className="space-y-6 scroll-mt-24">
-              <Card className="p-6">
-                <div className="flex items-center justify-between mb-3 gap-2">
-                  <h3 className="text-lg font-bold text-black font-serif">Recent Activity</h3>
-                  <VisibilityPill isPublic={user.activityPublic} editable={false} />
-                </div>
-                {data.isOwnProfile ? (
-                  <p className="text-gray-400">Visit your own profile page to see your activity.</p>
-                ) : showActivity ? (
-                  data.recentActivity?.length > 0 ? (
-                    <div className="space-y-3">
-                      {data.recentActivity.map((post) => (
-                        <div key={post._id} className="border border-gray-100 rounded-lg p-4">
-                          <p className="text-gray-800 text-sm">{post.content}</p>
-                          {post.mediaUrl && <img src={post.mediaUrl} alt="" className="mt-2 rounded-lg max-h-48 object-cover" />}
-                          <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
-                            <span className="flex items-center gap-1"><FiHeart className="w-3.5 h-3.5" />{post.likeCount}</span>
-                            <span className="flex items-center gap-1"><FiMessageSquare className="w-3.5 h-3.5" />{post.commentCount}</span>
-                            <span>{new Date(post.createdAt).toLocaleDateString()}</span>
-                          </div>
-                        </div>
-                      ))}
                     </div>
-                  ) : <p className="text-gray-400">No activity yet.</p>
-                ) : (
-                  <p className="text-gray-400">This member's activity is private.</p>
-                )}
-              </Card>
+                  ))}
+                </div>
+              </Section>
+            )}
 
-              {data.associatedProfessionals?.length > 0 && (
-                <Card className="p-6">
-                  <h3 className="text-lg font-bold text-black mb-3 font-serif">Associated Professionals</h3>
-                  <PeopleStrip people={data.associatedProfessionals} />
-                </Card>
-              )}
+            {user.languages?.length > 0 && (
+              <Section title="Languages"><LanguagesList languages={user.languages} /></Section>
+            )}
+
+            {data.associatedProfessionals?.length > 0 && (
+              <Section title="Associated Professionals"><PeopleStrip people={data.associatedProfessionals} /></Section>
+            )}
           </div>
+
+          <Section id="section-activity" title="Recent Activity" action={<VisibilityPill isPublic={user.activityPublic} editable={false} />}>
+            {data.isOwnProfile ? (
+              <p className="text-gray-400">Visit your own profile page to see your activity.</p>
+            ) : showActivity ? (
+              data.recentActivity?.length > 0 ? (
+                <div className="space-y-3">
+                  {data.recentActivity.map((post) => (
+                    <div key={post._id} className="rounded-xl border border-gray-200 p-4 sm:p-5">
+                      <p className="text-xs text-gray-500 mb-1">{new Date(post.createdAt).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                      <p className="text-gray-800 text-sm whitespace-pre-line">{post.content}</p>
+                      {post.mediaUrl && <img src={post.mediaUrl} alt="" className="mt-3 rounded-lg max-h-64 object-cover" />}
+                      <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
+                        <span className="flex items-center gap-1"><FiHeart className="w-3.5 h-3.5" />{post.likeCount}</span>
+                        <span className="flex items-center gap-1"><FiMessageSquare className="w-3.5 h-3.5" />{post.commentCount}</span>
+                        <ShareMenu path={`/profile/${user.username}`} title={`${user.name} on BeeBark`} text={post.content?.slice(0, 120)} align="start"
+                          trigger={<button type="button" className="flex items-center gap-1 hover:text-black"><FiShare2 className="w-3.5 h-3.5" />Share</button>} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : <p className="text-gray-400">No activity yet.</p>
+            ) : (
+              <p className="text-gray-400">{firstName}'s activity is private.</p>
+            )}
+          </Section>
+
+          {data.listingCount > 0 && (
+            <Section id="section-listings" title="Listings">
+              <ListingCards listings={data.listings} />
+            </Section>
+          )}
+
+          {data.openJobs?.length > 0 && (
+            <Section id="section-hiring" title={`Hiring · ${data.openJobs.length} open role${data.openJobs.length > 1 ? 's' : ''}`}>
+              <JobRows jobs={data.openJobs} />
+            </Section>
+          )}
         </div>
       </div>
+      <ContactInfoDialog
+        open={contactOpen}
+        onOpenChange={setContactOpen}
+        name={user.name}
+        username={user.username}
+        contact={data.contact}
+        socialLinks={user.socialLinks}
+        hiddenReason={data.contactHiddenReason}
+      />
       {!data.isOwnProfile && (
         <ReportDialog open={reportOpen} onOpenChange={setReportOpen} person={user} context="profile"
           onDone={({ blocked }) => { if (blocked) { refreshUser(); navigate('/connections'); } }} />

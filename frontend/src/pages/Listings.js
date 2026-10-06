@@ -9,8 +9,10 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import { FiPlus, FiMapPin, FiEdit2, FiTrash2, FiSearch, FiHome, FiUpload, FiX, FiMaximize } from 'react-icons/fi';
+import { FiPlus, FiMapPin, FiEdit2, FiTrash2, FiSearch, FiHome, FiUpload, FiX, FiMaximize, FiShare2 } from 'react-icons/fi';
+import { Link } from 'react-router-dom';
 import { LocationInput } from '../components/AutocompleteInput';
+import ShareMenu from '../components/ShareMenu';
 import { API_URL } from '../config/api';
 
 const PURPOSES = [{ value: 'sale', label: 'For sale' }, { value: 'rent', label: 'For rent' }, { value: 'lease', label: 'For lease' }];
@@ -185,6 +187,9 @@ const Listings = () => {
                       {l.location && <p className="text-xs text-gray-500 flex items-center gap-1 truncate"><FiMapPin className="w-3 h-3 shrink-0" />{l.location}</p>}
                       <div className="flex gap-2 pt-2">
                         <Button size="sm" variant="outline" onClick={() => setDraft(toForm(l))} className="flex-1"><FiEdit2 className="mr-1" />Edit</Button>
+                        <Link to={`/listing/${l._id}`}><Button size="sm" variant="outline" aria-label={`View ${l.title}`}>View</Button></Link>
+                        <ShareMenu path={`/listing/${l._id}`} title={l.title} text={formatPrice(l.price)} testId={`listing-share-${l._id}`}
+                          trigger={<Button size="sm" variant="outline" aria-label={`Share ${l.title}`}><FiShare2 /></Button>} />
                         <Button size="sm" variant="outline" onClick={() => remove(l)} className="text-red-600 hover:text-red-700" aria-label={`Delete ${l.title}`}><FiTrash2 /></Button>
                       </div>
                     </div>

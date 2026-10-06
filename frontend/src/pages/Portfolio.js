@@ -9,12 +9,13 @@ import { Textarea } from '../components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
-import { FiCamera, FiImage, FiPlus, FiDownload, FiX, FiEye, FiEdit2, FiTrash2, FiArrowUp, FiArrowDown, FiStar } from 'react-icons/fi';
+import { FiCamera, FiImage, FiPlus, FiDownload, FiX, FiEye, FiEdit2, FiTrash2, FiArrowUp, FiArrowDown, FiStar, FiShare2 } from 'react-icons/fi';
 // import { FiZap, FiCheck } from 'react-icons/fi'; // used by the AI tools below (switched off)
 // import { Card, CardContent } from '../components/ui/card';
 // import { Badge } from '../components/ui/badge';
 import { API_URL } from '../config/api';
-import { THEME_META, FONT_META, ACCENT_PRESETS, COLOUR_PRESETS, PALETTE_DEFAULTS, DEFAULT_CLOSING_LINE, resolveTemplate, resolveThemeKey } from '../components/portfolio/PortfolioTemplates';
+import { THEME_META, FONT_META, ACCENT_PRESETS, COLOUR_PRESETS, PALETTE_DEFAULTS, DEFAULT_CLOSING_LINE, resolveTemplate, resolveThemeKey, ProjectViewer, PROJECT_VIEWER_DIALOG_CLASS } from '../components/portfolio/PortfolioTemplates';
+import ShareMenu from '../components/ShareMenu';
 import { PillFilter } from '../components/profile/ProfileShell';
 import { exportPortfolioPdf } from '../utils/exportPortfolioPdf';
 import { getCopy } from '../config/roleDomainCopy';
@@ -46,6 +47,10 @@ const Portfolio = () => {
   const [uploadProgress, setUploadProgress] = useState(null); // { done, total }
   const [saving, setSaving] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  // The project dialog shows a project first ('view') and switches to the form ('form') to edit
+  const [dialogMode, setDialogMode] = useState('form');
+  const [viewingId, setViewingId] = useState(null);
+  const [viewerPhoto, setViewerPhoto] = useState(0);
   const [exporting, setExporting] = useState(false);
   const [mobileTab, setMobileTab] = useState('preview');
   const [activeCategory, setActiveCategory] = useState('All');
@@ -152,11 +157,23 @@ const Portfolio = () => {
 
   const openAddDialog = () => {
     setEditingItem(null);
+    setViewingId(null);
     setForm(emptyForm);
+    setDialogMode('form');
+    setShowAddDialog(true);
+  };
+
+  // Clicking a project shows it first; editing is one step away
+  const openViewer = (item, photo = 0) => {
+    setViewingId(item._id);
+    setViewerPhoto(photo);
+    setDialogMode('view');
     setShowAddDialog(true);
   };
 
   const openEditDialog = (item) => {
+    setViewingId(item._id);
+    setDialogMode('form');
     setEditingItem(item);
     setForm({
       title: item.title,
@@ -176,12 +193,19 @@ const Portfolio = () => {
     setSaving(true);
     try {
       if (editingItem) {
-        await axios.put(`${API_URL}/api/portfolio/items/${editingItem._id}`, form);
+        const response = await axios.put(`${API_URL}/api/portfolio/items/${editingItem._id}`, form);
+        const updated = response.data?.item;
+        if (updated) setItems((list) => list.map((i) => (i._id === updated._id ? updated : i)));
         toast.success('Updated');
-      } else {
-        await axios.post(`${API_URL}/api/portfolio/items`, form);
-        toast.success('Added to your portfolio');
+        // Back to the project, now showing the saved changes
+        setEditingItem(null);
+        setViewerPhoto(0);
+        setDialogMode('view');
+        if (!updated) fetchPortfolio();
+        return;
       }
+      await axios.post(`${API_URL}/api/portfolio/items`, form);
+      toast.success('Added to your portfolio');
       setShowAddDialog(false);
       fetchPortfolio();
     } catch (error) {
@@ -191,10 +215,21 @@ const Portfolio = () => {
     }
   };
 
+  // Leaving the form returns to the project when it was opened from there
+  const cancelEdit = () => {
+    if (viewingId && items.some((i) => i._id === viewingId)) {
+      setEditingItem(null);
+      setDialogMode('view');
+    } else {
+      setShowAddDialog(false);
+    }
+  };
+
   const handleDelete = async (item) => {
     try {
       await axios.delete(`${API_URL}/api/portfolio/items/${item._id}`);
       toast.success('Removed');
+      if (item._id === viewingId || item._id === editingItem?._id) setShowAddDialog(false);
       fetchPortfolio();
     } catch (error) {
       toast.error('Failed to remove');
@@ -239,6 +274,16 @@ const Portfolio = () => {
   const background = look.background || palette.background;
   const textColor = look.textColor || palette.textColor;
   const bodyFont = FONT_META.find((f) => f.key === look.bodyFont);
+  const viewingItem = items.find((i) => i._id === viewingId) || null;
+  // Prev/next follow what the preview shows, unless the project is filtered out
+  const viewerList = viewingItem && visibleItems.some((i) => i._id === viewingId) ? visibleItems : items;
+  const viewerIndex = viewingItem ? viewerList.findIndex((i) => i._id === viewingId) : -1;
+  const showViewerAt = (index) => {
+    const next = viewerList[index];
+    if (next) { setViewingId(next._id); setViewerPhoto(0); }
+  };
+  const editingIndex = editingItem ? items.findIndex((i) => i._id === editingItem._id) : -1;
+  const inViewer = dialogMode === 'view';
 
   const handleExport = async () => {
     setExporting(true);
@@ -426,20 +471,22 @@ const Portfolio = () => {
       {items.length > 1 && <p className="mb-2 text-xs text-gray-400">Use the arrows to change the order. The top project is featured first.</p>}
       <ul className="space-y-2">
         {items.map((item, index) => (
-          <li key={item._id} className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white p-2">
+          <li key={item._id} className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white p-2" data-testid={`project-row-${item._id}`}>
             <div className="flex shrink-0 flex-col">
               <button type="button" onClick={() => moveItem(index, -1)} disabled={index === 0} className="p-1 text-gray-500 hover:text-black disabled:opacity-25" aria-label={`Move ${item.title} up`}><FiArrowUp className="h-3.5 w-3.5" /></button>
               <button type="button" onClick={() => moveItem(index, 1)} disabled={index === items.length - 1} className="p-1 text-gray-500 hover:text-black disabled:opacity-25" aria-label={`Move ${item.title} down`}><FiArrowDown className="h-3.5 w-3.5" /></button>
             </div>
-            {item.images?.[0] ? (
-              <img src={item.images[0]} alt="" className="h-12 w-14 shrink-0 rounded object-cover" />
-            ) : (
-              <span className="flex h-12 w-14 shrink-0 items-center justify-center rounded bg-gray-100"><FiImage className="text-gray-400" /></span>
-            )}
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-black">{item.title}</p>
-              <p className="text-xs text-gray-500">{index === 0 ? 'Featured · ' : ''}{item.images?.length || 0} photo{item.images?.length === 1 ? '' : 's'}</p>
-            </div>
+            <button type="button" onClick={() => openViewer(item)} className="flex min-w-0 flex-1 items-center gap-2 rounded text-left hover:opacity-80" aria-label={`View ${item.title}`}>
+              {item.images?.[0] ? (
+                <img src={item.images[0]} alt="" className="h-12 w-14 shrink-0 rounded object-cover" />
+              ) : (
+                <span className="flex h-12 w-14 shrink-0 items-center justify-center rounded bg-gray-100"><FiImage className="text-gray-400" /></span>
+              )}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold text-black">{item.title}</span>
+                <span className="block text-xs text-gray-500">{index === 0 ? 'Featured · ' : ''}{item.images?.length || 0} photo{item.images?.length === 1 ? '' : 's'}</span>
+              </span>
+            </button>
             <button type="button" onClick={() => openEditDialog(item)} className="p-2 text-gray-500 hover:text-black" aria-label={`Edit ${item.title}`}><FiEdit2 /></button>
             <button type="button" onClick={() => handleDelete(item)} className="p-2 text-gray-500 hover:text-red-600" aria-label={`Remove ${item.title}`}><FiTrash2 /></button>
           </li>
@@ -474,6 +521,7 @@ const Portfolio = () => {
               onEdit={openEditDialog}
               onDelete={handleDelete}
               onAdd={openAddDialog}
+              onOpen={openViewer}
               font={font}
               accentColor={accentColor}
               look={look}
@@ -537,6 +585,40 @@ const Portfolio = () => {
       </div>
 
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        {inViewer ? (viewingItem && (
+          <DialogContent className={PROJECT_VIEWER_DIALOG_CLASS} aria-describedby={undefined}>
+            <DialogTitle className="sr-only">{viewingItem.title}</DialogTitle>
+            <ProjectViewer
+              key={viewingItem._id}
+              item={viewingItem}
+              index={viewerIndex}
+              total={viewerList.length}
+              initialPhoto={viewerPhoto}
+              onPrev={() => showViewerAt(viewerIndex - 1)}
+              onNext={() => showViewerAt(viewerIndex + 1)}
+              onClose={() => setShowAddDialog(false)}
+              actions={(
+                <>
+                  {user?.username && (
+                    <ShareMenu
+                      path={`/portfolio/${user.username}?project=${viewingItem._id}`}
+                      title={viewingItem.title}
+                      testId="project-viewer-share"
+                      trigger={(
+                        <button type="button" className="inline-flex h-9 items-center gap-2 rounded-full border border-gray-200 bg-white px-3 text-sm font-medium text-black hover:bg-gray-50" data-testid="project-viewer-share" aria-label="Share project">
+                          <FiShare2 className="h-4 w-4" /><span className="hidden sm:inline">Share</span>
+                        </button>
+                      )}
+                    />
+                  )}
+                  <button type="button" onClick={() => openEditDialog(viewingItem)} className="inline-flex h-9 items-center gap-2 rounded-full bg-black px-4 text-sm font-semibold text-white hover:bg-gray-800" data-testid="project-viewer-edit">
+                    <FiEdit2 className="h-4 w-4" />Edit
+                  </button>
+                </>
+              )}
+            />
+          </DialogContent>
+        )) : (
         <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingItem ? `Edit ${copy.workNoun}` : `Add ${copy.workNoun}`}</DialogTitle>
@@ -617,11 +699,42 @@ const Portfolio = () => {
                 </div>
               )}
             </div>
-            <Button type="submit" disabled={saving || !!uploadProgress} className="w-full bg-black text-white">
-              {saving ? 'Saving...' : editingItem ? 'Save changes' : `Add ${copy.workNoun}`}
-            </Button>
+            {editingItem && editingIndex >= 0 && (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gray-200 p-3" data-testid="pf-edit-position">
+                <p className="text-sm text-gray-600">
+                  Position {editingIndex + 1} of {items.length}{editingIndex === 0 ? ' · Featured' : ''}
+                </p>
+                <div className="flex items-center gap-1">
+                  <button type="button" onClick={() => moveItem(editingIndex, -1)} disabled={editingIndex === 0} className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm text-gray-600 hover:bg-gray-100 hover:text-black disabled:opacity-30">
+                    <FiArrowUp className="h-3.5 w-3.5" />Earlier
+                  </button>
+                  <button type="button" onClick={() => moveItem(editingIndex, 1)} disabled={editingIndex === items.length - 1} className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm text-gray-600 hover:bg-gray-100 hover:text-black disabled:opacity-30">
+                    <FiArrowDown className="h-3.5 w-3.5" />Later
+                  </button>
+                </div>
+              </div>
+            )}
+            <div className="flex flex-col-reverse gap-2 sm:flex-row">
+              {(editingItem || viewingId) && (
+                <Button type="button" variant="outline" onClick={cancelEdit} className="sm:flex-1" data-testid="pf-edit-cancel">Cancel</Button>
+              )}
+              <Button type="submit" disabled={saving || !!uploadProgress} className="bg-black text-white sm:flex-1">
+                {saving ? 'Saving...' : editingItem ? 'Save changes' : `Add ${copy.workNoun}`}
+              </Button>
+            </div>
+            {editingItem && (
+              <button
+                type="button"
+                onClick={() => { if (window.confirm(`Remove "${editingItem.title}" from your portfolio?`)) handleDelete(editingItem); }}
+                className="inline-flex w-full items-center justify-center gap-2 py-1 text-sm text-red-600 hover:underline"
+                data-testid="pf-edit-delete"
+              >
+                <FiTrash2 className="h-4 w-4" />Remove this {copy.workNoun}
+              </button>
+            )}
           </form>
         </DialogContent>
+        )}
       </Dialog>
 
       {/* AI tools, switched off: "Auto-generate from photos" dialog, the "Suggest a style for me"

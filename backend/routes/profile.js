@@ -10,7 +10,9 @@ const { analyzeResumeForProfile } = require('../utils/resumeVerifier');
 const { rateProfile } = require('../utils/profileRating');
 const PortfolioItem = require('../models/PortfolioItem');
 const Post = require('../models/Post');
-const { availabilityOptionsFor, PROFICIENCY, EMPLOYMENT_TYPES } = require('../utils/profileOptions');
+const { availabilityOptionsFor, PROFICIENCY, EMPLOYMENT_TYPES, SOCIAL_PLATFORMS, yearsOfExperience } = require('../utils/profileOptions');
+const Listing = require('../models/Listing');
+const Job = require('../models/Job');
 const { isBlockedBetween } = require('../utils/userRelations');
 
 const clip = (v, n) => String(v ?? '').trim().slice(0, n);
@@ -72,6 +74,35 @@ function cleanBusiness(b) {
   };
 }
 
+const withHttps = (v) => (v && !/^https?:\/\//i.test(v) ? `https://${v}` : v);
+const validUrl = (v) => { try { const u = new URL(v); return /^https?:$/.test(u.protocol) && u.hostname.includes('.'); } catch { return false; } };
+
+function cleanContact(c) {
+  const email = clip(c?.email, 120).toLowerCase();
+  const website = withHttps(clip(c?.website, 200));
+  return {
+    email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : '',
+    phone: clip(c?.phone, 20).replace(/[^\d+\-\s()]/g, ''),
+    whatsapp: clip(c?.whatsapp, 20).replace(/[^\d+]/g, ''),
+    website: validUrl(website) ? website : '',
+    address: clip(c?.address, 240),
+    visibility: ['everyone', 'connections', 'only_me'].includes(c?.visibility) ? c.visibility : 'connections'
+  };
+}
+
+function cleanSocialLinks(list) {
+  const seen = new Set();
+  const out = [];
+  for (const l of (Array.isArray(list) ? list : []).slice(0, 12)) {
+    const platform = SOCIAL_PLATFORMS.includes(l?.platform) ? l.platform : null;
+    const url = withHttps(clip(l?.url, 300));
+    if (!platform || !validUrl(url) || seen.has(url)) continue;
+    seen.add(url);
+    out.push({ platform, url });
+  }
+  return out;
+}
+
 const PERSON_CARD = 'name username profilePic role careerStage specialization accountStatus';
 const toCard = (c) => ({ _id: c._id, name: c.name, username: c.username, profilePic: c.profilePic, role: c.role, careerStage: c.careerStage, specialization: c.specialization || [] });
 
@@ -105,6 +136,10 @@ router.get('/me', auth, async (req, res) => {
       experience: user.experience,
       education: user.education || [],
       careerStage: user.careerStage || '',
+      headline: user.headline || '',
+      contact: user.contact || {},
+      socialLinks: user.socialLinks || [],
+      yearsOfExperience: yearsOfExperience(user.experience),
       authProvider: user.authProvider || 'local',
       languages: user.languages || [],
       availability: user.availability || [],
@@ -169,7 +204,7 @@ router.get('/completion', auth, async (req, res) => {
 router.get('/public/:username', auth, async (req, res) => {
   try {
     const user = await User.findOne({ username: req.params.username })
-      .select('name username profilePic coverPhoto bio pronouns role careerStage location industries skills specialization projectTypeFocus markets experience education languages availability business associatedProfessionals connections createdAt settings accountStatus blockedUsers')
+      .select('name username profilePic coverPhoto bio pronouns headline contact socialLinks role careerStage location industries skills specialization projectTypeFocus markets experience education languages availability business associatedProfessionals connections createdAt settings accountStatus blockedUsers')
       .populate('connections', PERSON_CARD)
       .populate('associatedProfessionals', PERSON_CARD);
     if (!user) return res.status(404).json({ error: 'Profile not found' });
@@ -197,11 +232,28 @@ router.get('/public/:username', auth, async (req, res) => {
     const showGallery = isOwnProfile || galleryPublic;
     const showActivity = isOwnProfile || activityPublic;
 
-    const [portfolioItems, portfolioCount, recentPosts] = await Promise.all([
+    const [portfolioItems, portfolioCount, recentPosts, listings, listingCount, openJobs] = await Promise.all([
       showGallery ? PortfolioItem.find({ user: user._id }).sort({ createdAt: -1 }).limit(24) : Promise.resolve([]),
       showGallery ? PortfolioItem.countDocuments({ user: user._id }) : Promise.resolve(0),
-      showActivity ? Post.find({ author: user._id }).sort({ createdAt: -1 }).limit(5).select('content mediaUrl likes comments createdAt') : Promise.resolve([])
+      showActivity ? Post.find({ author: user._id }).sort({ createdAt: -1 }).limit(5).select('content mediaUrl likes comments createdAt') : Promise.resolve([]),
+      Listing.find({ user: user._id, status: { $ne: 'draft' } }).sort({ createdAt: -1 }).limit(6).lean(),
+      Listing.countDocuments({ user: user._id, status: { $ne: 'draft' } }),
+      Job.find({ postedBy: user._id, status: { $ne: 'closed' } }).sort({ createdAt: -1 }).limit(6)
+        .select('title company location salary employmentType workplace experienceLevel createdAt applicants').lean()
     ]);
+
+    // Contact details follow the owner's visibility choice
+    const contactVisible = isOwnProfile
+      || user.contact?.visibility === 'everyone'
+      || ((user.contact?.visibility || 'connections') === 'connections' && connectionStatus === 'connected');
+    const contact = contactVisible ? {
+      email: user.contact?.email || '',
+      phone: user.contact?.phone || '',
+      whatsapp: user.contact?.whatsapp || '',
+      website: user.contact?.website || '',
+      address: user.contact?.address || '',
+      visibility: user.contact?.visibility || 'connections'
+    } : null;
 
     res.json({
       user: {
@@ -222,6 +274,9 @@ router.get('/public/:username', auth, async (req, res) => {
         experience: user.experience || [],
         education: user.education || [],
         careerStage: user.careerStage || '',
+        headline: user.headline || '',
+        socialLinks: user.socialLinks || [],
+        yearsOfExperience: yearsOfExperience(user.experience),
         languages: user.languages || [],
         availability: user.availability || [],
         business: user.business?.name ? user.business : null,
@@ -240,6 +295,12 @@ router.get('/public/:username', auth, async (req, res) => {
         : active(user.connections).slice(0, 8)).map(toCard),
       associatedChosen: Array.isArray(user.associatedProfessionals),
       connectionStatus,
+      contact,
+      // Tells the viewer why contact info is hidden
+      contactHiddenReason: contact ? null : (user.contact?.visibility === 'only_me' ? 'private' : 'connect'),
+      listings,
+      listingCount,
+      openJobs: openJobs.map(({ applicants, ...j }) => ({ ...j, applicantCount: (applicants || []).length })),
       portfolioPreview: portfolioItems,
       portfolioCount,
       recentActivity: recentPosts.map((p) => ({
@@ -374,7 +435,7 @@ router.get('/:userId', auth, async (req, res) => {
 
 router.put('/update', auth, async (req, res) => {
   try {
-    const { name, bio, pronouns, profilePic, coverPhoto, skills, experience, education, location, intent, industries, specialization, projectTypeFocus, markets, analyticsPublic, galleryPublic, activityPublic, readReceipts, careerStage, languages, availability, business, associatedProfessionals } = req.body;
+    const { name, bio, pronouns, profilePic, coverPhoto, skills, experience, education, location, intent, industries, specialization, projectTypeFocus, markets, analyticsPublic, galleryPublic, activityPublic, readReceipts, careerStage, headline, contact, socialLinks, languages, availability, business, associatedProfessionals } = req.body;
     const VALID_INTENT = ['learn', 'network', 'hire', 'get_hired'];
     const VALID_INDUSTRY = ['architecture', 'interiors', 'construction', 'real_estate', 'related'];
     const asTagList = (arr) => arr.map((s) => String(s).trim()).filter(Boolean).slice(0, 20);
@@ -390,6 +451,9 @@ router.put('/update', auth, async (req, res) => {
     if (Array.isArray(experience)) updateData.experience = cleanExperience(experience);
     if (Array.isArray(education)) updateData.education = cleanEducation(education);
     if (Array.isArray(languages)) updateData.languages = cleanLanguages(languages);
+    if (headline !== undefined) updateData.headline = clip(headline, 140);
+    if (contact && typeof contact === 'object') updateData.contact = cleanContact(contact);
+    if (Array.isArray(socialLinks)) updateData.socialLinks = cleanSocialLinks(socialLinks);
     if (business && typeof business === 'object') updateData.business = cleanBusiness(business);
     if (Array.isArray(intent)) updateData.intent = intent.filter((i) => VALID_INTENT.includes(i));
     if (Array.isArray(industries)) updateData.industries = industries.filter((i) => VALID_INDUSTRY.includes(i));
