@@ -536,9 +536,13 @@ const Profile = () => {
             </div>
           </div>
 
-          {editingSection === 'header' && (
-            <Card className="p-5 sm:p-8 space-y-5 rounded-2xl" id="intro-editor" data-testid="intro-editor">
-              <h3 className="text-xl font-semibold font-serif">Edit intro</h3>
+          {/* Opens over the page (like LinkedIn), so it's obvious the click did something */}
+          <Dialog open={editingSection === 'header'} onOpenChange={(o) => { if (!o) cancelSection(); }}>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 gap-0" id="intro-editor" data-testid="intro-editor">
+              <DialogHeader className="sticky top-0 z-10 border-b border-[#ebe6df] bg-white px-6 py-4">
+                <DialogTitle className="pf-serif text-2xl">Edit intro</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-5 px-6 py-5">
               <div className="space-y-2">
                 <Label>Name</Label>
                 <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} data-testid="name-input" />
@@ -616,12 +620,13 @@ const Profile = () => {
                 )}
               </div>
               <p className="text-xs text-gray-400">Use the camera icon on your profile photo to change it.</p>
-              <div className="flex gap-2">
-                <Button onClick={cancelSection} variant="outline">Cancel</Button>
-                <Button onClick={saveSection} disabled={saving} className="bg-black text-white hover:bg-gray-800">{saving ? 'Saving...' : 'Save'}</Button>
               </div>
-            </Card>
-          )}
+              <div className="sticky bottom-0 flex justify-end gap-2 border-t border-[#ebe6df] bg-white px-6 py-4">
+                <Button onClick={cancelSection} variant="outline">Cancel</Button>
+                <Button onClick={saveSection} disabled={saving} className="bg-black text-white hover:bg-gray-800" data-testid="intro-save">{saving ? 'Saving...' : 'Save'}</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           <div id="section-overview" className="space-y-6 scroll-mt-24">
               <Card className="p-5 sm:p-8 rounded-2xl border-black/5 shadow-sm">
@@ -1223,7 +1228,6 @@ const Profile = () => {
         onEdit={() => {
           setContactOpen(false);
           edit('header');
-          setTimeout(() => document.getElementById('intro-editor')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
         }}
       />
 
