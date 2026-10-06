@@ -81,7 +81,7 @@ const PublicPortfolio = () => {
   }
 
   if (!data) {
-    return <BeeLoader size="full" label="Opening the portfolio…" />;
+    return <BeeLoader size="full" label="Opening the portfolio" />;
   }
 
   const Template = resolveTemplate(data.theme);

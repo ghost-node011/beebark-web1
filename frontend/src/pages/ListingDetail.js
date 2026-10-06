@@ -49,7 +49,7 @@ const ListingDetail = () => {
   }
   if (!data) {
     return (
-      <div className="lg:ml-64 mt-16 flex min-h-[calc(100vh-4rem)] items-center justify-center p-8"><BeeLoader size="section" label="Opening the listing…" /></div>
+      <div className="fixed inset-x-0 bottom-0 top-16 lg:left-64 flex items-center justify-center"><BeeLoader size="section" label="Opening the listing" /></div>
     );
   }
 

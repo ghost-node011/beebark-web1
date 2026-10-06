@@ -14,7 +14,8 @@ export const ContentLoader = () => {
     return () => progress.done();
   }, []);
   return (
-    <div className="lg:ml-64 mt-16 flex min-h-[calc(100vh-4rem)] items-center justify-center p-8">
+    // Centred in the visible content area, whatever the page height
+    <div className="fixed inset-x-0 bottom-0 top-16 lg:left-64 flex items-center justify-center">
       <BeeLoader size="section" />
     </div>
   );

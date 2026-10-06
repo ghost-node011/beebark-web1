@@ -104,62 +104,26 @@ body {
 .font-display { font-family: 'Satoshi', 'Inter', sans-serif; }
 
 /* ---------- Bee loader ---------- */
-.bee-loader .bee-cell {
-  fill: url(#bee-honey);
-  stroke: #e6a800;
-  stroke-width: 1.2;
-  transform-box: fill-box;
-  transform-origin: center;
-  opacity: 0.15;
-  animation: bee-cell 1.4s ease-in-out infinite;
+.bee-loader .bee-track { fill: none; stroke: rgba(245, 158, 11, 0.14); stroke-width: 5; stroke-linejoin: round; }
+.bee-loader .bee-trace {
+  fill: none;
+  stroke: url(#bee-trace);
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 28 72;
+  animation: bee-trace 1.1s linear infinite;
+  filter: drop-shadow(0 0 3px rgba(245, 158, 11, 0.45));
 }
-.bee-loader .bee-core {
-  fill: #fff;
-  stroke: #f5b400;
-  stroke-width: 2.5;
-  filter: drop-shadow(0 6px 14px rgba(245, 180, 0, 0.35));
-}
-.bee-loader .bee-orbit {
-  transform-origin: 60px 60px;
-  animation: bee-orbit 2.2s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
-}
-.bee-loader .bee-wing {
-  fill: rgba(255, 255, 255, 0.9);
-  stroke: #111;
-  stroke-width: 0.6;
-  transform-box: fill-box;
-  transform-origin: bottom center;
-  animation: bee-wing 0.12s ease-in-out infinite alternate;
-}
-.bee-loader .bee-trail { fill: #f5b400; opacity: 0.5; }
 .bee-loader .bee-logo {
   transform: translate(-50%, -50%);
-  animation: bee-bob 1.4s ease-in-out infinite;
+  animation: bee-breathe 1.1s ease-in-out infinite;
 }
-.bee-loader .bee-glow {
-  background: radial-gradient(circle, rgba(250, 204, 21, 0.45) 0%, rgba(250, 204, 21, 0) 65%);
-  animation: bee-glow 1.4s ease-in-out infinite;
+@keyframes bee-trace { to { stroke-dashoffset: -100; } }
+@keyframes bee-breathe {
+  0%, 100% { transform: translate(-50%, -50%) scale(0.92); }
+  50% { transform: translate(-50%, -50%) scale(1.04); }
 }
-.bee-loader .bee-word span {
-  display: inline-block;
-  animation: bee-wave 1.4s ease-in-out infinite;
-}
-.bee-loader .bee-tip { animation: bee-tip 0.4s ease-out; }
-
-@keyframes bee-cell {
-  0%, 100% { opacity: 0.15; transform: scale(0.82); }
-  35% { opacity: 1; transform: scale(1); }
-  60% { opacity: 0.9; transform: scale(0.97); }
-}
-@keyframes bee-orbit { to { transform: rotate(360deg); } }
-@keyframes bee-wing { from { transform: scaleY(1); } to { transform: scaleY(0.35); } }
-@keyframes bee-bob {
-  0%, 100% { transform: translate(-50%, -50%) rotate(-6deg) scale(1); }
-  50% { transform: translate(-50%, -58%) rotate(6deg) scale(1.08); }
-}
-@keyframes bee-glow { 0%, 100% { transform: scale(0.85); opacity: 0.6; } 50% { transform: scale(1.15); opacity: 1; } }
-@keyframes bee-wave { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-6px); color: #e6a800; } }
-@keyframes bee-tip { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ---------- Top progress bar ---------- */
 .top-progress-fill {
@@ -176,7 +140,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .bee-loader *, .top-progress-bee, .page-enter { animation: none !important; }
-  .bee-loader .bee-cell { opacity: 0.8; }
+  .bee-loader .bee-trace { stroke-dasharray: none; }
 }
 
 /* ---------- Skeleton shimmer ---------- */
@@ -187,3 +151,6 @@ body {
 }
 @keyframes skeleton-shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
 @media (prefers-reduced-motion: reduce) { .skeleton-shimmer { animation: none; } }
+
+/* The people search has its own clear button */
+input[name="beebark-people-search"]::-webkit-search-cancel-button { display: none; }

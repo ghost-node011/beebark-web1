@@ -86,6 +86,11 @@ const PeopleSearchBox = () => {
         onFocus={() => setOpen(true)}
         onKeyDown={onKeyDown}
         placeholder="Search people, roles, skills, companies"
+        type="search"
+        name="beebark-people-search"
+        autoComplete="off"
+        autoCorrect="off"
+        spellCheck={false}
         className="w-full h-10 rounded-md border border-slate-200 bg-slate-50 pl-10 pr-9 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-yellow-400"
         role="combobox"
         aria-expanded={open}
