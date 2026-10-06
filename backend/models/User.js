@@ -87,8 +87,14 @@ const userSchema = new mongoose.Schema({
   experience: [{
     title: String,
     company: String,
+    // Free text kept for older entries; new entries also fill the structured fields
     duration: String,
-    description: String
+    description: String,
+    employmentType: { type: String, default: '' }, // full_time, part_time, internship, freelance, contract
+    location: { type: String, default: '' },
+    startDate: { type: String, default: '' }, // "YYYY-MM"
+    endDate: { type: String, default: '' }, // "YYYY-MM"; empty when current
+    current: { type: Boolean, default: false }
   }],
   education: [{
     school: String,
@@ -101,6 +107,35 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
+  languages: [{
+    name: { type: String, required: true },
+    proficiency: { type: String, default: '' } // basic, conversational, professional, native
+  }],
+  // What the person is open to; options depend on role (see profile route)
+  availability: [{ type: String }],
+  // Business / firm details for professionals who run a practice
+  business: {
+    name: { type: String, default: '' },
+    type: { type: String, default: '' },
+    website: { type: String, default: '' },
+    founded: { type: String, default: '' },
+    teamSize: { type: String, default: '' },
+    services: [{ type: String }],
+    address: { type: String, default: '' },
+    about: { type: String, default: '' }
+  },
+  // Chosen by the user; undefined means "not set yet" (connections are shown instead)
+  associatedProfessionals: {
+    type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    default: undefined
+  },
+  blockedUsers: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  // Deactivated accounts are hidden everywhere and come back on the next sign-in
+  accountStatus: { type: String, enum: ['active', 'deactivated'], default: 'active', index: true },
+  deactivatedAt: Date,
   pendingRequests: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'

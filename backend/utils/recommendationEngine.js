@@ -15,13 +15,16 @@ const getConnectionSuggestions = async (userId, limit = 10) => {
     const connectionIds = currentUser.connections.map(c => c._id.toString());
     const sentRequestIds = (currentUser.sentRequests || []).map(id => id.toString());
     const pendingRequestIds = (currentUser.pendingRequests || []).map(id => id.toString());
-    const excludeIds = [userId.toString(), ...connectionIds, ...sentRequestIds, ...pendingRequestIds];
+    const blockedIds = (currentUser.blockedUsers || []).map(id => id.toString());
+    const excludeIds = [userId.toString(), ...connectionIds, ...sentRequestIds, ...pendingRequestIds, ...blockedIds];
 
     // Only public profile fields leave the server (never password/OTP/token data).
     // Demo accounts only see each other, and real users never see demo accounts.
     const potentialConnections = await User.find({
       _id: { $nin: excludeIds },
-      isDemo: currentUser.isDemo ? true : { $ne: true }
+      isDemo: currentUser.isDemo ? true : { $ne: true },
+      accountStatus: { $ne: 'deactivated' },
+      blockedUsers: { $ne: currentUser._id }
     })
     .select(PUBLIC_FIELDS)
     .populate('connections', '_id name')

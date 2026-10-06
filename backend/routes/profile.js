@@ -10,6 +10,70 @@ const { analyzeResumeForProfile } = require('../utils/resumeVerifier');
 const { rateProfile } = require('../utils/profileRating');
 const PortfolioItem = require('../models/PortfolioItem');
 const Post = require('../models/Post');
+const { availabilityOptionsFor, PROFICIENCY, EMPLOYMENT_TYPES } = require('../utils/profileOptions');
+const { isBlockedBetween } = require('../utils/userRelations');
+
+const clip = (v, n) => String(v ?? '').trim().slice(0, n);
+const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
+
+function cleanExperience(list) {
+  return list.slice(0, 30).map((e) => {
+    const startDate = MONTH.test(e?.startDate) ? e.startDate : '';
+    const current = e?.current === true;
+    const endDate = !current && MONTH.test(e?.endDate) ? e.endDate : '';
+    return {
+      title: clip(e?.title, 120),
+      company: clip(e?.company, 120),
+      duration: clip(e?.duration, 60),
+      description: clip(e?.description, 2000),
+      employmentType: EMPLOYMENT_TYPES.includes(e?.employmentType) ? e.employmentType : '',
+      location: clip(e?.location, 120),
+      startDate,
+      endDate,
+      current
+    };
+  }).filter((e) => e.title || e.company);
+}
+
+function cleanEducation(list) {
+  return list.slice(0, 20).map((e) => ({
+    school: clip(e?.school, 160),
+    degree: clip(e?.degree, 120),
+    field: clip(e?.field, 120),
+    duration: clip(e?.duration, 60),
+    description: clip(e?.description, 2000)
+  })).filter((e) => e.school || e.degree);
+}
+
+function cleanLanguages(list) {
+  const seen = new Set();
+  const out = [];
+  for (const l of list.slice(0, 20)) {
+    const name = clip(l?.name, 40);
+    if (!name || seen.has(name.toLowerCase())) continue;
+    seen.add(name.toLowerCase());
+    out.push({ name, proficiency: PROFICIENCY.includes(l?.proficiency) ? l.proficiency : '' });
+  }
+  return out;
+}
+
+function cleanBusiness(b) {
+  let website = clip(b?.website, 200);
+  if (website && !/^https?:\/\//i.test(website)) website = `https://${website}`;
+  return {
+    name: clip(b?.name, 120),
+    type: clip(b?.type, 60),
+    website,
+    founded: clip(b?.founded, 4).replace(/\D/g, ''),
+    teamSize: clip(b?.teamSize, 20),
+    services: (Array.isArray(b?.services) ? b.services : []).map((s) => clip(s, 60)).filter(Boolean).slice(0, 20),
+    address: clip(b?.address, 240),
+    about: clip(b?.about, 2000)
+  };
+}
+
+const PERSON_CARD = 'name username profilePic role careerStage specialization accountStatus';
+const toCard = (c) => ({ _id: c._id, name: c.name, username: c.username, profilePic: c.profilePic, role: c.role, careerStage: c.careerStage, specialization: c.specialization || [] });
 
 router.get('/me', auth, async (req, res) => {
   try {
@@ -40,6 +104,13 @@ router.get('/me', auth, async (req, res) => {
       markets: user.markets || [],
       experience: user.experience,
       education: user.education || [],
+      careerStage: user.careerStage || '',
+      authProvider: user.authProvider || 'local',
+      languages: user.languages || [],
+      availability: user.availability || [],
+      availabilityOptions: availabilityOptionsFor(user),
+      business: user.business || {},
+      associatedProfessionals: (user.associatedProfessionals || []).map(String),
       connections: user.connections,
       pendingRequests: user.pendingRequests,
       sentRequests: user.sentRequests,
@@ -47,7 +118,7 @@ router.get('/me', auth, async (req, res) => {
       galleryPublic: user.settings?.galleryPublic ?? true,
       activityPublic: user.settings?.activityPublic || false,
       profileViews: user.profileViews || 0,
-      resume: user.resume ? {
+      resume: user.resume?.url ? {
         url: user.resume.url,
         fileName: user.resume.fileName,
         skills: user.resume.parsedData?.skills || [],
@@ -97,11 +168,22 @@ router.get('/completion', auth, async (req, res) => {
 router.get('/public/:username', auth, async (req, res) => {
   try {
     const user = await User.findOne({ username: req.params.username })
-      .select('name username profilePic coverPhoto bio pronouns role location industries skills specialization projectTypeFocus markets experience education connections createdAt settings')
-      .populate('connections', 'name username profilePic role');
+      .select('name username profilePic coverPhoto bio pronouns role careerStage location industries skills specialization projectTypeFocus markets experience education languages availability business associatedProfessionals connections createdAt settings accountStatus blockedUsers')
+      .populate('connections', PERSON_CARD)
+      .populate('associatedProfessionals', PERSON_CARD);
     if (!user) return res.status(404).json({ error: 'Profile not found' });
 
     const isOwnProfile = user._id.toString() === req.userId.toString();
+    const viewer = isOwnProfile ? null : await User.findById(req.userId).select('connections sentRequests pendingRequests blockedUsers');
+    if (!isOwnProfile && (user.accountStatus === 'deactivated' || isBlockedBetween(viewer, user))) {
+      return res.status(404).json({ error: 'Profile not found' });
+    }
+    const has = (list) => (list || []).some((id) => String(id) === String(user._id));
+    const connectionStatus = isOwnProfile ? 'self'
+      : has(viewer?.connections) ? 'connected'
+      : has(viewer?.sentRequests) ? 'sent'
+      : has(viewer?.pendingRequests) ? 'received' : 'none';
+    const active = (list) => (list || []).filter((c) => c && c.accountStatus !== 'deactivated');
     if (!isOwnProfile) {
       await User.updateOne({ _id: user._id }, { $inc: { profileViews: 1 } });
     }
@@ -138,7 +220,11 @@ router.get('/public/:username', auth, async (req, res) => {
         markets: user.markets || [],
         experience: user.experience || [],
         education: user.education || [],
-        connectionCount: user.connections?.length || 0,
+        careerStage: user.careerStage || '',
+        languages: user.languages || [],
+        availability: user.availability || [],
+        business: user.business?.name ? user.business : null,
+        connectionCount: active(user.connections).length,
         memberSince: user.createdAt,
         analyticsPublic,
         galleryPublic,
@@ -147,10 +233,12 @@ router.get('/public/:username', auth, async (req, res) => {
         // has opted in, or the viewer is the owner.
         profileViews: showAnalytics ? fresh.profileViews : undefined
       },
-      // Real connections, not fabricated "associated professionals"
-      associatedProfessionals: (user.connections || []).slice(0, 8).map((c) => ({
-        _id: c._id, name: c.name, username: c.username, profilePic: c.profilePic, role: c.role
-      })),
+      // Chosen by the owner when set, otherwise their first connections
+      associatedProfessionals: (user.associatedProfessionals
+        ? active(user.associatedProfessionals)
+        : active(user.connections).slice(0, 8)).map(toCard),
+      associatedChosen: Array.isArray(user.associatedProfessionals),
+      connectionStatus,
       portfolioPreview: portfolioItems,
       portfolioCount,
       recentActivity: recentPosts.map((p) => ({
@@ -213,6 +301,60 @@ router.get('/activity', auth, async (req, res) => {
   }
 });
 
+// Autocomplete for profile forms: ?field=school|degree|field|company|title|language|skill&q=
+// Suggests what other members already use (so spellings stay consistent),
+// topped up with common values.
+const COMMON = {
+  degree: ['B.Arch', 'M.Arch', 'B.Des', 'M.Des', 'B.Tech', 'M.Tech', 'B.E.', 'Diploma', 'B.Planning', 'M.Planning', 'MBA', 'B.Sc', 'M.Sc', 'BBA', 'Ph.D'],
+  field: ['Architecture', 'Interior Design', 'Civil Engineering', 'Urban Planning', 'Landscape Architecture', 'Construction Management', 'Real Estate', 'Structural Engineering', 'Product Design', 'Building Services'],
+  title: ['Architect', 'Junior Architect', 'Senior Architect', 'Principal Architect', 'Interior Designer', 'Project Manager', 'Site Engineer', 'Civil Engineer', 'Structural Engineer', 'Quantity Surveyor', 'Real Estate Agent', 'Sales Manager', 'Design Intern', 'Architecture Intern', 'BIM Modeler', '3D Visualizer', 'Draftsman', 'Contractor', 'Urban Planner', 'Landscape Architect'],
+  language: ['English', 'Hindi', 'Bengali', 'Marathi', 'Telugu', 'Tamil', 'Gujarati', 'Urdu', 'Kannada', 'Odia', 'Malayalam', 'Punjabi', 'Assamese', 'Konkani', 'Sanskrit', 'Arabic', 'French', 'German', 'Spanish', 'Japanese', 'Mandarin'],
+  skill: ['AutoCAD', 'Revit', 'SketchUp', 'Rhino', 'Grasshopper', 'Lumion', 'V-Ray', 'Enscape', '3ds Max', 'Photoshop', 'InDesign', 'Illustrator', 'BIM', 'ArchiCAD', 'STAAD Pro', 'ETABS', 'Primavera', 'MS Project', 'Estimation', 'Site Supervision', 'Space Planning', 'Working Drawings', 'Sustainable Design', 'Sales', 'Negotiation']
+};
+const SUGGEST_PATH = { school: 'education.school', degree: 'education.degree', field: 'education.field', company: 'experience.company', title: 'experience.title', language: 'languages.name', skill: 'skills' };
+
+router.get('/suggest', auth, async (req, res) => {
+  try {
+    const field = String(req.query.field || '');
+    const path = SUGGEST_PATH[field];
+    if (!path) return res.status(400).json({ error: 'Unknown field' });
+    const q = String(req.query.q || '').trim().slice(0, 60);
+    const re = q ? new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') : null;
+    const rows = await User.aggregate([
+      ...(path.includes('.') ? [{ $unwind: `$${path.split('.')[0]}` }] : [{ $unwind: '$skills' }]),
+      { $project: { v: `$${path}` } },
+      { $match: { v: re ? re : { $type: 'string', $ne: '' } } },
+      { $group: { _id: { $toLower: { $trim: { input: '$v' } } }, v: { $first: { $trim: { input: '$v' } } }, n: { $sum: 1 } } },
+      { $sort: { n: -1 } },
+      { $limit: 8 }
+    ]);
+    const out = rows.map((r) => r.v).filter(Boolean);
+    const seen = new Set(out.map((v) => v.toLowerCase()));
+    for (const v of COMMON[field] || []) {
+      if (out.length >= 10) break;
+      if ((!re || re.test(v)) && !seen.has(v.toLowerCase())) { out.push(v); seen.add(v.toLowerCase()); }
+    }
+    // Prefer values that start with what was typed
+    const lower = q.toLowerCase();
+    out.sort((a, b) => Number(b.toLowerCase().startsWith(lower)) - Number(a.toLowerCase().startsWith(lower)));
+    res.json({ suggestions: out.slice(0, 10) });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to load suggestions', message: error.message });
+  }
+});
+
+// Remove the uploaded résumé (the profile's skills stay)
+router.delete('/resume', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select('resume');
+    if (!user?.resume?.url) return res.status(404).json({ error: 'No résumé to remove' });
+    await User.updateOne({ _id: req.userId }, { $unset: { resume: 1 } });
+    res.json({ message: 'Résumé removed' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to remove résumé', message: error.message });
+  }
+});
+
 router.get('/:userId', auth, async (req, res) => {
   try {
     const user = await User.findById(req.params.userId)
@@ -231,7 +373,7 @@ router.get('/:userId', auth, async (req, res) => {
 
 router.put('/update', auth, async (req, res) => {
   try {
-    const { name, bio, pronouns, profilePic, coverPhoto, skills, experience, education, location, intent, industries, specialization, projectTypeFocus, markets, analyticsPublic, galleryPublic, activityPublic, careerStage } = req.body;
+    const { name, bio, pronouns, profilePic, coverPhoto, skills, experience, education, location, intent, industries, specialization, projectTypeFocus, markets, analyticsPublic, galleryPublic, activityPublic, careerStage, languages, availability, business, associatedProfessionals } = req.body;
     const VALID_INTENT = ['learn', 'network', 'hire', 'get_hired'];
     const VALID_INDUSTRY = ['architecture', 'interiors', 'construction', 'real_estate', 'related'];
     const asTagList = (arr) => arr.map((s) => String(s).trim()).filter(Boolean).slice(0, 20);
@@ -243,9 +385,11 @@ router.put('/update', auth, async (req, res) => {
     if (coverPhoto !== undefined) updateData.coverPhoto = coverPhoto;
     if (location !== undefined) updateData.location = String(location).slice(0, 120);
     if (profilePic !== undefined) updateData.profilePic = profilePic;
-    if (skills) updateData.skills = skills;
-    if (experience) updateData.experience = experience;
-    if (education) updateData.education = education;
+    if (Array.isArray(skills)) updateData.skills = asTagList(skills).slice(0, 30);
+    if (Array.isArray(experience)) updateData.experience = cleanExperience(experience);
+    if (Array.isArray(education)) updateData.education = cleanEducation(education);
+    if (Array.isArray(languages)) updateData.languages = cleanLanguages(languages);
+    if (business && typeof business === 'object') updateData.business = cleanBusiness(business);
     if (Array.isArray(intent)) updateData.intent = intent.filter((i) => VALID_INTENT.includes(i));
     if (Array.isArray(industries)) updateData.industries = industries.filter((i) => VALID_INDUSTRY.includes(i));
     if (Array.isArray(specialization)) updateData.specialization = asTagList(specialization);
@@ -256,6 +400,19 @@ router.put('/update', auth, async (req, res) => {
     if (typeof analyticsPublic === 'boolean') updateData['settings.analyticsPublic'] = analyticsPublic;
     if (typeof galleryPublic === 'boolean') updateData['settings.galleryPublic'] = galleryPublic;
     if (typeof activityPublic === 'boolean') updateData['settings.activityPublic'] = activityPublic;
+
+    if (Array.isArray(availability) || Array.isArray(associatedProfessionals)) {
+      const me = await User.findById(req.userId).select('role careerStage connections');
+      if (Array.isArray(availability)) {
+        const allowed = availabilityOptionsFor({ role: me.role, careerStage: updateData.careerStage ?? me.careerStage });
+        updateData.availability = [...new Set(availability)].filter((a) => allowed.includes(a));
+      }
+      if (Array.isArray(associatedProfessionals)) {
+        // Only people you're connected to can be shown as associated
+        const mine = new Set((me.connections || []).map(String));
+        updateData.associatedProfessionals = [...new Set(associatedProfessionals.map(String))].filter((id) => mine.has(id)).slice(0, 24);
+      }
+    }
 
     const user = await User.findByIdAndUpdate(
       req.userId,
@@ -275,7 +432,7 @@ router.put('/onboarding', auth, async (req, res) => {
   try {
     const { role, intent, industries, industriesOther, bio, location, skills, profilePic, complete, name } = req.body;
 
-    const VALID_ROLES = ['student', 'professional', 'firm'];
+    const VALID_ROLES = ['student', 'professional'];
     const VALID_INTENT = ['learn', 'network', 'hire', 'get_hired'];
     const VALID_INDUSTRY = ['architecture', 'interiors', 'construction', 'real_estate', 'related'];
 

@@ -131,6 +131,9 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/meetings', meetingRoutes);
 app.use('/api/stories', storyRoutes);
 app.use('/api/portfolio', portfolioRoutes);
+app.use('/api/account', require('./routes/account'));
+app.use('/api/calendar', require('./routes/calendar'));
+app.use('/api/listings', require('./routes/listing'));
 app.use('/api/ai', aiRoutes);
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/waitlist', waitlistRoutes);
@@ -150,10 +153,25 @@ app.set('io', io);
 app.set('connectedUsers', connectedUsers);
 app.set('meetingRooms', meetingRooms);
 
+// Sockets act as the signed-in user: the token from the client's handshake is
+// verified once, and its user id is used for presence and messages (never an
+// id the client sends).
+io.use((socket, next) => {
+  try {
+    const token = socket.handshake.auth && socket.handshake.auth.token;
+    const payload = require('jsonwebtoken').verify(token, process.env.JWT_SECRET);
+    socket.data.authUserId = String(payload.userId);
+    next();
+  } catch (err) {
+    next(new Error('unauthorized'));
+  }
+});
+
 io.on('connection', (socket) => {
   debug('User connected:', socket.id);
-  
-  socket.on('user-connected', (userId) => {
+
+  socket.on('user-connected', () => {
+    const userId = socket.data.authUserId;
     // Remove any existing mapping for this user (in case of reconnection)
     for (const [uid, sid] of connectedUsers.entries()) {
       if (uid === userId && sid !== socket.id) {
@@ -167,62 +185,18 @@ io.on('connection', (socket) => {
   });
 
   socket.on('send-message', async (data) => {
-    debug('📨 Received message:', data);
     try {
-      const Message = require('./models/Message');
-      const User = require('./models/User');
-      
-      // Validate sender is connected with receiver
-      const sender = await User.findById(data.sender);
-      if (!sender) {
-        console.error('❌ Sender not found:', data.sender);
-        socket.emit('message-error', { error: 'Sender not found' });
-        return;
-      }
-      
-      if (!sender.connections.includes(data.receiver)) {
-        console.error('❌ Not connected with this user');
-        socket.emit('message-error', { error: 'Not connected with this user' });
-        return;
-      }
-      
-      // Save message to database
-      const message = new Message({
-        sender: data.sender,
-        receiver: data.receiver,
-        text: data.text
+      const { sendDirectMessage } = require('./utils/directMessages');
+      const messageData = await sendDirectMessage({
+        senderId: socket.data.authUserId,
+        receiverId: String(data && data.receiver),
+        text: data && data.text,
+        io,
+        connectedUsers
       });
-      await message.save();
-      
-      debug('✅ Message saved to DB:', message._id);
-      
-      const messageData = {
-        _id: message._id.toString(),
-        sender: data.sender,
-        receiver: data.receiver,
-        text: data.text,
-        createdAt: message.createdAt
-      };
-      
-      // Send to receiver if online
-      const receiverSocketId = connectedUsers.get(data.receiver);
-      debug('🔍 Looking for receiver:', data.receiver);
-      debug('🔍 Receiver Socket ID:', receiverSocketId);
-      debug('🔍 All connected users:', Array.from(connectedUsers.entries()));
-      
-      if (receiverSocketId) {
-        io.to(receiverSocketId).emit('receive-message', messageData);
-        debug('✅ Message sent to receiver socket:', receiverSocketId);
-      } else {
-        debug('⚠️ Receiver not online');
-      }
-      
       // Confirm to sender
       socket.emit('message-sent', messageData);
-      debug('✅ Message confirmed to sender');
-      
     } catch (error) {
-      console.error('❌ Message error:', error);
       socket.emit('message-error', { error: error.message });
     }
   });
@@ -232,7 +206,7 @@ io.on('connection', (socket) => {
     const receiverSocketId = connectedUsers.get(data.to);
     if (receiverSocketId) {
       io.to(receiverSocketId).emit('call-signal', {
-        from: data.from,
+        from: socket.data.authUserId,
         signal: data.signal,
         callType: data.callType
       });

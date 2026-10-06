@@ -21,6 +21,12 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ error: 'Session expired. Please log in again.' });
     }
 
+    // Signing in again after deactivating brings the account back
+    if (user.accountStatus === 'deactivated') {
+      await User.updateOne({ _id: user._id }, { $set: { accountStatus: 'active' }, $unset: { deactivatedAt: 1 } });
+      user.accountStatus = 'active';
+    }
+
     req.user = user;
     req.userId = user._id;
     next();
