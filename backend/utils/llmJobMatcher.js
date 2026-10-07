@@ -174,7 +174,7 @@ Respond ONLY with a JSON array in this exact format:
     });
 
     scoredJobs.sort((a, b) => b.matchScore - a.matchScore);
-    return scoredJobs.filter(job => job.matchScore > 30).slice(0, 10);
+    return scoredJobs.filter(job => job.matchScore > 30).slice(0, 20);
 
   } catch (error) {
     console.error('LLM recommendations error:', error.response?.data || error.message);
@@ -205,25 +205,38 @@ function fallbackMatching(job, candidates) {
   return scored.slice(0, 10);
 }
 
+// Without the AI: score jobs by how many of the job's skills appear anywhere in
+// the person's profile (skills, résumé skills, headline, job titles,
+// specialisation), plus a bonus for the same industry and a level that fits.
 function fallbackRecommendations(user, allJobs) {
-  const userSkills = user.resume?.parsedData?.skills || user.resume?.skills || user.skills || [];
-  
-  const scored = allJobs.map(job => {
-    const jobKeywords = extractKeywords(job.description);
-    const matched = userSkills.filter(skill =>
-      jobKeywords.some(kw => skill.toLowerCase().includes(kw.toLowerCase()))
-    );
-    
+  const profileText = [
+    ...(user.resume?.parsedData?.skills || []),
+    ...(user.skills || []),
+    ...(user.specialization || []),
+    user.headline || '',
+    ...(user.experience || []).map((e) => `${e.title || ''} ${e.company || ''}`)
+  ].join(' | ').toLowerCase();
+  const student = user.role === 'student' || ['studying', 'career_prep', 'fresher', 'intern'].includes(user.careerStage);
+
+  const scored = allJobs.map((job) => {
+    const terms = [...new Set([...(job.skills || []), ...extractKeywords(`${job.title} ${job.description}`)].map((t) => t.toLowerCase()))];
+    const matched = terms.filter((t) => profileText.includes(t));
+    const coverage = terms.length ? matched.length / Math.min(terms.length, 6) : 0;
+    let score = matched.length ? 40 + Math.round(Math.min(coverage, 1) * 50) : 15;
+    if (job.industry && (user.industries || []).includes(job.industry)) score += 10;
+    if (student && ['internship', 'graduate'].includes(job.employmentType)) score += 5;
+    if (student && ['fresher', 'junior'].includes(job.experienceLevel)) score += 5;
+    const data = typeof job.toObject === 'function' ? job.toObject() : job;
     return {
-      ...job.toObject(),
-      matchScore: jobKeywords.length > 0 ? Math.round((matched.length / jobKeywords.length) * 100) : 0,
+      ...data,
+      matchScore: Math.min(score, 97),
       matchedSkills: matched,
-      matchReason: 'Keyword match (fallback)'
+      matchReason: matched.length ? `Matches your ${matched.slice(0, 3).join(', ')}` : 'In your field'
     };
   });
-  
+
   scored.sort((a, b) => b.matchScore - a.matchScore);
-  return scored.filter(job => job.matchScore > 30).slice(0, 10);
+  return scored.filter(job => job.matchScore > 30).slice(0, 20);
 }
 
 function extractKeywords(text) {

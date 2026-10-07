@@ -7,9 +7,8 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent } from '../components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Badge } from '../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Switch } from '../components/ui/switch';
@@ -19,56 +18,66 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from '../components/ui/alert-dialog';
-import ShareMenu from '../components/ShareMenu';
 import ReportDialog from '../components/ReportDialog';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 import {
-  FiUpload, FiBriefcase, FiMapPin, FiFileText, FiAward, FiZap, FiCheckCircle,
-  FiShare2, FiFlag, FiEdit2, FiTrash2, FiLock, FiUnlock, FiCalendar, FiX, FiUsers, FiPlus
+  FiUpload, FiZap, FiCheckCircle, FiAward, FiEdit2, FiTrash2, FiLock, FiUnlock, FiX, FiUsers, FiPlus,
+  FiSearch, FiBookmark, FiChevronDown, FiStar
 } from 'react-icons/fi';
 import { API_URL } from '../config/api';
-import { FaMoneyBillWave } from 'react-icons/fa';
-import { inrSalary } from '../utils/salary';
 import { getCopy } from '../config/roleDomainCopy';
+import {
+  EMPLOYMENT_TYPES, WORKPLACES, EXPERIENCE_LEVELS, isClosed, idOf, jobChips, shortDate
+} from '../components/jobs/jobUtils';
+import JobListItem, { JobCardActions } from '../components/jobs/JobListItem';
+import JobDetail from '../components/jobs/JobDetail';
+import ApplyDialog from '../components/jobs/ApplyDialog';
+import ApplicantsDialog from '../components/jobs/ApplicantsDialog';
+import SavedAnswersDialog from '../components/jobs/SavedAnswersDialog';
+import PendingApplications from '../components/jobs/PendingApplications';
+import SwipeDeck from '../components/jobs/SwipeDeck';
+import ScreeningQuestionsEditor, { questionsError, questionsPayload } from '../components/jobs/ScreeningQuestionsEditor';
 
-const EMPLOYMENT_TYPES = { full_time: 'Full-time', part_time: 'Part-time', internship: 'Internship', contract: 'Contract', freelance: 'Freelance', graduate: 'Graduate' };
-const WORKPLACES = { onsite: 'On-site', remote: 'Remote', hybrid: 'Hybrid' };
-const EXPERIENCE_LEVELS = { fresher: 'Fresher', junior: 'Junior', mid: 'Mid-level', senior: 'Senior' };
 // Roles that can post; students can't (the backend also allows anyone with a "hire" intent)
 const POSTING_ROLES = ['professional', 'firm', 'recruiter', 'company'];
 const NONE = 'none'; // Radix Select can't use '' as an item value
+const TABS = ['foryou', 'all', 'applied', 'pending', 'posted'];
+const LIST_TABS = ['all', 'applied', 'posted']; // list + detail layout ("foryou" is the swipe deck)
 
 const EMPTY_FORM = {
   title: '', description: '', company: '', location: '', salary: '',
-  employmentType: '', workplace: '', experienceLevel: '', skills: [], applyBy: ''
+  employmentType: '', workplace: '', experienceLevel: '', skills: [], applyBy: '', questions: []
 };
 
 const formFromJob = (job) => ({
   ...EMPTY_FORM,
   ...Object.fromEntries(Object.keys(EMPTY_FORM).map((k) => [k, job?.[k] ?? EMPTY_FORM[k]])),
   skills: job?.skills || [],
-  applyBy: job?.applyBy ? String(job.applyBy).slice(0, 10) : ''
+  applyBy: job?.applyBy ? String(job.applyBy).slice(0, 10) : '',
+  questions: (job?.questions || []).map((q) => ({
+    ...q, key: q._id, options: q.options || [], idealAnswer: q.idealAnswer || '', required: !!q.required
+  }))
 });
 
-const isClosed = (job) => job?.status === 'closed';
-const idOf = (ref) => (ref && typeof ref === 'object' ? ref._id : ref);
+const matches = (job, q) => {
+  if (!q) return true;
+  const hay = `${job?.title || ''} ${job?.company || ''} ${job?.location || ''}`.toLowerCase();
+  return q.toLowerCase().split(/\s+/).filter(Boolean).every((w) => hay.includes(w));
+};
 
-// "Full-time · Hybrid · Mid-level"
-const jobChips = (job) => [
-  EMPLOYMENT_TYPES[job?.employmentType],
-  WORKPLACES[job?.workplace],
-  EXPERIENCE_LEVELS[job?.experienceLevel]
-].filter(Boolean);
-
-const JobChips = ({ job }) => {
-  const chips = jobChips(job);
-  if (!chips.length) return null;
-  return (
-    <div className="flex flex-wrap gap-2 mb-3">
-      {chips.map((c) => <Badge key={c} variant="outline" className="text-xs font-medium text-gray-700">{c}</Badge>)}
-    </div>
-  );
+const useIsDesktop = () => {
+  const query = '(min-width: 1024px)';
+  const get = () => (typeof window !== 'undefined' && window.matchMedia ? window.matchMedia(query).matches : true);
+  const [desktop, setDesktop] = useState(get);
+  useEffect(() => {
+    if (!window.matchMedia) return undefined;
+    const mq = window.matchMedia(query);
+    const on = () => setDesktop(mq.matches);
+    mq.addEventListener?.('change', on);
+    return () => mq.removeEventListener?.('change', on);
+  }, []);
+  return desktop;
 };
 
 const OptionSelect = ({ value, onChange, options, placeholder, testId }) => (
@@ -98,16 +107,18 @@ const JobForm = ({ initial, submitLabel, onSubmit }) => {
 
   const submit = async (e) => {
     e.preventDefault();
+    const qErr = questionsError(form.questions);
+    if (qErr) { toast.error(qErr); return; }
     setSaving(true);
     try {
-      await onSubmit({ ...form, applyBy: form.applyBy || null });
+      await onSubmit({ ...form, applyBy: form.applyBy || null, questions: questionsPayload(form.questions) });
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <form onSubmit={submit} className="space-y-4 mt-4">
+    <form onSubmit={submit} className="space-y-4 mt-4 pf-page">
       <div>
         <Label>Job Title</Label>
         <Input value={form.title} onChange={(e) => set('title')(e.target.value)} maxLength={150} required data-testid="job-form-title" />
@@ -119,11 +130,11 @@ const JobForm = ({ initial, submitLabel, onSubmit }) => {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <Label>Location</Label>
-          <Input value={form.location} onChange={(e) => set('location')(e.target.value)} maxLength={150} />
+          <Input value={form.location} onChange={(e) => set('location')(e.target.value)} maxLength={150} data-testid="job-form-location" />
         </div>
         <div>
           <Label>Salary</Label>
-          <Input value={form.salary} onChange={(e) => set('salary')(e.target.value)} maxLength={80} placeholder="e.g. ₹6–8 LPA or ₹40,000/month" />
+          <Input value={form.salary} onChange={(e) => set('salary')(e.target.value)} maxLength={80} placeholder="e.g. ₹6–8 LPA or ₹40,000/month" data-testid="job-form-salary" />
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -156,7 +167,7 @@ const JobForm = ({ initial, submitLabel, onSubmit }) => {
         </div>
         <div>
           <Label>Apply by</Label>
-          <Input type="date" value={form.applyBy} onChange={(e) => set('applyBy')(e.target.value)} />
+          <Input type="date" value={form.applyBy} onChange={(e) => set('applyBy')(e.target.value)} data-testid="job-form-apply-by" />
         </div>
       </div>
       {form.skills.length > 0 && (
@@ -175,6 +186,12 @@ const JobForm = ({ initial, submitLabel, onSubmit }) => {
         <Label>Job Description</Label>
         <Textarea value={form.description} onChange={(e) => set('description')(e.target.value)} maxLength={5000} required className="min-h-32" data-testid="job-form-description" />
       </div>
+      <ScreeningQuestionsEditor
+        questions={form.questions}
+        onChange={set('questions')}
+        skills={form.skills}
+        location={form.location}
+      />
       <Button type="submit" disabled={saving} className="w-full bg-black text-white" data-testid="job-form-submit">
         {saving ? 'Saving...' : submitLabel}
       </Button>
@@ -182,82 +199,127 @@ const JobForm = ({ initial, submitLabel, onSubmit }) => {
   );
 };
 
-// Share (and Report, for other people's jobs) on a job card
-const JobCardActions = ({ job, isMine, onReport }) => (
-  <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-    <ShareMenu
-      path={`/jobs?job=${job._id}`}
-      title={`${job.title} at ${job.company}`}
-      testId={`job-share-${job._id}`}
-      trigger={
-        <Button type="button" variant="ghost" size="sm" className="h-8 px-2 text-gray-600" data-testid={`job-share-${job._id}`} aria-label="Share job">
-          <FiShare2 className="w-4 h-4" />
+const getMatchColor = (score) => {
+  if (score >= 90) return 'bg-green-500';
+  if (score >= 75) return 'bg-yellow-400';
+  if (score >= 60) return 'bg-orange-500';
+  return 'bg-gray-400';
+};
+
+// A posted job in the "Posted" list, with the owner's actions
+const PostedJobItem = ({ job, selected, onSelect, onEdit, onToggleStatus, onDelete, onApplicants, onMatches }) => {
+  const count = job.applicantCount ?? job.applicants?.length ?? 0;
+  const chips = jobChips(job);
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onSelect(job)}
+      onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onSelect(job); } }}
+      className={`relative rounded-2xl border bg-white p-3 sm:p-4 cursor-pointer transition outline-none focus-visible:ring-2 focus-visible:ring-[#F2B21B]
+        ${selected ? 'border-[#F2B21B] ring-1 ring-[#F2B21B] bg-[#FFFBF0]' : 'border-[#ebe6df] hover:border-[#d9d0c4]'} ${isClosed(job) ? 'opacity-80' : ''}`}
+      data-testid={`posted-job-${job._id}`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="font-semibold text-[#2b2622] break-words">{job.title}</p>
+          <p className="text-sm text-[#7a7067] truncate">{[job.company, job.location].filter(Boolean).join(' · ')}</p>
+          {chips.length > 0 && <p className="text-xs text-[#7a7067] mt-0.5">{chips.join(' · ')}</p>}
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          <JobCardActions job={job} isMine onReport={() => {}} />
+          <span className={`text-xs rounded-full px-2 py-0.5 ${isClosed(job) ? 'bg-gray-100 text-gray-600' : 'bg-green-50 text-green-700'}`}>{isClosed(job) ? 'Closed' : 'Open'}</span>
+        </div>
+      </div>
+      <p className="text-xs text-[#7a7067] mt-1">
+        {job.createdAt ? `Posted ${shortDate(job.createdAt)}` : ''}
+        {job.questions?.length ? `${job.createdAt ? ' · ' : ''}${job.questions.length} screening question${job.questions.length === 1 ? '' : 's'}` : ''}
+      </p>
+      <div className="flex flex-wrap gap-2 mt-3" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+        <Button size="sm" onClick={() => onApplicants(job)} className="bg-[#2b2622] hover:bg-black text-white h-8" data-testid={`applicants-${job._id}`}>
+          <FiUsers className="mr-1" />Applicants ({count})
         </Button>
-      }
-    />
-    {!isMine && idOf(job.postedBy) && (
-      <Button type="button" variant="ghost" size="sm" className="h-8 px-2 text-gray-600" onClick={() => onReport(job)} data-testid={`job-report-${job._id}`} aria-label="Report job">
-        <FiFlag className="w-4 h-4" />
-      </Button>
-    )}
-  </div>
-);
+        <Button variant="outline" size="sm" className="h-8" onClick={() => onEdit(job)} data-testid={`job-edit-${job._id}`}>
+          <FiEdit2 className="mr-1" />Edit
+        </Button>
+        <Button variant="outline" size="sm" className="h-8" onClick={() => onToggleStatus(job)} data-testid={`job-toggle-status-${job._id}`}>
+          {isClosed(job) ? <><FiUnlock className="mr-1" />Reopen</> : <><FiLock className="mr-1" />Close</>}
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => onDelete(job)} className="h-8 text-red-600 hover:text-red-700" data-testid={`job-delete-${job._id}`}>
+          <FiTrash2 className="mr-1" />Delete
+        </Button>
+        <Button size="sm" onClick={() => onMatches(job)} className="h-8 bg-yellow-400 hover:bg-yellow-500 text-black" data-testid={`job-matches-${job._id}`}>
+          <FiStar className="mr-1" />Top 10 matches
+        </Button>
+      </div>
+    </div>
+  );
+};
 
 const Jobs = () => {
   const [jobs, setJobs] = useState([]);
+  const [jobsLoading, setJobsLoading] = useState(true);
   const [recommendedJobs, setRecommendedJobs] = useState([]);
+  const [recLoading, setRecLoading] = useState(true);
   const [myApplications, setMyApplications] = useState([]);
   const [myJobs, setMyJobs] = useState([]);
-  const [selectedJob, setSelectedJob] = useState(null);
+  const [pending, setPending] = useState([]);
+  const [pendingLoading, setPendingLoading] = useState(true);
+  const [savedCount, setSavedCount] = useState(null);
+  const [showSavedAnswers, setShowSavedAnswers] = useState(false);
+  const [localApplied, setLocalApplied] = useState(() => new Set());
+  const [matchesJob, setMatchesJob] = useState(null);
   const [matchedCandidates, setMatchedCandidates] = useState([]);
   const [showPostDialog, setShowPostDialog] = useState(false);
   const [uploadingResume, setUploadingResume] = useState(false);
   const [resumeReview, setResumeReview] = useState(null);
+  const [showReview, setShowReview] = useState(false);
   const [autoApplyEnabled, setAutoApplyEnabled] = useState(false);
   const [savingPreference, setSavingPreference] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
   const [deletingJob, setDeletingJob] = useState(null);
   const [reportJob, setReportJob] = useState(null);
-  const [detailJob, setDetailJob] = useState(null);
+  const [applyJob, setApplyJob] = useState(null);
+  const [applicantsJob, setApplicantsJob] = useState(null);
+  const [fetchedJob, setFetchedJob] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailVersion, setDetailVersion] = useState(0);
+  const [search, setSearch] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();
+  const isDesktop = useIsDesktop();
   const { user } = useAuth();
   const copy = getCopy(user);
   const myId = user?.id || user?._id;
+  const isRecruiter = user?.role === 'recruiter';
   const canPost = POSTING_ROLES.includes(user?.role) || (user?.role !== 'student' && user?.intent?.includes?.('hire'));
   const showPostedTab = canPost || myJobs.length > 0;
-  const isMine = (job) => !!myId && String(idOf(job?.postedBy)) === String(myId);
+  const isMine = useCallback((job) => !!myId && String(idOf(job?.postedBy)) === String(myId), [myId]);
   const deepLinkId = searchParams.get('job');
+  const tabParam = searchParams.get('tab');
+  // Students land on the swipe deck; everyone else on the full list (a ?job= link opens the list)
+  const defaultTab = user?.role === 'student' && !deepLinkId ? 'foryou' : 'all';
+  const tab = TABS.includes(tabParam) && (tabParam !== 'posted' || showPostedTab) ? tabParam : defaultTab;
+
+  const setTab = (next) => {
+    setSearchParams((p) => {
+      p.set('tab', next);
+      p.delete('job');
+      return p;
+    }, { replace: true });
+  };
 
   useEffect(() => {
     fetchJobs();
     fetchRecommendedJobs();
     fetchMyApplications();
+    fetchPending();
     if (user) fetchMyPostedJobs();
+    if (user && !isRecruiter) {
+      axios.get(`${API_URL}/api/jobs/answers`, { silent: true })
+        .then((res) => setSavedCount((res.data.answers || []).length))
+        .catch(() => {});
+    }
   }, [user]);
-
-  // /jobs?job=<id> opens that job in the detail dialog
-  useEffect(() => {
-    if (!deepLinkId) { setDetailJob(null); return; }
-    let cancelled = false;
-    axios.get(`${API_URL}/api/jobs/${deepLinkId}`)
-      .then((res) => { if (!cancelled) setDetailJob(res.data.job); })
-      .catch(() => {
-        if (cancelled) return;
-        toast.error('That job is no longer available');
-        setSearchParams((p) => { p.delete('job'); return p; }, { replace: true });
-      });
-    return () => { cancelled = true; };
-  }, [deepLinkId, setSearchParams]);
-
-  const openJob = useCallback((job) => {
-    setDetailJob(job);
-    setSearchParams((p) => { p.set('job', job._id); return p; }, { replace: true });
-  }, [setSearchParams]);
-
-  const closeJob = () => {
-    setDetailJob(null);
-    setSearchParams((p) => { p.delete('job'); return p; }, { replace: true });
-  };
 
   // Seed resume score + auto-apply toggle from the persisted profile (survives page reloads)
   useEffect(() => {
@@ -276,24 +338,28 @@ const Jobs = () => {
   const fetchJobs = async () => {
     try {
       const response = await axios.get(`${API_URL}/api/jobs/list`);
-      setJobs(response.data.jobs);
+      setJobs(response.data.jobs || []);
     } catch (error) {
       console.error('Failed to load jobs');
+    } finally {
+      setJobsLoading(false);
     }
   };
 
   const fetchRecommendedJobs = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/jobs/recommended`);
+      const response = await axios.get(`${API_URL}/api/jobs/recommended`, { silent: true });
       setRecommendedJobs(response.data.recommendations || []);
     } catch (error) {
       console.error('Failed to load recommendations');
+    } finally {
+      setRecLoading(false);
     }
   };
 
   const fetchMyApplications = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/jobs/my/applications`);
+      const response = await axios.get(`${API_URL}/api/jobs/my/applications`, { silent: true });
       setMyApplications(response.data.applications || []);
     } catch (error) {
       console.error('Failed to load applications');
@@ -302,21 +368,112 @@ const Jobs = () => {
 
   const fetchMyPostedJobs = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/jobs/my/posted`);
+      const response = await axios.get(`${API_URL}/api/jobs/my/posted`, { silent: true });
       setMyJobs(response.data.jobs || []);
     } catch (error) {
       console.error('Failed to load posted jobs');
     }
   };
 
-  const fetchMatchedCandidates = async (jobId) => {
+  const fetchPending = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/jobs/${jobId}/matched-candidates`);
+      const response = await axios.get(`${API_URL}/api/jobs/my/pending`, { silent: true });
+      setPending(response.data.pending || []);
+    } catch (error) {
+      console.error('Failed to load pending applications');
+    } finally {
+      setPendingLoading(false);
+    }
+  };
+
+  const fetchMatchedCandidates = async (job) => {
+    try {
+      const response = await axios.get(`${API_URL}/api/jobs/${job._id}/matched-candidates`);
       setMatchedCandidates(response.data.matchedCandidates || []);
+      setMatchesJob(job);
+      if (!(response.data.matchedCandidates || []).length) toast.info('No strong matches yet');
     } catch (error) {
       toast.error('Failed to load matched candidates');
     }
   };
+
+  const appliedJobIds = useMemo(() => {
+    const ids = new Set(localApplied);
+    myApplications.forEach((app) => { const id = app.job?.id || app.job?._id; if (id) ids.add(String(id)); });
+    jobs.forEach((j) => { if (j.hasApplied) ids.add(String(j._id)); });
+    return ids;
+  }, [myApplications, jobs, localApplied]);
+  const hasApplied = (job) => !!job && (job.hasApplied || appliedJobIds.has(String(job._id)));
+
+  // Applications shaped like jobs so they share the list + detail layout
+  const applicationJobs = useMemo(() => myApplications.map((app) => ({
+    ...app.job,
+    _id: app.job?.id || app.job?._id,
+    hasApplied: true,
+    appliedAt: app.appliedAt,
+    applicationStatus: app.status,
+    applicationSource: app.source
+  })), [myApplications]);
+
+  const listForTab = useMemo(() => {
+    const source = tab === 'all' ? jobs : tab === 'applied' ? applicationJobs : tab === 'posted' ? myJobs : [];
+    return source.filter((j) => matches(j, search.trim()));
+  }, [tab, jobs, applicationJobs, myJobs, search]);
+
+  const isListTab = LIST_TABS.includes(tab);
+  // Desktop always shows something on the right; phones show the list until a job is tapped
+  const effectiveId = deepLinkId || (isDesktop && isListTab ? listForTab[0]?._id : null);
+
+  const listJob = useMemo(() => {
+    if (!effectiveId) return null;
+    const pools = [jobs, recommendedJobs, myJobs, applicationJobs];
+    for (const pool of pools) {
+      const found = pool.find((j) => String(j._id) === String(effectiveId));
+      if (found) return found;
+    }
+    return null;
+  }, [effectiveId, jobs, recommendedJobs, myJobs, applicationJobs]);
+
+  // Full job (description, poster, applicant count) for whichever job is shown
+  useEffect(() => {
+    if (!effectiveId) { setFetchedJob(null); return undefined; }
+    let cancelled = false;
+    setDetailLoading(true);
+    axios.get(`${API_URL}/api/jobs/${effectiveId}`, { silent: true })
+      .then((res) => { if (!cancelled) setFetchedJob(res.data.job); })
+      .catch(() => {
+        if (cancelled) return;
+        setFetchedJob(null);
+        if (deepLinkId === effectiveId) {
+          toast.error('That job is no longer available');
+          setSearchParams((p) => { p.delete('job'); return p; }, { replace: true });
+        }
+      })
+      .finally(() => { if (!cancelled) setDetailLoading(false); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveId, detailVersion]);
+
+  const detailJob = useMemo(() => {
+    const fetched = fetchedJob && String(fetchedJob._id) === String(effectiveId) ? fetchedJob : null;
+    if (!listJob && !fetched) return null;
+    // Keep recommendation extras (matchScore, matchedSkills, matchReason) from the list item
+    return { ...(listJob || {}), ...(fetched || {}), postedBy: fetched?.postedBy || listJob?.postedBy };
+  }, [listJob, fetchedJob, effectiveId]);
+
+  const openJob = useCallback((job) => {
+    const id = job?._id || job?.id;
+    if (!id) return;
+    setSearchParams((p) => { p.set('job', id); return p; }, { replace: true });
+    if (!window.matchMedia?.('(min-width: 1024px)').matches) window.scrollTo({ top: 0 });
+  }, [setSearchParams]);
+
+  const closeJob = useCallback(() => {
+    setSearchParams((p) => { p.delete('job'); return p; }, { replace: true });
+  }, [setSearchParams]);
+
+  // A job link from another tab (e.g. a shared link while on "Jobs for you") opens in a dialog there
+  const detailInDialog = !isListTab && !!deepLinkId;
 
   const handleUploadResume = async (e) => {
     const file = e.target.files[0];
@@ -333,15 +490,17 @@ const Jobs = () => {
       toast.success('Resume uploaded and parsed successfully!');
       if (response.data.review) {
         setResumeReview(response.data.review);
+        setShowReview(true);
       } else {
         toast.info("Uploaded, but AI scoring wasn't available right now.");
       }
       fetchRecommendedJobs();
-      if (autoApplyEnabled) fetchMyApplications();
+      if (autoApplyEnabled) { fetchMyApplications(); fetchPending(); }
     } catch (error) {
       toast.error('Failed to upload resume');
     } finally {
       setUploadingResume(false);
+      e.target.value = '';
     }
   };
 
@@ -351,7 +510,7 @@ const Jobs = () => {
     try {
       await axios.put(`${API_URL}/api/jobs/preferences`, { autoApplyEnabled: checked });
       toast.success(checked ? 'Auto-apply turned on — strong matches will be applied for you.' : 'Auto-apply turned off.');
-      if (checked) setTimeout(fetchMyApplications, 3000);
+      if (checked) setTimeout(() => { fetchMyApplications(); fetchPending(); }, 3000);
     } catch (error) {
       setAutoApplyEnabled(!checked);
       toast.error('Could not update auto-apply preference');
@@ -360,15 +519,18 @@ const Jobs = () => {
     }
   };
 
-  const handleApply = async (jobId) => {
-    try {
-      await axios.post(`${API_URL}/api/jobs/${jobId}/apply`);
-      toast.success('Application submitted!');
-      fetchMyApplications();
-      setDetailJob((d) => (d && d._id === jobId ? { ...d, hasApplied: true, applicantCount: (d.applicantCount || 0) + 1 } : d));
-    } catch (error) {
-      toast.error(error.response?.data?.error || 'Failed to apply');
-    }
+  // After any successful application (Apply dialog, swipe, or a pending draft)
+  const handleApplied = useCallback((id) => {
+    setLocalApplied((s) => new Set(s).add(String(id)));
+    setJobs((list) => list.map((j) => (String(j._id) === String(id) ? { ...j, hasApplied: true, applicantCount: (j.applicantCount || 0) + 1 } : j)));
+    setFetchedJob((d) => (d && String(d._id) === String(id) ? { ...d, hasApplied: true, applicantCount: (d.applicantCount || 0) + 1 } : d));
+    fetchMyApplications();
+    fetchPending();
+  }, []);
+
+  const handlePendingDone = (pendingId, outcome, jobIdDone) => {
+    setPending((list) => list.filter((p) => p._id !== pendingId));
+    if (outcome === 'submitted' && jobIdDone) handleApplied(jobIdDone);
   };
 
   const handlePostJob = async (data) => {
@@ -390,6 +552,7 @@ const Jobs = () => {
       setEditingJob(null);
       fetchJobs();
       fetchMyPostedJobs();
+      setDetailVersion((v) => v + 1);
     } catch (error) {
       toast.error(error.response?.data?.error || 'Failed to update job');
     }
@@ -402,6 +565,7 @@ const Jobs = () => {
       toast.success(status === 'closed' ? 'Job closed to new applications' : 'Job reopened');
       fetchJobs();
       fetchMyPostedJobs();
+      setDetailVersion((v) => v + 1);
     } catch (error) {
       toast.error(error.response?.data?.error || 'Failed to update job');
     }
@@ -413,6 +577,7 @@ const Jobs = () => {
     try {
       await axios.delete(`${API_URL}/api/jobs/${job._id}`);
       toast.success('Job deleted');
+      if (String(deepLinkId) === String(job._id)) closeJob();
       fetchJobs();
       fetchMyPostedJobs();
     } catch (error) {
@@ -420,400 +585,359 @@ const Jobs = () => {
     }
   };
 
-  const getMatchColor = (score) => {
-    if (score >= 90) return 'bg-green-500';
-    if (score >= 75) return 'bg-yellow-400';
-    if (score >= 60) return 'bg-orange-500';
-    return 'bg-gray-400';
+  const detailProps = {
+    job: detailJob,
+    loading: detailLoading,
+    mine: isMine(detailJob),
+    applied: hasApplied(detailJob),
+    onApply: setApplyJob,
+    onReport: setReportJob,
+    onEdit: (j) => { setEditingJob(myJobs.find((m) => m._id === j._id) || j); },
+    onApplicants: setApplicantsJob
   };
 
-  const appliedJobIds = useMemo(
-    () => new Set(myApplications.map((app) => app.job.id)),
-    [myApplications]
+  const tabButton = (value, label, extra = {}) => (
+    <button
+      key={value}
+      type="button"
+      role="tab"
+      aria-selected={tab === value}
+      onClick={() => setTab(value)}
+      className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition whitespace-nowrap
+        ${tab === value ? 'bg-[#2b2622] text-white' : 'bg-white border border-[#ebe6df] text-[#2b2622] hover:border-[#d9d0c4]'}`}
+      {...extra}
+    >
+      {label}
+    </button>
   );
 
+  const countPill = (n, active) => (
+    <span className={`min-w-[1.25rem] h-5 px-1.5 rounded-full text-[11px] font-bold inline-flex items-center justify-center ${active ? 'bg-[#F2B21B] text-[#2b2622]' : 'bg-[#F2EEE8] text-[#7a7067]'}`}>{n}</span>
+  );
+
+  const emptyList = {
+    all: jobsLoading ? 'Loading jobs…' : search ? 'No jobs match your search' : 'No open jobs right now',
+    applied: search ? 'No applications match your search' : 'No applications yet',
+    posted: search ? 'No posted jobs match your search' : "You haven't posted any jobs yet"
+  }[tab];
+
+  const filteredPending = pending.filter((p) => matches(p.job, search.trim()));
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#F7F5F2] pf-page" style={{ overflowX: 'clip' }}>
       <Sidebar />
       <TopBar />
       <div className="lg:ml-64 mt-16 p-4 sm:p-6 lg:p-8">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-black mb-2">{copy.jobsLabel}</h1>
-            <p className="text-gray-600">{copy.jobsSubtitle}</p>
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 mb-6">
+          <div className="min-w-0">
+            <h1 className="pf-serif text-3xl sm:text-4xl text-[#2b2622]">{copy.jobsLabel}</h1>
+            <p className="text-[#7a7067] mt-1">{copy.jobsSubtitle}</p>
           </div>
-          <div className="flex items-center gap-4 flex-wrap">
-            {user?.role !== 'recruiter' && (
-              <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-4 py-2.5" data-testid="auto-apply-toggle">
-                <FiZap className={autoApplyEnabled ? 'text-yellow-500' : 'text-gray-400'} />
-                <span className="text-sm font-medium text-black">Auto-apply to strong matches</span>
-                <Switch checked={autoApplyEnabled} onCheckedChange={handleToggleAutoApply} disabled={savingPreference} />
-              </div>
-            )}
-            {user?.role !== 'recruiter' && (
-              <label className="cursor-pointer">
-                <input type="file" accept=".pdf,.docx" onChange={handleUploadResume} className="hidden" />
-                <div className="flex items-center space-x-2 bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-6 py-3 rounded-lg transition">
-                  <FiUpload className="w-5 h-5" />
-                  <span>{uploadingResume ? 'Uploading...' : 'Upload Resume'}</span>
-                </div>
-              </label>
-            )}
-            {canPost && (
-              <Dialog open={showPostDialog} onOpenChange={setShowPostDialog}>
-                <DialogTrigger asChild>
-                  <Button className="bg-black hover:bg-gray-900 text-white" data-testid="post-job-button">
-                    <FiPlus className="mr-2" />Post a job
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Post a New Job</DialogTitle>
-                  </DialogHeader>
-                  {showPostDialog && <JobForm submitLabel="Post Job" onSubmit={handlePostJob} />}
-                </DialogContent>
-              </Dialog>
-            )}
-          </div>
+          {canPost && (
+            <Dialog open={showPostDialog} onOpenChange={setShowPostDialog}>
+              <DialogTrigger asChild>
+                <Button className="bg-[#2b2622] hover:bg-black text-white rounded-full self-start sm:self-auto" data-testid="post-job-button">
+                  <FiPlus className="mr-2" />Post a job
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="w-[calc(100%-1.5rem)] max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
+                <DialogHeader>
+                  <DialogTitle className="pf-serif text-2xl">Post a New Job</DialogTitle>
+                </DialogHeader>
+                {showPostDialog && <JobForm submitLabel="Post Job" onSubmit={handlePostJob} />}
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
 
-        {resumeReview && (
-          <Card className="shadow-md mb-8 border-2 border-yellow-200" data-testid="resume-score-card">
-            <CardContent className="pt-6">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-6">
-                <div className="flex items-center gap-4">
-                  <div className={`${getMatchColor(resumeReview.score)} w-20 h-20 rounded-full flex items-center justify-center text-white font-bold text-2xl shrink-0`}>
-                    {resumeReview.score}
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-black">Your Resume Score</h3>
-                    <p className="text-sm text-gray-600">AI-reviewed</p>
-                  </div>
+        {/* Résumé + auto-apply */}
+        {!isRecruiter && (
+          <div className="rounded-2xl border border-[#ebe6df] bg-white p-4 sm:p-5 mb-6" data-testid="auto-apply-card">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${autoApplyEnabled ? 'bg-[#F2B21B] text-[#2b2622]' : 'bg-[#F2EEE8] text-[#7a7067]'}`}>
+                  <FiZap className="w-5 h-5" />
                 </div>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-3" data-testid="auto-apply-toggle">
+                    <p className="font-semibold text-[#2b2622]">Auto-apply</p>
+                    <Switch checked={autoApplyEnabled} onCheckedChange={handleToggleAutoApply} disabled={savingPreference} aria-label="Auto-apply to strong matches" />
+                    <span className="text-xs text-[#7a7067]">{autoApplyEnabled ? 'On' : 'Off'}</span>
+                  </div>
+                  <p className="text-sm text-[#7a7067] mt-1">
+                    Auto-apply: our AI applies to strong matches for you using your profile and saved answers. If a job asks something only you can answer, we'll email you and keep it under Needs your answers.
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 lg:shrink-0">
+                <Button variant="outline" size="sm" className="rounded-full" onClick={() => setShowSavedAnswers(true)} data-testid="saved-answers-button">
+                  <FiBookmark className="mr-1.5" />Saved answers{savedCount !== null ? ` (${savedCount})` : ''}
+                </Button>
+                <label className="cursor-pointer">
+                  <input type="file" accept=".pdf,.docx" onChange={handleUploadResume} className="hidden" data-testid="resume-upload-input" />
+                  <span className="inline-flex items-center gap-2 rounded-full bg-[#F2B21B] hover:bg-[#e0a312] text-[#2b2622] font-semibold px-4 py-1.5 text-sm transition">
+                    <FiUpload className="w-4 h-4" />{uploadingResume ? 'Uploading...' : resumeReview ? 'Update résumé' : 'Upload résumé'}
+                  </span>
+                </label>
+              </div>
+            </div>
 
-                {resumeReview.breakdown && Object.keys(resumeReview.breakdown).length > 0 && (
-                  <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {Object.entries(resumeReview.breakdown).map(([key, val]) => (
-                      <div key={key}>
-                        <p className="text-xs text-gray-500 capitalize mb-1">{key}</p>
-                        <Progress value={val} className="h-2" />
+            {resumeReview && (
+              <div className="mt-4 pt-4 border-t border-[#f0ebe4]" data-testid="resume-score-card">
+                <button type="button" onClick={() => setShowReview((v) => !v)} className="w-full flex items-center gap-3 text-left" aria-expanded={showReview}>
+                  <span className={`${getMatchColor(resumeReview.score)} w-11 h-11 rounded-full flex items-center justify-center text-white font-bold shrink-0`}>{resumeReview.score}</span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block font-semibold text-[#2b2622]">Your résumé score</span>
+                    <span className="block text-xs text-[#7a7067]">AI-reviewed · {showReview ? 'hide' : 'see'} the review</span>
+                  </span>
+                  <FiChevronDown className={`text-[#7a7067] transition ${showReview ? 'rotate-180' : ''}`} />
+                </button>
+                {showReview && (
+                  <div className="mt-4 space-y-4">
+                    {resumeReview.breakdown && Object.keys(resumeReview.breakdown).length > 0 && (
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        {Object.entries(resumeReview.breakdown).map(([key, val]) => (
+                          <div key={key}>
+                            <p className="text-xs text-[#7a7067] capitalize mb-1">{key}</p>
+                            <Progress value={val} className="h-2" />
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {resumeReview.strengths?.length > 0 && (
+                        <div>
+                          <p className="text-sm font-semibold text-[#2b2622] mb-2">Strengths</p>
+                          <ul className="space-y-1">
+                            {resumeReview.strengths.map((s, i) => (
+                              <li key={i} className="flex items-start gap-2 text-sm text-[#2b2622]"><FiCheckCircle className="text-green-500 mt-0.5 shrink-0" />{s}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {resumeReview.improvements?.length > 0 && (
+                        <div>
+                          <p className="text-sm font-semibold text-[#2b2622] mb-2">How to improve</p>
+                          <ul className="space-y-1">
+                            {resumeReview.improvements.map((s, i) => (
+                              <li key={i} className="flex items-start gap-2 text-sm text-[#2b2622]"><FiAward className="text-yellow-500 mt-0.5 shrink-0" />{s}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                    {resumeReview.suggestedRoles?.length > 0 && (
+                      <div>
+                        <p className="text-xs text-[#7a7067] mb-2">Well-suited roles:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {resumeReview.suggestedRoles.map((role, i) => <Badge key={i} className="bg-[#F2EEE8] text-[#2b2622] hover:bg-[#F2EEE8]">{role}</Badge>)}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
-                {resumeReview.strengths?.length > 0 && (
-                  <div>
-                    <p className="text-sm font-semibold text-black mb-2">Strengths</p>
-                    <ul className="space-y-1">
-                      {resumeReview.strengths.map((s, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                          <FiCheckCircle className="text-green-500 mt-0.5 shrink-0" />{s}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {resumeReview.improvements?.length > 0 && (
-                  <div>
-                    <p className="text-sm font-semibold text-black mb-2">How to improve</p>
-                    <ul className="space-y-1">
-                      {resumeReview.improvements.map((s, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                          <FiAward className="text-yellow-500 mt-0.5 shrink-0" />{s}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-
-              {resumeReview.suggestedRoles?.length > 0 && (
-                <div className="mt-4">
-                  <p className="text-xs text-gray-600 mb-2">Well-suited roles:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {resumeReview.suggestedRoles.map((role, i) => (
-                      <Badge key={i} className="bg-gray-100 text-black">{role}</Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+            )}
+          </div>
         )}
 
-        <Tabs defaultValue="browse" className="w-full">
-          <TabsList className="flex w-full justify-start overflow-x-auto mb-6">
-            <TabsTrigger value="browse">Browse {copy.jobsLabel}</TabsTrigger>
-            <TabsTrigger value="recommended">Recommended ({recommendedJobs.length})</TabsTrigger>
-            <TabsTrigger value="applied">My Applications ({myApplications.length})</TabsTrigger>
-            {showPostedTab && <TabsTrigger value="posted" data-testid="posted-jobs-tab">Posted Jobs ({myJobs.length})</TabsTrigger>}
-          </TabsList>
-
-          <TabsContent value="browse">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {jobs.map((job) => (
-                <Card key={job._id} className="shadow-md hover:shadow-xl transition" data-testid={`job-card-${job._id}`}>
-                  <CardContent className="pt-6">
-                    <div className="flex items-start justify-between gap-2 mb-4">
-                      <div className="flex items-center space-x-3 min-w-0">
-                        <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
-                          <FiBriefcase className="w-6 h-6 text-blue-600" />
-                        </div>
-                        <div className="min-w-0">
-                          <button type="button" onClick={() => openJob(job)} className="text-left text-xl font-bold text-black hover:underline">{job.title}</button>
-                          <p className="text-sm text-gray-600">{job.company}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <JobCardActions job={job} isMine={isMine(job)} onReport={setReportJob} />
-                        <Badge className="bg-green-500 text-white">Active</Badge>
-                      </div>
-                    </div>
-                    <JobChips job={job} />
-                    <div className="space-y-2 mb-4">
-                      {job.location && (
-                        <div className="flex items-center text-sm text-gray-600">
-                          <FiMapPin className="mr-2" />{job.location}
-                        </div>
-                      )}
-                      {job.salary && (
-                        <div className="flex items-center text-sm text-gray-600">
-                          <FaMoneyBillWave className="mr-2" />{inrSalary(job.salary)}
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-gray-700 line-clamp-3 mb-4">{job.description}</p>
-                    {isMine(job) ? (
-                      <Button variant="outline" onClick={() => openJob(job)} className="w-full">Your job · View details</Button>
-                    ) : appliedJobIds.has(job._id) ? (
-                      <Button disabled className="w-full bg-gray-200 text-gray-500 cursor-not-allowed">
-                        <FiCheckCircle className="mr-2" />Applied
-                      </Button>
-                    ) : (
-                      <Button onClick={() => handleApply(job._id)} className="w-full bg-black hover:bg-gray-900 text-white">
-                        Apply Now
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+        {/* Tabs + search */}
+        <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-5">
+          <div role="tablist" className="flex gap-2 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 pb-1 lg:pb-0 flex-1 min-w-0 [scrollbar-width:none]">
+            {tabButton('foryou', <>Jobs for you{recommendedJobs.length > 0 && countPill(recommendedJobs.filter((j) => !hasApplied(j)).length, tab === 'foryou')}</>, { 'data-testid': 'tab-foryou' })}
+            {tabButton('all', 'All jobs', { 'data-testid': 'tab-all' })}
+            {tabButton('applied', <>Applied{myApplications.length > 0 && countPill(myApplications.length, tab === 'applied')}</>, { 'data-testid': 'tab-applied' })}
+            {(!isRecruiter || pending.length > 0) && tabButton('pending', <>Needs your answers{pending.length > 0 && countPill(pending.length, true)}</>, { 'data-testid': 'tab-pending' })}
+            {showPostedTab && tabButton('posted', <>Posted{countPill(myJobs.length, tab === 'posted')}</>, { 'data-testid': 'posted-jobs-tab' })}
+          </div>
+          {tab !== 'foryou' && (
+            <div className="relative lg:w-72">
+              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7a7067]" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search title, company, location"
+                className="pl-9 rounded-full bg-white border-[#ebe6df]"
+                autoComplete="off"
+                data-testid="jobs-search"
+              />
             </div>
-          </TabsContent>
+          )}
+        </div>
 
-          <TabsContent value="recommended">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {recommendedJobs.map((job) => (
-                <Card key={job._id} className="shadow-md border-2 border-yellow-400 hover:shadow-xl transition">
-                  <CardContent className="pt-6">
-                    <div className="flex items-start justify-between gap-2 mb-4">
-                      <div className="flex items-center space-x-3 min-w-0">
-                        <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center shrink-0">
-                          <FiAward className="w-6 h-6 text-yellow-600" />
-                        </div>
-                        <div className="min-w-0">
-                          <button type="button" onClick={() => openJob(job)} className="text-left text-xl font-bold text-black hover:underline">{job.title}</button>
-                          <p className="text-sm text-gray-600">{job.company}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <JobCardActions job={job} isMine={isMine(job)} onReport={setReportJob} />
-                        <div className={`${getMatchColor(job.matchScore)} text-white px-3 py-1 rounded-full font-bold text-sm`}>
-                          {job.matchScore}% AI Match
-                        </div>
-                      </div>
+        {/* Jobs for you: swipe deck */}
+        {tab === 'foryou' && (
+          <>
+            {/*
+              Previous list view for Jobs for you — kept so it can be restored
+              (render it instead of <SwipeDeck /> below):
+
+              <div className="lg:grid lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:gap-6 lg:items-start">
+                <div className={`${deepLinkId ? 'hidden lg:block' : ''} space-y-3 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-1`}>
+                  {recommendedJobs.filter((j) => matches(j, search.trim())).map((job) => (
+                    <JobListItem
+                      key={job._id}
+                      job={job}
+                      selected={String(effectiveId) === String(job._id)}
+                      applied={hasApplied(job)}
+                      isMine={isMine(job)}
+                      onSelect={openJob}
+                      onReport={setReportJob}
+                    />
+                  ))}
+                  {recommendedJobs.length === 0 && (
+                    <div className="rounded-2xl border border-[#ebe6df] bg-white text-center py-12 px-4 text-[#7a7067]">
+                      Upload your résumé to get AI-powered job recommendations
                     </div>
-                    <JobChips job={job} />
-                    {job.matchedSkills?.length > 0 && (
-                      <div className="mb-4">
-                        <p className="text-xs text-gray-600 mb-2">Matched Skills:</p>
-                        <div className="flex flex-wrap gap-2">
-                          {job.matchedSkills.slice(0, 5).map((skill, idx) => (
-                            <Badge key={idx} className="bg-yellow-100 text-black">{skill}</Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    <div className="space-y-2 mb-4">
-                      {job.location && (
-                        <div className="flex items-center text-sm text-gray-600">
-                          <FiMapPin className="mr-2" />{job.location}
-                        </div>
-                      )}
-                      {job.salary && (
-                        <div className="flex items-center text-sm text-gray-600">
-                          <FaMoneyBillWave className="mr-2" />{inrSalary(job.salary)}
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-gray-700 line-clamp-3 mb-4">{job.description}</p>
-                    {appliedJobIds.has(job._id) ? (
-                      <Button disabled className="w-full bg-gray-200 text-gray-500 cursor-not-allowed">
-                        <FiCheckCircle className="mr-2" />Applied
-                      </Button>
-                    ) : (
-                      <Button onClick={() => handleApply(job._id)} className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-semibold">
-                        Quick Apply
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-              {recommendedJobs.length === 0 && (
-                <div className="col-span-2 text-center py-12">
-                  <FiFileText className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                  <p className="text-gray-500">Upload your resume to get AI-powered job recommendations</p>
+                  )}
                 </div>
-              )}
-            </div>
-          </TabsContent>
+                <div className={`${deepLinkId ? '' : 'hidden lg:block'} lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto`}>
+                  <JobDetail {...detailProps} onBack={closeJob} />
+                </div>
+              </div>
+            */}
+            <SwipeDeck
+              jobs={recommendedJobs}
+              appliedIds={appliedJobIds}
+              loading={recLoading}
+              onApplied={handleApplied}
+              onDetails={openJob}
+              onBrowseAll={() => setTab('all')}
+              paused={!!deepLinkId || !!applyJob}
+            />
+            {!recLoading && recommendedJobs.length === 0 && !resumeReview && !isRecruiter && (
+              <p className="text-center text-sm text-[#7a7067] mt-4">Tip: upload your résumé above to get AI-matched jobs here.</p>
+            )}
+          </>
+        )}
 
-          <TabsContent value="applied">
-            <div className="space-y-4">
-              {myApplications.map((app, idx) => (
-                <Card key={idx} className="shadow-md">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                          <FiBriefcase className="w-6 h-6 text-blue-600" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-bold text-black">{app.job.title}</h3>
-                          <p className="text-sm text-gray-600">{app.job.company}</p>
-                          <p className="text-xs text-gray-500 mt-1">Applied on {new Date(app.appliedAt).toLocaleDateString()}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {app.source === 'auto' && (
-                          <Badge className="bg-purple-100 text-purple-700 flex items-center gap-1">
-                            <FiZap className="w-3 h-3" />Auto-applied
-                          </Badge>
-                        )}
-                        <Badge className={app.status === 'pending' ? 'bg-yellow-500' : 'bg-green-500'}>{app.status}</Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+        {/* Needs your answers */}
+        {tab === 'pending' && (
+          <div className="max-w-3xl">
+            <PendingApplications pending={filteredPending} loading={pendingLoading} onDone={handlePendingDone} onOpenJob={openJob} />
+          </div>
+        )}
+
+        {/* List + detail (All jobs, Applied, Posted) */}
+        {isListTab && (
+          <div className="lg:grid lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:gap-6 lg:items-start">
+            <div
+              className={`${deepLinkId ? 'hidden lg:block' : ''} space-y-3 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-1 lg:pb-4`}
+              data-testid="jobs-list"
+            >
+              {listForTab.length > 0 && (
+                <p className="text-xs text-[#7a7067] px-1">{listForTab.length} {listForTab.length === 1 ? 'job' : 'jobs'}</p>
+              )}
+              {tab === 'posted' ? listForTab.map((job) => (
+                <PostedJobItem
+                  key={job._id}
+                  job={job}
+                  selected={String(effectiveId) === String(job._id)}
+                  onSelect={openJob}
+                  onEdit={setEditingJob}
+                  onToggleStatus={handleToggleStatus}
+                  onDelete={setDeletingJob}
+                  onApplicants={setApplicantsJob}
+                  onMatches={fetchMatchedCandidates}
+                />
+              )) : listForTab.map((job) => (
+                <JobListItem
+                  key={job._id}
+                  job={job}
+                  selected={String(effectiveId) === String(job._id)}
+                  applied={hasApplied(job)}
+                  isMine={isMine(job)}
+                  onSelect={openJob}
+                  onReport={setReportJob}
+                  testId={tab === 'applied' ? `application-${job._id}` : undefined}
+                  meta={tab === 'applied' ? (
+                    <>
+                      {job.appliedAt && <span>Applied {shortDate(job.appliedAt)}</span>}
+                      {job.applicationSource === 'auto' && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 text-purple-700 px-2 py-0.5"><FiZap className="w-3 h-3" />Auto-applied</span>
+                      )}
+                      {job.applicationStatus && <span className="rounded-full bg-[#F2EEE8] text-[#2b2622] px-2 py-0.5 capitalize">{job.applicationStatus}</span>}
+                    </>
+                  ) : null}
+                />
               ))}
-              {myApplications.length === 0 && (
-                <div className="text-center py-12 text-gray-500">No applications yet</div>
+              {listForTab.length === 0 && (
+                <div className="rounded-2xl border border-[#ebe6df] bg-white text-center py-12 px-4 text-[#7a7067]">{emptyList}</div>
               )}
             </div>
-          </TabsContent>
 
-          {showPostedTab && (
-            <TabsContent value="posted">
-              <div className="space-y-6">
-                {myJobs.map((job) => (
-                  <Card key={job._id} className={`shadow-md ${isClosed(job) ? 'opacity-75' : ''}`} data-testid={`posted-job-${job._id}`}>
-                    <CardHeader>
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <CardTitle className="text-xl">
-                            <button type="button" onClick={() => openJob(job)} className="text-left hover:underline">{job.title}</button>
-                          </CardTitle>
-                          <p className="text-sm text-gray-600">{job.company}</p>
+            <div className={`${deepLinkId ? '' : 'hidden lg:block'} lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pb-4`}>
+              {(detailJob || deepLinkId || listForTab.length > 0) ? (
+                <JobDetail {...detailProps} onBack={closeJob} />
+              ) : (
+                <div className="rounded-2xl border border-[#ebe6df] bg-white p-8 text-center text-[#7a7067]">Nothing to show yet</div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Job opened from the deck or the pending tab */}
+        <Dialog open={detailInDialog} onOpenChange={(o) => { if (!o) closeJob(); }}>
+          <DialogContent className="w-[calc(100%-1.5rem)] max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl p-0 border-0 bg-transparent shadow-none">
+            <DialogHeader className="sr-only"><DialogTitle>{detailJob?.title || 'Job'}</DialogTitle></DialogHeader>
+            {detailInDialog && <JobDetail {...detailProps} />}
+          </DialogContent>
+        </Dialog>
+
+        {matchesJob && matchedCandidates.length > 0 && (
+          <Dialog open onOpenChange={(o) => { if (!o) setMatchesJob(null); }}>
+            <DialogContent className="w-[calc(100%-1.5rem)] max-w-4xl max-h-[80vh] overflow-y-auto rounded-2xl">
+              <DialogHeader>
+                <DialogTitle className="pf-serif text-xl pr-6">Top 10 AI-Matched Candidates for {matchesJob.title}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                {matchedCandidates.map((candidate, idx) => (
+                  <Card key={candidate._id} className="border border-[#ebe6df] rounded-2xl">
+                    <CardContent className="pt-4">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center font-bold text-black shrink-0">#{idx + 1}</div>
+                          <Avatar className="w-12 h-12 shrink-0">
+                            <AvatarImage src={candidate.profilePic} />
+                            <AvatarFallback className="bg-gray-300 text-xl">{candidate.name?.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0">
+                            <h3 className="font-bold text-[#2b2622] truncate">{candidate.name}</h3>
+                            <p className="text-sm text-[#7a7067] truncate">{candidate.email}</p>
+                            {candidate.resume?.parsedData?.experience?.years && (
+                              <p className="text-xs text-[#7a7067]">{candidate.resume.parsedData.experience.years} years experience</p>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <JobCardActions job={job} isMine onReport={setReportJob} />
-                          <Button variant="outline" size="sm" onClick={() => setEditingJob(job)} data-testid={`job-edit-${job._id}`}>
-                            <FiEdit2 className="mr-1" />Edit
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => handleToggleStatus(job)} data-testid={`job-toggle-status-${job._id}`}>
-                            {isClosed(job) ? <><FiUnlock className="mr-1" />Reopen</> : <><FiLock className="mr-1" />Close</>}
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => setDeletingJob(job)} className="text-red-600 hover:text-red-700" data-testid={`job-delete-${job._id}`}>
-                            <FiTrash2 className="mr-1" />Delete
-                          </Button>
-                          <Button size="sm" onClick={() => { setSelectedJob(job); fetchMatchedCandidates(job._id); }} className="bg-yellow-400 hover:bg-yellow-500 text-black">
-                            View Top 10 Matches
-                          </Button>
+                        <div className={`${getMatchColor(candidate.matchScore)} text-white px-3 py-1.5 rounded-lg font-bold self-start`}>
+                          {candidate.matchScore}% Match
                         </div>
                       </div>
-                    </CardHeader>
-                    <CardContent>
-                      <JobChips job={job} />
-                      <p className="text-gray-700 mb-4 line-clamp-4">{job.description}</p>
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm text-gray-600 flex items-center gap-1"><FiUsers /><strong>{job.applicants?.length || 0}</strong> applicants</p>
-                        <Badge className={isClosed(job) ? 'bg-gray-500' : 'bg-green-500'}>{isClosed(job) ? 'Closed' : 'Open'}</Badge>
-                      </div>
+                      {candidate.matchedSkills?.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {candidate.matchedSkills.map((skill, i) => <Badge key={i} className="bg-green-100 text-green-800 hover:bg-green-100">{skill}</Badge>)}
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))}
-                {myJobs.length === 0 && (
-                  <div className="text-center py-12 text-gray-500">You haven't posted any jobs yet</div>
-                )}
               </div>
-
-              {selectedJob && matchedCandidates.length > 0 && (
-                <Dialog open={!!selectedJob} onOpenChange={() => setSelectedJob(null)}>
-                  <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>Top 10 AI-Matched Candidates for {selectedJob.title}</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 mt-4">
-                      {matchedCandidates.map((candidate, idx) => (
-                        <Card key={candidate._id} className="border-2 border-gray-200">
-                          <CardContent className="pt-4">
-                            <div className="flex items-start justify-between">
-                              <div className="flex items-center space-x-4">
-                                <div className="text-center">
-                                  <div className="w-12 h-12 bg-yellow-400 rounded-full flex items-center justify-center font-bold text-xl text-black">
-                                    #{idx + 1}
-                                  </div>
-                                </div>
-                                <Avatar className="w-16 h-16">
-                                  <AvatarImage src={candidate.profilePic} />
-                                  <AvatarFallback className="bg-gray-300 text-xl">{candidate.name.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <h3 className="text-lg font-bold text-black">{candidate.name}</h3>
-                                  <p className="text-sm text-gray-600">{candidate.email}</p>
-                                  {candidate.resume?.parsedData?.experience?.years && (
-                                    <p className="text-xs text-gray-500">{candidate.resume.parsedData.experience.years} years experience</p>
-                                  )}
-                                </div>
-                              </div>
-                              <div className={`${getMatchColor(candidate.matchScore)} text-white px-4 py-2 rounded-lg font-bold text-lg`}>
-                                {candidate.matchScore}% Match
-                              </div>
-                            </div>
-                            {candidate.matchedSkills?.length > 0 && (
-                              <div className="mt-4">
-                                <p className="text-xs text-gray-600 mb-2">Matched Skills:</p>
-                                <div className="flex flex-wrap gap-2">
-                                  {candidate.matchedSkills.map((skill, idx) => (
-                                    <Badge key={idx} className="bg-green-100 text-green-800">{skill}</Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              )}
-            </TabsContent>
-          )}
-        </Tabs>
+            </DialogContent>
+          </Dialog>
+        )}
 
         <Dialog open={!!editingJob} onOpenChange={(o) => { if (!o) setEditingJob(null); }}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[calc(100%-1.5rem)] max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
             <DialogHeader>
-              <DialogTitle>Edit job</DialogTitle>
+              <DialogTitle className="pf-serif text-2xl">Edit job</DialogTitle>
             </DialogHeader>
             {editingJob && <JobForm key={editingJob._id} initial={formFromJob(editingJob)} submitLabel="Save changes" onSubmit={handleEditJob} />}
           </DialogContent>
         </Dialog>
 
         <AlertDialog open={!!deletingJob} onOpenChange={(o) => { if (!o) setDeletingJob(null); }}>
-          <AlertDialogContent>
+          <AlertDialogContent className="w-[calc(100%-1.5rem)] rounded-2xl">
             <AlertDialogHeader>
               <AlertDialogTitle>Delete this job?</AlertDialogTitle>
               <AlertDialogDescription>
@@ -827,61 +951,9 @@ const Jobs = () => {
           </AlertDialogContent>
         </AlertDialog>
 
-        <Dialog open={!!detailJob} onOpenChange={(o) => { if (!o) closeJob(); }}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="job-detail-dialog">
-            {detailJob && (
-              <>
-                <DialogHeader>
-                  <DialogTitle className="text-2xl pr-6">{detailJob.title}</DialogTitle>
-                  <p className="text-gray-600">
-                    {detailJob.company}
-                    {detailJob.postedBy?.name ? <> · posted by {detailJob.postedBy.name}</> : null}
-                  </p>
-                </DialogHeader>
-                <div className="space-y-4 mt-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge className={isClosed(detailJob) ? 'bg-gray-500' : 'bg-green-500'}>{isClosed(detailJob) ? 'Closed' : 'Open'}</Badge>
-                    {jobChips(detailJob).map((c) => <Badge key={c} variant="outline" className="text-gray-700">{c}</Badge>)}
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600">
-                    {detailJob.location && <div className="flex items-center"><FiMapPin className="mr-2" />{detailJob.location}</div>}
-                    {detailJob.salary && <div className="flex items-center"><FaMoneyBillWave className="mr-2" />{inrSalary(detailJob.salary)}</div>}
-                    {detailJob.applyBy && <div className="flex items-center"><FiCalendar className="mr-2" />Apply by {new Date(detailJob.applyBy).toLocaleDateString()}</div>}
-                    {detailJob.applicantCount !== undefined && <div className="flex items-center"><FiUsers className="mr-2" />{detailJob.applicantCount} applicant{detailJob.applicantCount === 1 ? '' : 's'}</div>}
-                  </div>
-                  {detailJob.skills?.length > 0 && (
-                    <div>
-                      <p className="text-xs text-gray-600 mb-2">Skills</p>
-                      <div className="flex flex-wrap gap-2">
-                        {detailJob.skills.map((skill) => <Badge key={skill} className="bg-yellow-100 text-black hover:bg-yellow-100">{skill}</Badge>)}
-                      </div>
-                    </div>
-                  )}
-                  <p className="text-gray-700 whitespace-pre-line">{detailJob.description}</p>
-                  <div className="flex flex-wrap items-center gap-2 pt-2 border-t">
-                    {isMine(detailJob) ? (
-                      <Button variant="outline" onClick={() => { const j = detailJob; closeJob(); setEditingJob(j); }}>
-                        <FiEdit2 className="mr-2" />Edit job
-                      </Button>
-                    ) : isClosed(detailJob) ? (
-                      <Button disabled className="bg-gray-200 text-gray-500">This job is closed</Button>
-                    ) : detailJob.hasApplied || appliedJobIds.has(detailJob._id) ? (
-                      <Button disabled className="bg-gray-200 text-gray-500"><FiCheckCircle className="mr-2" />Applied</Button>
-                    ) : (
-                      <Button onClick={() => handleApply(detailJob._id)} className="bg-black hover:bg-gray-900 text-white" data-testid="job-detail-apply">Apply Now</Button>
-                    )}
-                    <ShareMenu path={`/jobs?job=${detailJob._id}`} title={`${detailJob.title} at ${detailJob.company}`} align="start" testId="job-detail-share" />
-                    {!isMine(detailJob) && idOf(detailJob.postedBy) && (
-                      <Button variant="ghost" onClick={() => setReportJob(detailJob)} className="text-gray-600" data-testid="job-detail-report">
-                        <FiFlag className="mr-2" />Report
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </>
-            )}
-          </DialogContent>
-        </Dialog>
+        {applyJob && <ApplyDialog job={applyJob} onClose={() => setApplyJob(null)} onApplied={handleApplied} />}
+        {applicantsJob && <ApplicantsDialog job={applicantsJob} onClose={() => setApplicantsJob(null)} />}
+        <SavedAnswersDialog open={showSavedAnswers} onOpenChange={setShowSavedAnswers} onCountChange={setSavedCount} />
 
         {reportJob && (
           <ReportDialog

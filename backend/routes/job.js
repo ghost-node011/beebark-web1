@@ -9,6 +9,8 @@ const { parseResume } = require('../utils/resumeParser');
 const { matchCandidatesWithJobLLM, getJobRecommendationsLLM } = require('../utils/llmJobMatcher');
 const { analyzeResume } = require('../utils/resumeScorer');
 const { evaluateAutoApplyForUser, evaluateAutoApplyForJob } = require('../utils/autoApply');
+const PendingApplication = require('../models/PendingApplication');
+const { cleanQuestions, checkAnswers, savedAnswerFor, saveToBank } = require('../utils/screening');
 const path = require('path');
 const fs = require('fs');
 
@@ -56,7 +58,23 @@ const jobFieldsFromBody = (body = {}, partial = false) => {
   if (has('experienceLevel')) out.experienceLevel = pick(body.experienceLevel, EXPERIENCE_LEVELS);
   if (has('skills')) out.skills = cleanSkills(body.skills);
   if (has('applyBy')) out.applyBy = cleanDate(body.applyBy);
+  if (has('questions')) out.questions = cleanQuestions(body.questions);
   return out;
+};
+
+const POSTER_FIELDS = 'name company profilePic username headline';
+
+// What anyone browsing sees of a job: no applicant records or answers, and
+// never the poster's ideal answers
+const publicJob = (job, viewerId) => {
+  const data = typeof job.toObject === 'function' ? job.toObject() : { ...job };
+  const applicants = data.applicants || [];
+  data.applicantCount = applicants.length;
+  data.hasApplied = applicants.some((a) => String(a.user?._id || a.user) === String(viewerId));
+  data.questions = (data.questions || []).map(({ idealAnswer, ...q }) => q);
+  data.questionCount = data.questions.length;
+  delete data.applicants;
+  return data;
 };
 
 // 'open' is the public name for the stored 'active' state
@@ -112,7 +130,7 @@ router.get('/list', auth, async (req, res) => {
     if (req.query.type) filter.employmentType = { $in: String(req.query.type).split(',') };
 
     const jobs = await Job.find(filter)
-      .populate('postedBy', 'name company profilePic username')
+      .populate('postedBy', POSTER_FIELDS)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -120,7 +138,7 @@ router.get('/list', auth, async (req, res) => {
     const total = await Job.countDocuments(filter);
 
     res.json({ 
-      jobs,
+      jobs: jobs.map((j) => publicJob(j, req.userId)),
       pagination: {
         page,
         limit,
@@ -137,12 +155,20 @@ router.get('/list', auth, async (req, res) => {
 router.get('/recommended', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
-    const allJobs = await Job.find({ status: { $ne: 'closed' }, isDemo: user?.isDemo ? true : { $ne: true } })
-      .populate('postedBy', 'name company profilePic username');
+    // Jobs you passed on, applied to, posted, or that are waiting for your answers don't come back
+    const waiting = await PendingApplication.find({ user: req.userId, status: 'needs_answers' }).distinct('job');
+    const allJobs = await Job.find({
+      status: { $ne: 'closed' },
+      isDemo: user?.isDemo ? true : { $ne: true },
+      postedBy: { $ne: req.userId },
+      'applicants.user': { $ne: req.userId },
+      _id: { $nin: [...(user?.jobPreferences?.passedJobs || []), ...waiting] }
+    })
+      .populate('postedBy', POSTER_FIELDS);
 
     const recommendations = await getJobRecommendationsLLM(user, allJobs);
 
-    res.json({ recommendations });
+    res.json({ recommendations: recommendations.map((r) => ({ ...publicJob(r, req.userId), matchScore: r.matchScore, matchReason: r.matchReason })) });
   } catch (error) {
     res.status(500).json({ error: 'Failed to get recommendations', message: error.message });
   }
@@ -266,13 +292,117 @@ router.get('/my/applications', auth, async (req, res) => {
         },
         appliedAt: application.appliedAt,
         status: application.status,
-        source: application.source || 'manual'
+        source: application.source || 'manual',
+        answers: (application.answers || []).map((a) => ({ question: a.question, answer: a.answer }))
       };
     });
 
     res.json({ applications });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch applications', message: error.message });
+  }
+});
+
+// ----- Applications the AI couldn't finish (waiting for the student's answers) -----
+
+router.get('/my/pending', auth, async (req, res) => {
+  try {
+    const pending = await PendingApplication.find({ user: req.userId, status: 'needs_answers' })
+      .populate('job', 'title company location status questions postedBy')
+      .sort({ createdAt: -1 })
+      .lean();
+    res.json({
+      pending: pending.filter((p) => p.job).map((p) => ({
+        _id: p._id,
+        createdAt: p.createdAt,
+        job: { _id: p.job._id, title: p.job.title, company: p.job.company, location: p.job.location, status: p.job.status },
+        questions: (p.job.questions || []).map((q) => {
+          const a = (p.answers || []).find((x) => String(x.questionId) === String(q._id)) || {};
+          return { _id: q._id, text: q.text, type: q.type, options: q.options, required: q.required, answer: a.answer || '', source: a.source || null, needsYou: Boolean(a.needsYou), reason: a.reason || '' };
+        })
+      }))
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to load pending applications', message: error.message });
+  }
+});
+
+router.post('/pending/:id/submit', auth, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ error: 'Not found' });
+    const pending = await PendingApplication.findOne({ _id: req.params.id, user: req.userId, status: 'needs_answers' });
+    if (!pending) return res.status(404).json({ error: 'Not found' });
+    const job = await Job.findById(pending.job);
+    if (!job || job.status === 'closed') return res.status(400).json({ error: 'This job is closed to new applications' });
+    if (job.applicants.some((a) => String(a.user) === String(req.userId))) {
+      pending.status = 'submitted';
+      await pending.save();
+      return res.json({ message: 'Already applied' });
+    }
+    const { answers, missing, invalid } = checkAnswers(job.questions, req.body?.answers);
+    if (missing.length || invalid.length) return res.status(400).json({ error: missing.length ? 'Please answer the required questions' : 'Some answers are not valid', missing: [...missing, ...invalid] });
+    const prior = new Map((pending.answers || []).map((a) => [String(a.questionId), a]));
+    job.applicants.push({
+      user: req.userId,
+      source: 'auto',
+      answers: answers.map((a) => {
+        const was = prior.get(String(a.questionId));
+        // Unchanged AI/saved answers keep their origin; anything typed now is the student's
+        return { ...a, source: was && was.answer === a.answer && was.source ? was.source : 'manual' };
+      })
+    });
+    await job.save();
+    await saveToBank(req.userId, job.questions, answers.filter((a) => (prior.get(String(a.questionId)) || {}).source !== 'ai' || prior.get(String(a.questionId)).answer !== a.answer));
+    pending.status = 'submitted';
+    await pending.save();
+    res.json({ message: 'Application sent' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to send application', message: error.message });
+  }
+});
+
+router.post('/pending/:id/dismiss', auth, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ error: 'Not found' });
+    const r = await PendingApplication.updateOne({ _id: req.params.id, user: req.userId, status: 'needs_answers' }, { $set: { status: 'dismissed' } });
+    if (!r.matchedCount) return res.status(404).json({ error: 'Not found' });
+    res.json({ message: 'Removed' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to remove', message: error.message });
+  }
+});
+
+// ----- Saved answers (the student's answer bank) -----
+
+router.get('/answers', auth, async (req, res) => {
+  try {
+    const me = await User.findById(req.userId).select('answerBank').lean();
+    res.json({ answers: (me?.answerBank || []).map(({ key, ...a }) => a).sort((x, y) => new Date(y.updatedAt) - new Date(x.updatedAt)) });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to load saved answers', message: error.message });
+  }
+});
+
+router.put('/answers/:id', auth, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ error: 'Not found' });
+    const answer = String(req.body?.answer ?? '').trim().slice(0, 3000);
+    if (!answer) return res.status(400).json({ error: 'Answer is required' });
+    const r = await User.updateOne({ _id: req.userId, 'answerBank._id': req.params.id }, { $set: { 'answerBank.$.answer': answer, 'answerBank.$.updatedAt': new Date() } });
+    if (!r.matchedCount) return res.status(404).json({ error: 'Not found' });
+    res.json({ message: 'Saved' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to save answer', message: error.message });
+  }
+});
+
+router.delete('/answers/:id', auth, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ error: 'Not found' });
+    await User.updateOne({ _id: req.userId }, { $pull: { answerBank: { _id: req.params.id } } });
+    res.json({ message: 'Deleted' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete answer', message: error.message });
   }
 });
 
@@ -295,10 +425,15 @@ router.get('/:jobId', auth, async (req, res) => {
     }
 
     const isOwner = job.postedBy?._id?.toString() === req.userId.toString();
-    const data = job.toObject();
-    data.applicantCount = job.applicants.length;
-    data.hasApplied = job.applicants.some((app) => app.user?._id?.toString() === req.userId.toString());
-    if (!isOwner) delete data.applicants;
+    let data;
+    if (isOwner) {
+      data = job.toObject();
+      data.applicantCount = job.applicants.length;
+      data.questionCount = (job.questions || []).length;
+    } else {
+      data = publicJob(job, req.userId);
+      delete data.postedBy?.email;
+    }
 
     res.json({ job: data, isOwner });
   } catch (error) {
@@ -369,6 +504,61 @@ router.delete('/:jobId', auth, async (req, res) => {
   }
 });
 
+// The questions to answer, prefilled with the student's earlier answers
+router.get('/:jobId/apply-form', auth, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.jobId)) return res.status(404).json({ error: 'Job not found' });
+    const [job, me, pending] = await Promise.all([
+      Job.findById(req.params.jobId).select('questions applicants.user status').lean(),
+      User.findById(req.userId).select('answerBank').lean(),
+      PendingApplication.findOne({ user: req.userId, job: req.params.jobId, status: 'needs_answers' }).select('_id').lean()
+    ]);
+    if (!job) return res.status(404).json({ error: 'Job not found' });
+    res.json({
+      questions: (job.questions || []).map((q) => ({ _id: q._id, text: q.text, type: q.type, options: q.options, required: q.required, savedAnswer: savedAnswerFor(me?.answerBank, q) })),
+      hasApplied: (job.applicants || []).some((a) => String(a.user) === String(req.userId)),
+      pendingId: pending?._id || null,
+      closed: job.status === 'closed'
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to load the application form', message: error.message });
+  }
+});
+
+// Swipe left in "Jobs for you" (and undo)
+router.post('/:jobId/pass', auth, async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.jobId)) return res.status(404).json({ error: 'Job not found' });
+  await User.updateOne({ _id: req.userId }, { $addToSet: { 'jobPreferences.passedJobs': req.params.jobId } });
+  res.json({ ok: true });
+});
+
+router.delete('/:jobId/pass', auth, async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.jobId)) return res.status(404).json({ error: 'Job not found' });
+  await User.updateOne({ _id: req.userId }, { $pull: { 'jobPreferences.passedJobs': req.params.jobId } });
+  res.json({ ok: true });
+});
+
+// Applicants and their answers (job poster only)
+router.get('/:jobId/applicants', auth, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.jobId)) return res.status(404).json({ error: 'Job not found' });
+    const job = await Job.findById(req.params.jobId).populate('applicants.user', 'name username profilePic headline experience role careerStage').lean();
+    if (!job) return res.status(404).json({ error: 'Job not found' });
+    if (String(job.postedBy) !== String(req.userId)) return res.status(403).json({ error: 'Only the job poster can see applicants' });
+    res.json({
+      applicants: (job.applicants || []).filter((a) => a.user).sort((a, b) => new Date(b.appliedAt) - new Date(a.appliedAt)).map((a) => ({
+        user: { _id: a.user._id, name: a.user.name, username: a.user.username, profilePic: a.user.profilePic, headline: a.user.headline, experience: a.user.experience, role: a.user.role, careerStage: a.user.careerStage },
+        appliedAt: a.appliedAt,
+        status: a.status,
+        source: a.source || 'manual',
+        answers: (a.answers || []).map((x) => ({ question: x.question, answer: x.answer }))
+      }))
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to load applicants', message: error.message });
+  }
+});
+
 router.post('/:jobId/apply', auth, async (req, res) => {
   try {
     if (!mongoose.isValidObjectId(req.params.jobId)) {
@@ -397,11 +587,16 @@ router.post('/:jobId/apply', auth, async (req, res) => {
       return res.status(400).json({ error: 'Already applied to this job' });
     }
 
-    job.applicants.push({
-      user: req.userId
-    });
+    const { answers, missing, invalid } = checkAnswers(job.questions || [], req.body?.answers);
+    if (missing.length || invalid.length) {
+      return res.status(400).json({ error: missing.length ? 'Please answer the required questions' : 'Some answers are not valid', missing: [...missing, ...invalid] });
+    }
 
+    job.applicants.push({ user: req.userId, answers });
     await job.save();
+    if (answers.length) await saveToBank(req.userId, job.questions, answers);
+    // A manual application settles any waiting AI one for this job
+    await PendingApplication.updateMany({ user: req.userId, job: job._id, status: 'needs_answers' }, { $set: { status: 'submitted' } });
 
     res.json({ message: 'Application submitted successfully' });
   } catch (error) {

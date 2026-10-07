@@ -45,7 +45,25 @@ const jobSchema = new mongoose.Schema({
       type: String,
       enum: ['manual', 'auto'],
       default: 'manual'
-    }
+    },
+    // Answers to the job's screening questions (question text is copied so
+    // later edits to the job don't change what was answered)
+    answers: [{
+      _id: false,
+      questionId: { type: mongoose.Schema.Types.ObjectId },
+      question: { type: String, default: '' },
+      answer: { type: String, default: '' },
+      source: { type: String, enum: ['manual', 'saved', 'ai'], default: 'manual' }
+    }]
+  }],
+  // Screening questions, like LinkedIn's (max 10)
+  questions: [{
+    text: { type: String, required: true, maxlength: 300 },
+    type: { type: String, enum: ['yes_no', 'number', 'short_text', 'long_text', 'single_choice'], default: 'short_text' },
+    options: [{ type: String }],
+    required: { type: Boolean, default: true },
+    // What the poster hopes for (e.g. "Yes", or a minimum number); never shown to applicants
+    idealAnswer: { type: String, default: '' }
   }],
   industry: {
     type: String,

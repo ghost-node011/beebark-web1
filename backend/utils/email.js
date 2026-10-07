@@ -270,4 +270,30 @@ const sendWaitlistEmail = async (toEmail, name, profile = {}) => {
   await send({ to: toEmail, subject, html });
 };
 
-module.exports = { sendOtpEmail, sendWelcomeEmail, sendPasswordResetEmail, sendPasswordResetOtpEmail, sendWaitlistEmail, send };
+// --- Job applications waiting for the student's answers ---
+// jobs: [{ title, company }] — every application currently waiting on them
+const sendNeedsAnswersEmail = async (toEmail, name, jobs) => {
+  const firstName = (name || '').split(' ')[0] || 'there';
+  const esc = (v) => String(v || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const list = jobs.slice(0, 8).map((j) => `<li style="margin:0 0 6px 0;"><strong>${esc(j.title)}</strong>${j.company ? ` at ${esc(j.company)}` : ''}</li>`).join('');
+  const more = jobs.length > 8 ? `<p style="margin:0 0 16px 0;color:${BRAND.muted};font-size:14px;">and ${jobs.length - 8} more.</p>` : '';
+  const url = `${APP_URL()}/jobs?tab=pending`;
+  const body = `
+    <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:${BRAND.ink};">Hi ${esc(firstName)}, BeeBark's AI found ${jobs.length === 1 ? 'a job that matches' : 'jobs that match'} your profile and filled in what it could. ${jobs.length === 1 ? 'It asks' : 'They ask'} something only you can answer, so ${jobs.length === 1 ? 'this application is' : 'these applications are'} waiting for you:</p>
+    <ul style="margin:0 0 16px 18px;padding:0;font-size:15px;line-height:1.5;color:${BRAND.ink};">${list}</ul>
+    ${more}
+    <p style="margin:0 0 24px 0;font-size:15px;line-height:1.6;color:${BRAND.ink};">Answer once and we'll send the application. We'll remember your answer for similar questions.</p>
+    <p style="margin:0 0 8px 0;"><a href="${url}" style="display:inline-block;background:${BRAND.black};color:#fff;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:10px;font-size:15px;">Answer and apply</a></p>`;
+  await send({
+    to: toEmail,
+    subject: jobs.length === 1 ? `Quick question before we apply to ${jobs[0].title}` : `${jobs.length} applications are waiting for your answers`,
+    html: layout({
+      preheader: 'Your answer is needed to finish an application',
+      heading: jobs.length === 1 ? 'One question before we apply' : 'A few questions before we apply',
+      body,
+      footerNote: "You're getting this because auto-apply is on in your BeeBark Jobs settings. Turn it off there any time."
+    })
+  });
+};
+
+module.exports = { sendOtpEmail, sendWelcomeEmail, sendPasswordResetEmail, sendPasswordResetOtpEmail, sendWaitlistEmail, sendNeedsAnswersEmail, send };

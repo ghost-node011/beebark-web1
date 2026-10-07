@@ -127,6 +127,14 @@ const userSchema = new mongoose.Schema({
   // Followers see someone's updates without being connected; connecting also follows both ways
   followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  // Answers to job screening questions, reused when the same question comes up again
+  answerBank: [{
+    key: { type: String, required: true }, // normalised question text
+    question: { type: String, required: true },
+    type: { type: String, default: 'short_text' },
+    answer: { type: String, default: '' },
+    updatedAt: { type: Date, default: Date.now }
+  }],
   // Set by the BeeBark team only (identity checked / paid plan)
   badges: {
     verified: { type: Boolean, default: false },
@@ -241,7 +249,9 @@ const userSchema = new mongoose.Schema({
   },
   jobPreferences: {
     // When true, the system auto-applies to strong job matches on the user's behalf
-    autoApplyEnabled: { type: Boolean, default: false }
+    autoApplyEnabled: { type: Boolean, default: false },
+    // Jobs swiped left in "Jobs for you"; they aren't recommended again
+    passedJobs: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Job' }]
   },
   portfolio: {
     theme: {
