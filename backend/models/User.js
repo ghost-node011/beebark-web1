@@ -256,7 +256,8 @@ const userSchema = new mongoose.Schema({
   portfolio: {
     theme: {
       type: String,
-      enum: ['editorial', 'studio', 'grid', 'timeline', 'minimal', 'magazine', 'stack', 'mosaic', 'index', 'brutalist'],
+      enum: ['editorial', 'studio', 'grid', 'timeline', 'minimal', 'magazine', 'stack', 'mosaic', 'index', 'brutalist',
+        'noir', 'redline', 'warm', 'manual', 'cleanbook', 'creative', 'catalogue'],
       default: 'editorial'
     },
     headline: { type: String, default: '' },
@@ -273,7 +274,12 @@ const userSchema = new mongoose.Schema({
     tagline: { type: String, default: '', maxlength: 160 },
     aboutText: { type: String, default: '', maxlength: 1200 },
     closingLine: { type: String, default: '', maxlength: 120 },
-    contactInfo: { type: String, default: '', maxlength: 160 }
+    contactInfo: { type: String, default: '', maxlength: 160 },
+    // 'catalogue' turns the portfolio into a product catalogue (suppliers)
+    mode: { type: String, enum: ['portfolio', 'catalogue'], default: 'portfolio' },
+    // Extra pages on the public portfolio
+    showCv: { type: Boolean, default: true },
+    showContact: { type: Boolean, default: true }
   },
   settings: {
     // Owner-controlled, per-section visibility on the public-facing profile.
@@ -285,6 +291,8 @@ const userSchema = new mongoose.Schema({
     activityPublic: { type: Boolean, default: false },
     // Off: others don't see when you've read their messages, and you don't see theirs
     readReceipts: { type: Boolean, default: true },
+    // How "Jobs for you" is shown: a swipe deck or a plain list
+    jobsView: { type: String, enum: ['swipe', 'list'], default: 'swipe' },
     // Public profile at /in/:username that anyone can open without signing in
     publicProfile: { type: Boolean, default: true }
   },

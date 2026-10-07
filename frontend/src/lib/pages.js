@@ -21,6 +21,7 @@ export const Pages = {
   Feed: page(() => import('../pages/Feed')),
   Portfolio: page(() => import('../pages/Portfolio')),
   PublicPortfolio: page(() => import('../pages/PublicPortfolio')),
+  PortfolioCv: page(() => import('../pages/PortfolioCv')),
   Profile: page(() => import('../pages/Profile')),
   PublicProfile: page(() => import('../pages/PublicProfile')),
   Connections: page(() => import('../pages/Connections')),

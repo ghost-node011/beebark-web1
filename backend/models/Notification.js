@@ -22,6 +22,11 @@ const notificationSchema = new mongoose.Schema({
   read: {
     type: Boolean,
     default: false
+  },
+  // Extra details for some types (e.g. quote_request: { itemTitle, message })
+  meta: {
+    type: Object,
+    default: undefined
   }
 }, {
   timestamps: true

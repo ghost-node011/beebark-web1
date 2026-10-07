@@ -1,10 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '../ui/button';
-import { FiEdit2, FiTrash2, FiMail, FiChevronLeft, FiChevronRight, FiArrowRight, FiX, FiImage, FiMapPin, FiFlag, FiCalendar, FiMaximize2 } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiMail, FiChevronLeft, FiChevronRight, FiArrowRight, FiX, FiImage, FiMapPin, FiFlag, FiCalendar, FiMaximize2, FiUser, FiLayers, FiDownload } from 'react-icons/fi';
+import {
+  BOOK_THEME_META, BOOK_PALETTE_DEFAULTS, BOOK_COLOUR_PRESETS,
+  NoirTemplate, RedlineTemplate, WarmTemplate, ManualTemplate, CleanbookTemplate, CreativeTemplate, CatalogueTemplate
+} from './BookTemplates';
 
+// `group` and `modes` let the picker filter templates (portfolio vs product catalogue)
 export const THEME_META = [
-  { key: 'editorial', label: 'Editorial', description: 'Refined and light, with a warm serif feel' },
-  { key: 'studio', label: 'Studio', description: 'Bold and dark, one project at a time' }
+  { key: 'editorial', label: 'Editorial', description: 'Refined and light, with a warm serif feel', group: 'Architecture', modes: ['portfolio'], swatches: ['#FBF8F3', '#1C1A17', '#F5C518'] },
+  { key: 'studio', label: 'Studio', description: 'Bold and dark, one project at a time', group: 'Creative', modes: ['portfolio'], swatches: ['#151618', '#FFFFFF', '#F5C518'] },
+  ...BOOK_THEME_META
   // Earlier layouts, kept in the code but not offered for now:
   // { key: 'grid', label: 'Contemporary', description: 'Numbered project grid, monochrome' },
   // { key: 'timeline', label: 'Spec Sheet', description: 'Chaptered spreads with project meta' },
@@ -42,12 +48,12 @@ export const FONT_META = [
 export const ACCENT_PRESETS = ['#F5C518', '#1F1F1F', '#A8A8A8', '#9AA08B', '#E9E2D8'];
 // Earlier presets: ['#D4F547', '#FFB347', '#7DD3FC', '#FCA5A5', '#C4B5FD', '#000000']
 
-const fontStack = (font) => FONT_META.find((f) => f.key === font)?.stack || FONT_META[0].stack;
-const num = (i) => String(i + 1).padStart(2, '0');
+export const fontStack = (font) => FONT_META.find((f) => f.key === font)?.stack || FONT_META[0].stack;
+export const num = (i) => String(i + 1).padStart(2, '0');
 // Own-account view passes `connections` (populated array); public view passes `connectionCount` (number)
 const connCount = (user) => (typeof user?.connectionCount === 'number' ? user.connectionCount : (user?.connections?.length ?? null));
 
-const Controls = ({ item, editable, onEdit, onDelete, light }) => {
+export const Controls = ({ item, editable, onEdit, onDelete, light }) => {
   if (!editable) return null;
   return (
     <div className="flex gap-2 mt-4" data-pdf-ignore>
@@ -63,7 +69,7 @@ const Controls = ({ item, editable, onEdit, onDelete, light }) => {
   );
 };
 
-const Tags = ({ tags, light }) => {
+export const Tags = ({ tags, light }) => {
   if (!tags?.length) return null;
   return (
     <div className="flex flex-wrap gap-2 mt-3">
@@ -412,7 +418,8 @@ export const BrutalistTemplate = ({ items, user, headline, editable, onEdit, onD
 // empty value in the saved settings means "use the template default".
 export const PALETTE_DEFAULTS = {
   editorial: { background: '#FBF8F3', textColor: '#1C1A17' },
-  studio: { background: '#151618', textColor: '#FFFFFF' }
+  studio: { background: '#151618', textColor: '#FFFFFF' },
+  ...BOOK_PALETTE_DEFAULTS
 };
 
 export const COLOUR_PRESETS = {
@@ -431,23 +438,24 @@ export const COLOUR_PRESETS = {
     { label: 'Forest', background: '#14211B', textColor: '#EEF3EA' },
     { label: 'Espresso', background: '#1F1A17', textColor: '#F5EFE6' },
     { label: 'Plum', background: '#221623', textColor: '#F6EEF4' }
-  ]
+  ],
+  ...BOOK_COLOUR_PRESETS
 };
 
 export const DEFAULT_CLOSING_LINE = "Let's work together.";
 
-const HEX = /^#[0-9a-fA-F]{6}$/;
-const rgba = (hex, a) => {
+export const HEX = /^#[0-9a-fA-F]{6}$/;
+export const rgba = (hex, a) => {
   const n = parseInt(hex.slice(1), 16);
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
 };
-const isLight = (hex) => {
+export const isLight = (hex) => {
   const n = parseInt(hex.slice(1), 16);
   return (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255 > 0.6;
 };
 
 // Everything a template needs from the saved look, with defaults filled in
-const resolveLook = (theme, look = {}) => {
+export const resolveLook = (theme, look = {}) => {
   const base = PALETTE_DEFAULTS[theme];
   const bg = HEX.test(look.background || '') ? look.background : base.background;
   const fg = HEX.test(look.textColor || '') ? look.textColor : base.textColor;
@@ -467,7 +475,7 @@ const resolveLook = (theme, look = {}) => {
 };
 
 // An accent too close to the background is swapped for the text colour
-const visibleAccent = (accent, bg, fg) => {
+export const visibleAccent = (accent, bg, fg) => {
   if (!HEX.test(accent || '')) return fg;
   const d = (a, b) => Math.abs(parseInt(a.slice(1), 16) - parseInt(b.slice(1), 16));
   return isLight(accent) === isLight(bg) && d(accent, bg) < 0x303030 ? fg : accent;
@@ -475,14 +483,14 @@ const visibleAccent = (accent, bg, fg) => {
 
 // Clicking anywhere on a project (except its own buttons and links) opens it in
 // the viewer; a clicked photo opens the viewer at that photo.
-const openOnClick = (onOpen, item) => (onOpen ? (e) => {
+export const openOnClick = (onOpen, item) => (onOpen ? (e) => {
   if (e.target.closest('button, a, input, label')) return;
   const photo = e.target.closest('[data-photo]');
   onOpen(item, photo ? Number(photo.dataset.photo) || 0 : 0);
 } : undefined);
 
 // A project title that opens the viewer (keyboard reachable) when the page allows it
-const OpenTitle = ({ item, onOpen }) => (onOpen ? (
+export const OpenTitle = ({ item, onOpen }) => (onOpen ? (
   <button type="button" onClick={() => onOpen(item)} className="text-left hover:underline focus:underline focus:outline-none">{item.title}</button>
 ) : item.title);
 
@@ -712,6 +720,58 @@ export const StudioTemplate = ({ items, user, headline, editable, onEdit, onDele
   );
 };
 
+// ---------- Products: INR prices, availability, spec helpers (shared with BookTemplates) ----------
+export const UNIT_LABELS = { piece: '/piece', sqft: '/sq ft', sqm: '/sq m', rft: '/running ft', kg: '/kg', bag: '/bag', ton: '/ton', set: '/set' };
+
+const hasNumber = (v) => v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v)) && Number(v) >= 0;
+const short = (x) => String(parseFloat(x.toFixed(2)));
+
+// ₹3.5 Cr, ₹1.2 L, otherwise ₹12,500
+export const formatINR = (value) => {
+  if (!hasNumber(value)) return '';
+  const n = Number(value);
+  if (n >= 1e7) return `₹${short(n / 1e7)} Cr`;
+  if (n >= 1e5) return `₹${short(n / 1e5)} L`;
+  return `₹${n.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+};
+
+// "₹450 – ₹780 / sq ft"; "" when the item has no price
+export const formatPrice = (item) => {
+  const from = hasNumber(item?.priceFrom) ? Number(item.priceFrom) : null;
+  const to = hasNumber(item?.priceTo) ? Number(item.priceTo) : null;
+  if (from === null && to === null) return '';
+  let text;
+  if (from !== null && to !== null && to !== from) text = `${formatINR(Math.min(from, to))} – ${formatINR(Math.max(from, to))}`;
+  else if (from !== null) text = formatINR(from);
+  else text = `Up to ${formatINR(to)}`;
+  const unit = UNIT_LABELS[item?.priceUnit];
+  return unit ? `${text} ${unit.replace('/', '/ ')}` : text;
+};
+
+export const AVAILABILITY_META = {
+  in_stock: { label: 'In stock', color: '#166534', bg: '#DCFCE7' },
+  made_to_order: { label: 'Made to order', color: '#92400E', bg: '#FEF3C7' },
+  out_of_stock: { label: 'Out of stock', color: '#991B1B', bg: '#FEE2E2' }
+};
+
+export const AvailabilityBadge = ({ value, className = '' }) => {
+  const meta = AVAILABILITY_META[value];
+  if (!meta) return null;
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${className}`} style={{ color: meta.color, backgroundColor: meta.bg }} data-testid="availability-badge">
+      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: meta.color }} />{meta.label}
+    </span>
+  );
+};
+
+export const isProduct = (item) => item?.kind === 'product';
+export const specsOf = (item) => (Array.isArray(item?.specs) ? item.specs.filter((s) => s && (s.label || s.value)) : []);
+export const STORY_LABELS = { summary: 'Summary', contribution: 'My contribution', process: 'Process', outcome: 'Outcome' };
+// [{ key, label, text }] for the story parts that have text
+export const storyOf = (item) => Object.keys(STORY_LABELS)
+  .map((key) => ({ key, label: STORY_LABELS[key], text: typeof item?.story?.[key] === 'string' ? item.story[key].trim() : '' }))
+  .filter((s) => s.text);
+
 // ---------- PROJECT VIEWER: one project in full, shown before any editing ----------
 // Wrap it in <DialogContent className={PROJECT_VIEWER_DIALOG_CLASS}>: full screen on
 // phones, a large panel from `sm` up. The dialog's own close button is hidden
@@ -768,11 +828,38 @@ export const ProjectViewer = ({ item, index = 0, total = 1, initialPhoto = 0, on
   };
 
   const date = viewerDate(item.createdAt);
+  const captions = Array.isArray(item.captions) ? item.captions : [];
+  const caption = (captions[current] || '').trim();
+  const product = isProduct(item);
+  const kicker = [...new Set([item.section, item.category].filter(Boolean))].join(' · ');
   const meta = [
     item.location && { icon: FiMapPin, label: 'Location', value: item.location },
+    item.role && { icon: FiUser, label: 'Role', value: item.role },
+    item.year && { icon: FiCalendar, label: 'Year', value: String(item.year) },
     item.projectStatus && { icon: FiFlag, label: 'Status', value: item.projectStatus },
-    date && { icon: FiCalendar, label: 'Added', value: date }
+    !item.year && date && { icon: FiCalendar, label: 'Added', value: date }
   ].filter(Boolean);
+  const story = storyOf(item);
+  const description = (item.description || '').trim();
+  // The description stays unless the story already says the same thing
+  const showDescription = description && !story.some((part) => part.text === description);
+  const price = product ? formatPrice(item) : '';
+  const specs = product ? specsOf(item) : [];
+  const facts = product ? [
+    item.sku && ['SKU', item.sku],
+    item.moq && ['Minimum order', item.moq],
+    item.leadTime && ['Lead time', item.leadTime]
+  ].filter(Boolean) : [];
+  const chipRow = (label, list) => (Array.isArray(list) && list.filter(Boolean).length > 0 ? (
+    <div className="mt-5">
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">{label}</p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {list.filter(Boolean).map((v, n) => (
+          <span key={`${v}-${n}`} className="rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700">{v}</span>
+        ))}
+      </div>
+    </div>
+  ) : null);
   const navBtn = 'inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-black transition hover:bg-gray-50 disabled:opacity-30';
 
   return (
@@ -800,7 +887,7 @@ export const ProjectViewer = ({ item, index = 0, total = 1, initialPhoto = 0, on
           >
             {images.length > 0 ? (
               <a href={images[current]} target="_blank" rel="noreferrer" className="group flex h-full w-full items-center justify-center" title="Open full size" data-testid="project-viewer-image">
-                <img src={images[current]} alt={`${item.title} – photo ${current + 1}`} className="max-h-full max-w-full object-contain" />
+                <img src={images[current]} alt={caption || `${item.title} – photo ${current + 1}`} className="max-h-full max-w-full object-contain" />
                 <span className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white opacity-80 group-hover:opacity-100"><FiMaximize2 className="h-4 w-4" /></span>
               </a>
             ) : (
@@ -817,6 +904,11 @@ export const ProjectViewer = ({ item, index = 0, total = 1, initialPhoto = 0, on
               </>
             )}
           </div>
+          {caption && (
+            <p className="shrink-0 break-words px-4 pt-3 text-sm leading-snug text-white/80 sm:px-5" data-testid="project-viewer-caption">
+              <span className="mr-2 tabular-nums text-white/50">{String(current + 1).padStart(2, '0')}</span>{caption}
+            </p>
+          )}
           {images.length > 1 && (
             <div className="flex shrink-0 gap-2 overflow-x-auto p-3" data-testid="project-viewer-thumbs">
               {images.map((src, n) => (
@@ -825,6 +917,7 @@ export const ProjectViewer = ({ item, index = 0, total = 1, initialPhoto = 0, on
                   type="button"
                   onClick={() => setPhoto(n)}
                   aria-label={`Show photo ${n + 1}`}
+                  title={captions[n] || `Photo ${n + 1}`}
                   aria-current={n === current}
                   className={`h-14 w-20 shrink-0 overflow-hidden rounded-md border-2 transition ${n === current ? 'border-yellow-400' : 'border-transparent opacity-70 hover:opacity-100'}`}
                 >
@@ -836,7 +929,7 @@ export const ProjectViewer = ({ item, index = 0, total = 1, initialPhoto = 0, on
         </section>
 
         <section className="min-w-0 p-5 sm:p-8 lg:overflow-y-auto">
-          {item.category && <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">{item.category}</p>}
+          {kicker && <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">{kicker}</p>}
           <h2 className="mt-1 break-words font-serif text-3xl leading-tight text-black sm:text-4xl" data-testid="project-viewer-title">{item.title}</h2>
           {meta.length > 0 && (
             <dl className="mt-5 space-y-2.5">
@@ -849,8 +942,56 @@ export const ProjectViewer = ({ item, index = 0, total = 1, initialPhoto = 0, on
               ))}
             </dl>
           )}
-          {item.description && (
-            <p className="mt-6 whitespace-pre-wrap break-words leading-relaxed text-gray-800" data-testid="project-viewer-description">{item.description}</p>
+          {product && (price || item.availability) && (
+            <div className="mt-4 flex flex-wrap items-center gap-3" data-testid="project-viewer-price">
+              {price && <p className="text-xl font-semibold text-black">{price}</p>}
+              <AvailabilityBadge value={item.availability} />
+            </div>
+          )}
+          {facts.length > 0 && (
+            <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {facts.map(([label, value]) => (
+                <div key={label} className="min-w-0 rounded-lg border border-gray-200 bg-white px-3 py-2">
+                  <dt className="text-[11px] uppercase tracking-wide text-gray-500">{label}</dt>
+                  <dd className="break-words text-sm font-medium text-gray-900">{value}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+          {showDescription && (
+            <p className="mt-6 whitespace-pre-wrap break-words leading-relaxed text-gray-800" data-testid="project-viewer-description">{description}</p>
+          )}
+          {story.length > 0 && (
+            <div className="mt-6 space-y-5" data-testid="project-viewer-story">
+              {story.map((part) => (
+                <div key={part.key}>
+                  <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">{part.label}</h3>
+                  <p className="mt-1.5 whitespace-pre-wrap break-words leading-relaxed text-gray-800">{part.text}</p>
+                </div>
+              ))}
+            </div>
+          )}
+          {product && chipRow('Finishes', item.finishes)}
+          {product && chipRow('Sizes', item.sizes)}
+          {specs.length > 0 && (
+            <div className="mt-6" data-testid="project-viewer-specs">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-gray-500"><FiLayers className="h-3.5 w-3.5" />Specifications</p>
+              <table className="mt-2 w-full table-fixed border-collapse text-sm">
+                <tbody>
+                  {specs.map((spec, n) => (
+                    <tr key={`${spec.label}-${n}`} className="border-b border-gray-200 align-top">
+                      <th scope="row" className="w-2/5 break-words py-2 pr-3 text-left font-normal text-gray-500">{spec.label}</th>
+                      <td className="break-words py-2 text-gray-900">{spec.value}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {product && item.brochureUrl && (
+            <a href={item.brochureUrl} target="_blank" rel="noreferrer" className="mt-6 inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-black hover:bg-gray-50" data-testid="project-viewer-brochure">
+              <FiDownload className="h-4 w-4" />Download brochure
+            </a>
           )}
           {item.tags?.length > 0 && (
             <div className="mt-6 flex flex-wrap gap-2">
@@ -865,11 +1006,18 @@ export const ProjectViewer = ({ item, index = 0, total = 1, initialPhoto = 0, on
   );
 };
 
-// Only Editorial and Studio are offered. Anyone who picked an earlier layout
-// sees Editorial; the earlier templates stay above, commented out of use.
+// Editorial, Studio and the book templates (BookTemplates.js) are offered. Anyone
+// who picked an earlier layout sees Editorial; the earlier templates stay above, commented out of use.
 export const TEMPLATES = {
   editorial: EditorialTemplate,
-  studio: StudioTemplate
+  studio: StudioTemplate,
+  noir: NoirTemplate,
+  redline: RedlineTemplate,
+  warm: WarmTemplate,
+  manual: ManualTemplate,
+  cleanbook: CleanbookTemplate,
+  creative: CreativeTemplate,
+  catalogue: CatalogueTemplate
   // grid: GridTemplate,
   // timeline: TimelineTemplate,
   // minimal: MinimalTemplate,

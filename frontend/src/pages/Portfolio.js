@@ -9,7 +9,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
-import { FiCamera, FiImage, FiPlus, FiDownload, FiX, FiEye, FiEdit2, FiTrash2, FiArrowUp, FiArrowDown, FiStar, FiShare2 } from 'react-icons/fi';
+import { FiCamera, FiImage, FiPlus, FiDownload, FiX, FiEye, FiEdit2, FiTrash2, FiArrowUp, FiArrowDown, FiStar, FiShare2, FiFileText, FiMonitor, FiSmartphone } from 'react-icons/fi';
 // import { FiZap, FiCheck } from 'react-icons/fi'; // used by the AI tools below (switched off)
 // import { Card, CardContent } from '../components/ui/card';
 // import { Badge } from '../components/ui/badge';
@@ -20,8 +20,13 @@ import { PillFilter } from '../components/profile/ProfileShell';
 import { exportPortfolioPdf } from '../utils/exportPortfolioPdf';
 import { SkeletonCards } from '../components/Skeletons';
 import { getCopy } from '../config/roleDomainCopy';
+import { emptyExtra, extraFromItem, extraToPayload, KindSwitch, StoryFields, ProductFields } from '../components/portfolio/editor/ItemFields';
+import { ModeToggle, TemplateGallery, PageToggles, templatesFor } from '../components/portfolio/editor/TemplateGallery';
+import DeviceFrame from '../components/portfolio/editor/DeviceFrame';
+import PdfImportDialog from '../components/portfolio/editor/PdfImportDialog';
 
-const emptyForm = { title: '', description: '', images: [], category: '', location: '', projectStatus: '', role: '', year: '' };
+const BASE_FIELDS = ['title', 'description', 'images', 'category', 'location', 'projectStatus', 'role', 'year'];
+const emptyForm = { title: '', description: '', images: [], category: '', location: '', projectStatus: '', role: '', year: '', ...emptyExtra };
 // Photos are uploaded a few at a time so any number can be added to a project
 const UPLOAD_BATCH = 5;
 
@@ -56,6 +61,11 @@ const Portfolio = () => {
   // Phones open on the project list (the part you manage); desktops show everything
   const [mobileTab, setMobileTab] = useState('projects');
   const [activeCategory, setActiveCategory] = useState('All');
+  // 'catalogue' turns the portfolio into a product catalogue
+  const [mode, setMode] = useState('portfolio');
+  const [pages, setPages] = useState({ showCv: true, showContact: true });
+  const [previewDevice, setPreviewDevice] = useState('desktop');
+  const [pdfImportOpen, setPdfImportOpen] = useState(false);
   const captureRef = useRef(null);
 
   // AI tools in the portfolio are switched off for now; their code is kept below, commented out.
@@ -81,6 +91,8 @@ const Portfolio = () => {
       const nextLook = { ...emptyLook, ...(response.data.look || {}) };
       setLook(nextLook);
       setSavedLook(nextLook);
+      setMode(response.data.mode === 'catalogue' ? 'catalogue' : 'portfolio');
+      setPages({ showCv: response.data.showCv !== false, showContact: response.data.showContact !== false });
       // setStarterSuggestions(response.data.starterSuggestions || []);
     } catch (error) {
       toast.error('Failed to load your portfolio');
@@ -160,7 +172,8 @@ const Portfolio = () => {
   const openAddDialog = () => {
     setEditingItem(null);
     setViewingId(null);
-    setForm(emptyForm);
+    // Suppliers mostly add products
+    setForm({ ...emptyForm, kind: mode === 'catalogue' ? 'product' : 'project' });
     setDialogMode('form');
     setShowAddDialog(true);
   };
@@ -185,7 +198,8 @@ const Portfolio = () => {
       location: item.location || '',
       projectStatus: item.projectStatus || '',
       role: item.role || '',
-      year: item.year || ''
+      year: item.year || '',
+      ...extraFromItem(item)
     });
     setShowAddDialog(true);
   };
@@ -194,10 +208,11 @@ const Portfolio = () => {
     e.preventDefault();
     if (!form.title.trim()) return toast.error('Give it a title');
 
+    const payload = { ...Object.fromEntries(BASE_FIELDS.map((k) => [k, form[k]])), ...extraToPayload(form) };
     setSaving(true);
     try {
       if (editingItem) {
-        const response = await axios.put(`${API_URL}/api/portfolio/items/${editingItem._id}`, form);
+        const response = await axios.put(`${API_URL}/api/portfolio/items/${editingItem._id}`, payload);
         const updated = response.data?.item;
         if (updated) setItems((list) => list.map((i) => (i._id === updated._id ? updated : i)));
         toast.success('Updated');
@@ -208,7 +223,7 @@ const Portfolio = () => {
         if (!updated) fetchPortfolio();
         return;
       }
-      await axios.post(`${API_URL}/api/portfolio/items`, form);
+      await axios.post(`${API_URL}/api/portfolio/items`, payload);
       toast.success('Added to your portfolio');
       setShowAddDialog(false);
       fetchPortfolio();
@@ -266,11 +281,30 @@ const Portfolio = () => {
     setSavedLook((l) => ({ ...l, [key]: look[key] }));
     saveSetting({ [key]: look[key] }, 'text');
   };
+  // Switching mode keeps the template if it suits the new mode, otherwise picks the first one that does
+  const handleModeChange = (next) => {
+    setMode(next);
+    const available = templatesFor(THEME_META, next);
+    if (available.length && !available.some((t) => t.key === theme)) {
+      setTheme(available[0].key);
+      setLook((l) => ({ ...l, background: '', textColor: '' }));
+      setSavedLook((l) => ({ ...l, background: '', textColor: '' }));
+      saveSetting({ mode: next, theme: available[0].key, background: '', textColor: '' }, 'mode');
+    } else {
+      saveSetting({ mode: next }, 'mode');
+    }
+  };
+  const handlePagesChange = (patch) => {
+    setPages((p) => ({ ...p, ...patch }));
+    saveSetting(patch, 'pages');
+  };
   const handleFontChange = (next) => { setFont(next); saveSetting({ font: next }, 'font'); };
   const handleAccentChange = (next) => { setAccentColor(next); saveSetting({ accentColor: next }, 'colour'); };
 
   const Template = resolveTemplate(theme);
   const existingCategories = [...new Set(items.map((i) => i.category).filter(Boolean))];
+  const sectionSuggestions = [...new Set([...items.map((i) => i.section), ...existingCategories].filter(Boolean))];
+  const isProductForm = form.kind === 'product';
   const visibleItems = activeCategory === 'All' ? items : items.filter((i) => i.category === activeCategory);
   const currentFont = FONT_META.find((f) => f.key === font) || FONT_META[0];
   const firstImage = items.find((i) => i.images?.length)?.images[0];
@@ -292,6 +326,11 @@ const Portfolio = () => {
   const handleExport = async () => {
     setExporting(true);
     try {
+      // The PDF is taken from the desktop layout
+      if (previewDevice !== 'desktop') {
+        setPreviewDevice('desktop');
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      }
       await exportPortfolioPdf(captureRef.current, `${user?.username || 'portfolio'}.pdf`);
     } catch (error) {
       toast.error('Failed to export PDF');
@@ -302,30 +341,17 @@ const Portfolio = () => {
 
   const designPanel = (
     <section className="space-y-6" data-testid="portfolio-design">
-      <div>
-        <p className="mb-3 text-sm font-semibold text-black">Template</p>
-        <div className="grid grid-cols-2 gap-3">
-          {THEME_META.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => handleThemeChange(t.key)}
-              aria-pressed={theme === t.key}
-              className={`overflow-hidden rounded-xl border-2 text-left transition ${theme === t.key ? 'border-yellow-400' : 'border-gray-200 hover:border-gray-300'}`}
-              data-testid={`theme-${t.key}`}
-            >
-              <div className="flex h-24 items-end gap-2 p-2" style={{ backgroundColor: theme === t.key ? background : PALETTE_DEFAULTS[t.key].background }}>
-                <span className="flex-1 text-sm leading-tight" style={{ fontFamily: currentFont.stack, color: theme === t.key ? textColor : PALETTE_DEFAULTS[t.key].textColor }}>Aa</span>
-                {firstImage && <img src={firstImage} alt="" className="h-16 w-16 rounded object-cover" />}
-              </div>
-              <div className="p-2">
-                <p className="text-sm font-semibold text-black">{t.label}</p>
-                <p className="text-xs text-gray-500">{t.description}</p>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
+      <ModeToggle mode={mode} onChange={handleModeChange} />
+
+      <TemplateGallery
+        themes={THEME_META}
+        mode={mode}
+        theme={theme}
+        onSelect={handleThemeChange}
+        paletteDefaults={PALETTE_DEFAULTS}
+        firstImage={firstImage}
+        headingFont={currentFont.stack}
+      />
 
       <div>
         <Label htmlFor="portfolio-font" className="mb-2 block text-sm font-semibold text-black">Heading font</Label>
@@ -460,13 +486,15 @@ const Portfolio = () => {
         })}
         <p className="text-xs text-gray-400">Changes save when you leave a field.</p>
       </div>
+
+      <PageToggles showCv={pages.showCv} showContact={pages.showContact} onChange={handlePagesChange} />
     </section>
   );
 
   const projectsPanel = (
     <section data-testid="portfolio-projects">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-semibold text-black">Projects ({items.length})</p>
+        <p className="text-sm font-semibold text-black">{mode === 'catalogue' ? 'Products & projects' : 'Projects'} ({items.length})</p>
         <button type="button" onClick={openAddDialog} className="inline-flex items-center gap-1 text-sm font-semibold text-black hover:underline">
           <FiPlus /> Add work
         </button>
@@ -488,7 +516,7 @@ const Portfolio = () => {
               )}
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-semibold text-black">{item.title}</span>
-                <span className="block text-xs text-gray-500">{index === 0 ? 'Featured · ' : ''}{item.images?.length || 0} photo{item.images?.length === 1 ? '' : 's'}</span>
+                <span className="block text-xs text-gray-500">{index === 0 ? 'Featured · ' : ''}{item.kind === 'product' ? 'Product · ' : ''}{item.images?.length || 0} photo{item.images?.length === 1 ? '' : 's'}</span>
               </span>
             </button>
             <button type="button" onClick={() => openEditDialog(item)} className="p-2 text-gray-500 hover:text-black" aria-label={`Edit ${item.title}`}><FiEdit2 /></button>
@@ -499,13 +527,47 @@ const Portfolio = () => {
     </section>
   );
 
+  const templateNode = (
+    <Template
+      items={visibleItems}
+      user={user}
+      headline={user?.portfolio?.headline}
+      editable
+      onEdit={openEditDialog}
+      onDelete={handleDelete}
+      onAdd={openAddDialog}
+      onOpen={openViewer}
+      font={font}
+      accentColor={accentColor}
+      look={look}
+      mode={mode}
+    />
+  );
+
   const previewPanel = (
     <section className="min-w-0" data-testid="portfolio-preview">
-      {existingCategories.length > 0 && (
-        <div className="mb-4">
-          <PillFilter options={['All', ...existingCategories]} active={activeCategory} onChange={setActiveCategory} />
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          {existingCategories.length > 0 && (
+            <PillFilter options={['All', ...existingCategories]} active={activeCategory} onChange={setActiveCategory} />
+          )}
         </div>
-      )}
+        <div className="inline-flex shrink-0 rounded-full border border-gray-200 bg-white p-1" role="radiogroup" aria-label="Preview size">
+          {[['desktop', 'Desktop', FiMonitor], ['phone', 'Phone', FiSmartphone]].map(([key, label, Icon]) => (
+            <button
+              key={key}
+              type="button"
+              role="radio"
+              aria-checked={previewDevice === key}
+              onClick={() => setPreviewDevice(key)}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${previewDevice === key ? 'bg-black text-white' : 'text-gray-600 hover:text-black'}`}
+              data-testid={`pf-preview-${key}`}
+            >
+              <Icon className="h-3.5 w-3.5" />{label}
+            </button>
+          ))}
+        </div>
+      </div>
       {loading && <SkeletonCards count={3} />}
       {!loading && items.length === 0 && (
         <div className="rounded-2xl border border-dashed border-gray-300 bg-white py-16 text-center">
@@ -514,25 +576,13 @@ const Portfolio = () => {
           <Button onClick={openAddDialog} className="bg-yellow-400 font-semibold text-black hover:bg-yellow-500">{copy.portfolioAddLabel}</Button>
         </div>
       )}
-      {!loading && items.length > 0 && (
+      {!loading && items.length > 0 && (previewDevice === 'phone' ? (
+        <DeviceFrame>{templateNode}</DeviceFrame>
+      ) : (
         <div className="overflow-hidden rounded-2xl border border-gray-200 shadow-sm">
-          <div ref={captureRef}>
-            <Template
-              items={visibleItems}
-              user={user}
-              headline={user?.portfolio?.headline}
-              editable
-              onEdit={openEditDialog}
-              onDelete={handleDelete}
-              onAdd={openAddDialog}
-              onOpen={openViewer}
-              font={font}
-              accentColor={accentColor}
-              look={look}
-            />
-          </div>
+          <div ref={captureRef}>{templateNode}</div>
         </div>
-      )}
+      ))}
     </section>
   );
 
@@ -554,6 +604,9 @@ const Portfolio = () => {
             )}
             <Button onClick={handleExport} disabled={exporting || items.length === 0} variant="outline" className="flex items-center gap-2">
               <FiDownload />{exporting ? 'Exporting...' : 'Export as PDF'}
+            </Button>
+            <Button onClick={() => setPdfImportOpen(true)} variant="outline" className="flex items-center gap-2" data-testid="pf-import-pdf">
+              <FiFileText />Import from PDF
             </Button>
             {/* AI tool, switched off:
             <Button onClick={() => setShowAutoGenDialog(true)} variant="outline"><FiZap />Auto-generate from photos</Button> */}
@@ -628,8 +681,9 @@ const Portfolio = () => {
             <DialogTitle>{editingItem ? `Edit ${copy.workNoun}` : `Add ${copy.workNoun}`}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSave} className="mt-2 space-y-4">
+            <KindSwitch value={form.kind} onChange={(kind) => setForm((f) => ({ ...f, kind }))} />
             <div>
-              <Label htmlFor="pf-title">Title</Label>
+              <Label htmlFor="pf-title">{isProductForm ? 'Product name' : 'Title'}</Label>
               <Input id="pf-title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -656,13 +710,26 @@ const Portfolio = () => {
               </div>
             </div>
             <div>
+              <Label htmlFor="pf-section">Section</Label>
+              <Input id="pf-section" value={form.section} maxLength={80} onChange={(e) => setForm({ ...form, section: e.target.value })} list="section-suggestions" placeholder={isProductForm ? 'e.g. Floor tiles' : 'e.g. Residential'} data-testid="pf-section" />
+              <datalist id="section-suggestions">
+                {sectionSuggestions.map((c) => <option key={c} value={c} />)}
+              </datalist>
+              <p className="mt-1 text-xs text-gray-400">Items with the same section are shown together under that heading.</p>
+            </div>
+            <div>
               <Label htmlFor="pf-location">Location</Label>
               <Input id="pf-location" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="e.g. Pune, India" />
             </div>
             <div>
               <Label htmlFor="pf-description">Description</Label>
-              <Textarea id="pf-description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="min-h-24" />
+              <Textarea id="pf-description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="min-h-24" placeholder={isProductForm ? 'What it is, where it is used, what makes it good.' : undefined} />
             </div>
+            {isProductForm ? (
+              <ProductFields form={form} setForm={setForm} />
+            ) : (
+              <StoryFields story={form.story} onChange={(story) => setForm((f) => ({ ...f, story }))} />
+            )}
             <div>
               <Label>Photos {form.images.length > 0 && <span className="font-normal text-gray-500">({form.images.length})</span>}</Label>
               <div className="mt-1 flex flex-wrap gap-3">
@@ -683,31 +750,42 @@ const Portfolio = () => {
               {uploadProgress && <p className="mt-2 text-xs text-gray-600">Uploading {uploadProgress.done} of {uploadProgress.total}…</p>}
               {form.images.length > 1 && <p className="mt-2 text-xs text-gray-500">Tap the star on a photo to make it the cover.</p>}
               {form.images.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {form.images.map((url, i) => (
-                    <div key={url} className="relative">
-                      <img src={url} alt="" className={`h-16 w-16 rounded-md object-cover ${i === 0 ? 'ring-2 ring-yellow-400 ring-offset-1' : ''}`} />
-                      {i === 0 ? (
-                        <span className="absolute bottom-0 left-0 right-0 rounded-b-md bg-yellow-400 text-center text-[10px] font-semibold text-black" data-testid="pf-cover-badge">Cover</span>
-                      ) : (
+                    <div key={url} className="min-w-0">
+                      <div className="relative">
+                        <img src={url} alt="" className={`h-24 w-full rounded-md object-cover ${i === 0 ? 'ring-2 ring-yellow-400 ring-offset-1' : ''}`} />
+                        {i === 0 ? (
+                          <span className="absolute bottom-0 left-0 right-0 rounded-b-md bg-yellow-400 text-center text-[10px] font-semibold text-black" data-testid="pf-cover-badge">Cover</span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => makeCover(url)}
+                            className="absolute bottom-1 left-1 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-black shadow hover:bg-yellow-400"
+                            aria-label="Set as cover"
+                            title="Set as cover"
+                          >
+                            <FiStar className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                         <button
                           type="button"
-                          onClick={() => makeCover(url)}
-                          className="absolute bottom-1 left-1 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-black shadow hover:bg-yellow-400"
-                          aria-label="Set as cover"
-                          title="Set as cover"
+                          onClick={() => removePhoto(url)}
+                          className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-black text-white"
+                          aria-label="Remove photo"
                         >
-                          <FiStar className="h-3.5 w-3.5" />
+                          <FiX className="h-3.5 w-3.5" />
                         </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => removePhoto(url)}
-                        className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-black text-white"
-                        aria-label="Remove photo"
-                      >
-                        <FiX className="h-3.5 w-3.5" />
-                      </button>
+                      </div>
+                      <Input
+                        value={form.captions[url] || ''}
+                        maxLength={200}
+                        onChange={(e) => setForm((f) => ({ ...f, captions: { ...f.captions, [url]: e.target.value } }))}
+                        placeholder={i === 0 ? 'e.g. 3D view from the street' : 'e.g. Ground floor plan'}
+                        aria-label={`Caption for photo ${i + 1}`}
+                        className="mt-1.5 h-8 px-2 text-xs"
+                        data-testid={`pf-caption-${i}`}
+                      />
                     </div>
                   ))}
                 </div>
@@ -750,6 +828,13 @@ const Portfolio = () => {
         </DialogContent>
         )}
       </Dialog>
+
+      <PdfImportDialog
+        open={pdfImportOpen}
+        onOpenChange={setPdfImportOpen}
+        kind={mode === 'catalogue' ? 'product' : 'project'}
+        onImported={fetchPortfolio}
+      />
 
       {/* AI tools, switched off: "Auto-generate from photos" dialog, the "Suggest a style for me"
           button, resume-based starter suggestions and the "AI take" feedback dialog. Restore from

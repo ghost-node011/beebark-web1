@@ -296,4 +296,24 @@ const sendNeedsAnswersEmail = async (toEmail, name, jobs) => {
   });
 };
 
-module.exports = { sendOtpEmail, sendWelcomeEmail, sendPasswordResetEmail, sendPasswordResetOtpEmail, sendWaitlistEmail, sendNeedsAnswersEmail, send };
+// --- Quote request from someone browsing a product catalogue ---
+const sendQuoteRequestEmail = async (toEmail, ownerName, { buyer, product, quantity, message, replyTo }) => {
+  const esc = (v) => String(v || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const firstName = (ownerName || '').split(' ')[0] || 'there';
+  const row = (label, value) => (value ? `<tr><td style="padding:4px 16px 4px 0;color:${BRAND.muted};font-size:14px;">${label}</td><td style="padding:4px 0;font-size:14px;color:${BRAND.ink};">${esc(value)}</td></tr>` : '');
+  const profileUrl = buyer.username ? `${APP_URL()}/profile/${encodeURIComponent(buyer.username)}` : APP_URL();
+  const body = `
+    <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:${BRAND.ink};">Hi ${esc(firstName)}, ${esc(buyer.name)} saw your catalogue on BeeBark and would like a quote.</p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 16px 0;">
+      ${row('Product', product)}${row('Quantity', quantity)}${row('From', buyer.name)}${row('Email', replyTo)}
+    </table>
+    ${message ? `<p style="margin:0 0 16px 0;padding:12px 14px;background:#f6f5f2;border-radius:10px;font-size:15px;line-height:1.6;color:${BRAND.ink};white-space:pre-line;">${esc(message)}</p>` : ''}
+    ${button('See their profile', profileUrl)}`;
+  await send({
+    to: toEmail,
+    subject: `Quote request${product ? ` for ${product}` : ''} from ${buyer.name}`,
+    html: layout({ preheader: `${buyer.name} would like a quote`, heading: 'New quote request', body, footerNote: 'Reply to this email or connect with them on BeeBark to chat.' })
+  });
+};
+
+module.exports = { sendOtpEmail, sendWelcomeEmail, sendPasswordResetEmail, sendPasswordResetOtpEmail, sendWaitlistEmail, sendNeedsAnswersEmail, sendQuoteRequestEmail, send };

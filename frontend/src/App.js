@@ -15,7 +15,7 @@ installAxiosProgress();
 
 const {
   Login, Register, VerifyEmail, Onboarding, ForgotPassword, LinkedInCallback, PrivacyPolicy, PhoneLogin,
-  Dashboard, Feed, Portfolio, PublicPortfolio, Profile, PublicProfile, Connections, Chat, Jobs, News,
+  Dashboard, Feed, Portfolio, PublicPortfolio, PortfolioCv, Profile, PublicProfile, Connections, Chat, Jobs, News,
   Official, Meetings, MeetingRoom, Settings, Notifications, CalendarPage, Listings, ListingDetail, Search
 } = Pages;
 
@@ -74,6 +74,7 @@ function App() {
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/portfolio/:username" element={<PublicPortfolio />} />
+            <Route path="/portfolio/:username/cv" element={<PortfolioCv />} />
             {/* Public profile anyone can open (shared on LinkedIn etc.); signed-in people get the in-app one */}
             <Route path="/in/:username" element={<PublicProfile open />} />
             <Route element={<PrivateRoute />}>

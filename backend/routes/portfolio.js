@@ -4,6 +4,9 @@ const router = express.Router();
 const User = require('../models/User');
 const PortfolioItem = require('../models/PortfolioItem');
 const auth = require('../middleware/auth');
+const Notification = require('../models/Notification');
+const { isBlockedBetween } = require('../utils/userRelations');
+const { sendQuoteRequestEmail } = require('../utils/email');
 const { analyzePortfolioItem, suggestPortfolioStyle } = require('../utils/portfolioAdvisor');
 const { draftPortfolioFromImages } = require('../utils/portfolioAutoGenerator');
 
@@ -25,7 +28,76 @@ const buildStarterSuggestions = (user) => {
 
 const ITEM_ORDER = { order: 1, createdAt: -1 };
 
+// --- Extra item fields (captions, story, product details) -------------------
+const PRICE_UNITS = ['piece', 'sqft', 'sqm', 'rft', 'kg', 'bag', 'ton', 'set', ''];
+const AVAILABILITY = ['in_stock', 'made_to_order', 'out_of_stock', ''];
+const STORY_KEYS = ['summary', 'contribution', 'process', 'outcome'];
+const text = (value, max) => (typeof value === 'string' || typeof value === 'number' ? String(value).trim().slice(0, max) : '');
+const textList = (value, maxItems, maxLen) => (Array.isArray(value) ? value : [])
+  .map((v) => text(v, maxLen)).filter(Boolean).slice(0, maxItems);
+const price = (value) => {
+  if (value === null || value === undefined || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? Math.min(Math.round(n * 100) / 100, 1e10) : null;
+};
+const isFileUrl = (url) => /^https:\/\/\S+$/i.test(url) || /^\/uploads\/[\w.\-]+$/.test(url);
+// Captions follow the photos: never more captions than photos, trailing blanks dropped
+const captionsFor = (captions, images) => {
+  const list = (Array.isArray(captions) ? captions : []).slice(0, (images || []).length).map((c) => text(c, 200));
+  while (list.length && !list[list.length - 1]) list.pop();
+  return list;
+};
+
+// Picks the extra fields present in `body`, validated and clamped.
+// Returns { fields } or { error }. `images` is the item's final photo list.
+const extraFields = (body, images) => {
+  const fields = {};
+  if (body.kind !== undefined) fields.kind = body.kind === 'product' ? 'product' : 'project';
+  if (body.captions !== undefined) fields.captions = captionsFor(body.captions, images);
+  if (body.section !== undefined) fields.section = text(body.section, 80);
+  if (body.story !== undefined) {
+    const story = body.story && typeof body.story === 'object' ? body.story : {};
+    fields.story = Object.fromEntries(STORY_KEYS.map((k) => [k, text(story[k], 2000)]));
+  }
+  if (body.sku !== undefined) fields.sku = text(body.sku, 60);
+  if (body.specs !== undefined) {
+    fields.specs = (Array.isArray(body.specs) ? body.specs : [])
+      .map((s) => ({ label: text(s?.label, 80), value: text(s?.value, 80) }))
+      .filter((s) => s.label || s.value)
+      .slice(0, 20);
+  }
+  if (body.finishes !== undefined) fields.finishes = textList(body.finishes, 30, 60);
+  if (body.sizes !== undefined) fields.sizes = textList(body.sizes, 30, 60);
+  if (body.priceFrom !== undefined) fields.priceFrom = price(body.priceFrom);
+  if (body.priceTo !== undefined) fields.priceTo = price(body.priceTo);
+  if (fields.priceFrom != null && fields.priceTo != null && fields.priceTo < fields.priceFrom) {
+    [fields.priceFrom, fields.priceTo] = [fields.priceTo, fields.priceFrom];
+  }
+  if (body.priceUnit !== undefined) {
+    if (!PRICE_UNITS.includes(body.priceUnit || '')) return { error: 'Invalid price unit' };
+    fields.priceUnit = body.priceUnit || '';
+  }
+  if (body.moq !== undefined) fields.moq = text(body.moq, 60);
+  if (body.leadTime !== undefined) fields.leadTime = text(body.leadTime, 60);
+  if (body.availability !== undefined) {
+    if (!AVAILABILITY.includes(body.availability || '')) return { error: 'Invalid availability' };
+    fields.availability = body.availability || '';
+  }
+  if (body.brochureUrl !== undefined) {
+    const url = text(body.brochureUrl, 1000);
+    if (url && !isFileUrl(url)) return { error: 'Brochure must be an uploaded file link' };
+    fields.brochureUrl = url;
+  }
+  return { fields };
+};
+const imageList = (images) => (Array.isArray(images) ? images.filter((u) => typeof u === 'string' && u) : []);
+
 const LOOK_TEXT_LIMITS = { tagline: 160, aboutText: 1200, closingLine: 120, contactInfo: 160 };
+const settingsOf = (user) => ({
+  mode: user.portfolio?.mode === 'catalogue' ? 'catalogue' : 'portfolio',
+  showCv: user.portfolio?.showCv !== false,
+  showContact: user.portfolio?.showContact !== false
+});
 const lookOf = (user) => {
   const p = user.portfolio || {};
   return {
@@ -53,6 +125,7 @@ router.get('/me', auth, async (req, res) => {
       font: user.portfolio?.font || 'playfair',
       accentColor: user.portfolio?.accentColor || '#D4F547',
       look: lookOf(user),
+      ...settingsOf(user),
       starterSuggestions
     });
   } catch (error) {
@@ -94,10 +167,45 @@ router.post('/auto-generate', auth, async (req, res) => {
   }
 });
 
+// Request a quote for a catalogue product. Buyers usually aren't connected to the
+// supplier, so this reaches them as a notification and an email instead of a chat.
+router.post('/:username/enquiry', auth, async (req, res) => {
+  try {
+    const owner = await User.findOne({ username: req.params.username })
+      .select('name email username blockedUsers accountStatus');
+    if (!owner || owner.accountStatus === 'deactivated') return res.status(404).json({ error: 'Not found' });
+    if (String(owner._id) === String(req.userId)) return res.status(400).json({ error: 'This is your own catalogue' });
+    const buyer = await User.findById(req.userId).select('name username email blockedUsers');
+    if (!buyer || isBlockedBetween(buyer, owner)) return res.status(403).json({ error: "You can't contact this business" });
+
+    const message = text(req.body.message, 2000);
+    const quantity = text(req.body.quantity, 120);
+    let item = null;
+    if (req.body.itemId && mongoose.isValidObjectId(req.body.itemId)) {
+      item = await PortfolioItem.findOne({ _id: req.body.itemId, user: owner._id }).select('title sku').lean();
+    }
+    if (!message && !item) return res.status(400).json({ error: 'Add a message' });
+
+    // At most 5 requests a day to the same business
+    const recent = await Notification.countDocuments({ recipient: owner._id, actor: buyer._id, type: 'quote_request', createdAt: { $gt: new Date(Date.now() - 86400000) } });
+    if (recent >= 5) return res.status(429).json({ error: "You've sent several requests today. Please wait for a reply." });
+
+    const product = item ? `${item.title}${item.sku ? ` (SKU ${item.sku})` : ''}` : '';
+    await Notification.create({ recipient: owner._id, actor: buyer._id, type: 'quote_request', meta: { itemTitle: product, quantity, message: message.slice(0, 300) } });
+    if (owner.email) {
+      sendQuoteRequestEmail(owner.email, owner.name, { buyer: { name: buyer.name, username: buyer.username }, product, quantity, message, replyTo: buyer.email })
+        .catch((e) => console.error('Quote request email failed:', e.message));
+    }
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Could not send your request' });
+  }
+});
+
 router.get('/:username', async (req, res) => {
   try {
     const user = await User.findOne({ username: req.params.username })
-      .select('name username profilePic bio portfolio role skills experience location connections')
+      .select('name username profilePic bio portfolio role skills experience education languages business headline contact location connections')
       .populate('connections', '_id');
     if (!user) return res.status(404).json({ error: 'Portfolio not found' });
 
@@ -122,6 +230,20 @@ router.get('/:username', async (req, res) => {
         location: user.location,
         skills: user.skills || [],
         experience: user.experience || [],
+        headline: user.headline || '',
+        education: user.education || [],
+        languages: user.languages || [],
+        business: user.business || {},
+        // Contact details only when the owner shows them to everyone
+        ...(user.contact?.visibility === 'everyone' ? {
+          contact: {
+            email: user.contact.email || '',
+            phone: user.contact.phone || '',
+            whatsapp: user.contact.whatsapp || '',
+            website: user.contact.website || '',
+            address: user.contact.address || ''
+          }
+        } : {}),
         connectionCount: user.connections?.length || 0
       },
       items,
@@ -129,7 +251,8 @@ router.get('/:username', async (req, res) => {
       headline: user.portfolio?.headline || '',
       font: user.portfolio?.font || 'playfair',
       accentColor: user.portfolio?.accentColor || '#D4F547',
-      look: lookOf(user)
+      look: lookOf(user),
+      ...settingsOf(user)
     });
   } catch (error) {
     res.status(500).json({ error: 'Failed to load portfolio', message: error.message });
@@ -149,13 +272,17 @@ router.post('/items', auth, async (req, res) => {
 
     // New work goes to the top of the owner's chosen order
     const first = await PortfolioItem.findOne({ user: req.userId }).sort(ITEM_ORDER).select('order');
+    const photos = imageList(images);
+    const extra = extraFields(req.body, photos);
+    if (extra.error) return res.status(400).json({ error: extra.error });
 
     const item = new PortfolioItem({
+      ...extra.fields,
       user: req.userId,
       order: first ? first.order - 1 : 0,
       title: title.trim(),
       description: description || '',
-      images: Array.isArray(images) ? images : [],
+      images: photos,
       tags: Array.isArray(tags) && tags.length > 0 ? tags : (review?.suggestedTags || []),
       category: category || '',
       location: location || '',
@@ -215,17 +342,29 @@ router.post('/items/bulk', auth, async (req, res) => {
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: 'At least one item is required' });
     }
-    const docs = items
-      .filter((i) => i?.title?.trim())
-      .slice(0, 10)
-      .map((i) => ({
+    const valid = items.filter((i) => typeof i?.title === 'string' && i.title.trim()).slice(0, 10);
+    // New work goes to the top, keeping the order it was sent in
+    const first = await PortfolioItem.findOne({ user: req.userId }).sort(ITEM_ORDER).select('order');
+    const top = first ? first.order : 0;
+    const docs = [];
+    for (const [index, i] of valid.entries()) {
+      const photos = imageList(i.images);
+      const extra = extraFields(i, photos);
+      if (extra.error) return res.status(400).json({ error: extra.error });
+      docs.push({
+        ...extra.fields,
         user: req.userId,
-        title: i.title.trim(),
-        description: i.description || '',
-        images: Array.isArray(i.images) ? i.images : [],
+        order: top - valid.length + index,
+        title: i.title.trim().slice(0, 200),
+        description: typeof i.description === 'string' ? i.description : '',
+        images: photos,
         tags: Array.isArray(i.tags) ? i.tags : [],
-        category: i.category || ''
-      }));
+        category: i.category || '',
+        location: typeof i.location === 'string' ? i.location : '',
+        role: text(i.role, 80),
+        year: /^\d{4}$/.test(String(i.year || '')) ? String(i.year) : ''
+      });
+    }
     const saved = await PortfolioItem.insertMany(docs);
     res.status(201).json({ message: `Added ${saved.length} to your portfolio`, items: saved });
   } catch (error) {
@@ -245,9 +384,14 @@ router.put('/items/:id', auth, async (req, res) => {
     if (role !== undefined) item.role = String(role).trim().slice(0, 80);
     if (year !== undefined) item.year = /^\d{4}$/.test(String(year)) ? String(year) : '';
     if (description !== undefined) item.description = description;
-    if (images !== undefined) item.images = images;
     if (tags !== undefined) item.tags = tags;
     if (category !== undefined) item.category = category;
+    if (images !== undefined) item.images = imageList(images);
+    const extra = extraFields(req.body, item.images);
+    if (extra.error) return res.status(400).json({ error: extra.error });
+    Object.assign(item, extra.fields);
+    // Removing photos also removes their captions
+    if (extra.fields.captions === undefined && images !== undefined) item.captions = captionsFor(item.captions, item.images);
     await item.save();
 
     res.json({ message: 'Updated', item });
@@ -271,7 +415,8 @@ router.put('/theme', auth, async (req, res) => {
   try {
     const { theme, headline, font, accentColor, background, textColor, bodyFont } = req.body;
     // Only Editorial and Studio are offered; earlier layouts remain valid for existing data
-    const validThemes = ['editorial', 'studio', 'grid', 'timeline', 'minimal', 'magazine', 'stack', 'mosaic', 'index', 'brutalist'];
+    const validThemes = ['editorial', 'studio', 'grid', 'timeline', 'minimal', 'magazine', 'stack', 'mosaic', 'index', 'brutalist',
+      'noir', 'redline', 'warm', 'manual', 'cleanbook', 'creative', 'catalogue'];
     const validFonts = ['playfair', 'space', 'mono', 'classic', 'inter', 'dmserif', 'cormorant', 'bodoni', 'fraunces', 'archivo', 'bigshoulders', 'oswald', 'bebas', 'plexmono', 'plexsans', 'poppins', 'manrope', 'syne', 'unbounded', 'spectral'];
     if (theme && !validThemes.includes(theme)) {
       return res.status(400).json({ error: 'Invalid theme' });
@@ -287,6 +432,14 @@ router.put('/theme', auth, async (req, res) => {
     for (const [key, value] of Object.entries({ background, textColor })) {
       if (value !== undefined && value !== '' && !/^#[0-9a-fA-F]{6}$/.test(value)) {
         return res.status(400).json({ error: `${key} must be a hex color like #RRGGBB` });
+      }
+    }
+    if (req.body.mode !== undefined && !['portfolio', 'catalogue'].includes(req.body.mode)) {
+      return res.status(400).json({ error: 'mode must be portfolio or catalogue' });
+    }
+    for (const key of ['showCv', 'showContact']) {
+      if (req.body[key] !== undefined && typeof req.body[key] !== 'boolean') {
+        return res.status(400).json({ error: `${key} must be true or false` });
       }
     }
     if (bodyFont !== undefined && bodyFont !== '' && !validFonts.includes(bodyFont)) {
@@ -307,9 +460,12 @@ router.put('/theme', auth, async (req, res) => {
     if (headline !== undefined) update['portfolio.headline'] = headline;
     if (font) update['portfolio.font'] = font;
     if (accentColor) update['portfolio.accentColor'] = accentColor;
+    for (const key of ['mode', 'showCv', 'showContact']) {
+      if (req.body[key] !== undefined) update[`portfolio.${key}`] = req.body[key];
+    }
 
     const user = await User.findByIdAndUpdate(req.userId, update, { new: true });
-    res.json({ message: 'Portfolio settings updated', portfolio: user.portfolio, look: lookOf(user) });
+    res.json({ message: 'Portfolio settings updated', portfolio: user.portfolio, look: lookOf(user), ...settingsOf(user) });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update portfolio settings', message: error.message });
   }

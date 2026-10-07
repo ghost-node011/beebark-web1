@@ -44,7 +44,37 @@ const portfolioItemSchema = new mongoose.Schema({
   aiFeedback: {
     type: String,
     default: ''
-  }
+  },
+  // 'product' items make up a supplier's catalogue; everything else is a project
+  kind: { type: String, enum: ['project', 'product'], default: 'project' },
+  // One caption per photo, same order as `images` (may be shorter)
+  captions: [{ type: String }],
+  // Optional heading the item is grouped under ("Residential", "Tiles")
+  section: { type: String, default: '', trim: true },
+  // Guided write-up of a project
+  story: {
+    summary: { type: String, default: '', maxlength: 2000 },
+    contribution: { type: String, default: '', maxlength: 2000 },
+    process: { type: String, default: '', maxlength: 2000 },
+    outcome: { type: String, default: '', maxlength: 2000 }
+  },
+  // Product details (kind: 'product')
+  sku: { type: String, default: '', trim: true },
+  specs: [{
+    _id: false,
+    label: { type: String, default: '' },
+    value: { type: String, default: '' }
+  }],
+  finishes: [{ type: String }],
+  sizes: [{ type: String }],
+  priceFrom: { type: Number, default: null },
+  priceTo: { type: Number, default: null },
+  priceUnit: { type: String, enum: ['piece', 'sqft', 'sqm', 'rft', 'kg', 'bag', 'ton', 'set', ''], default: '' },
+  moq: { type: String, default: '' },
+  leadTime: { type: String, default: '' },
+  availability: { type: String, enum: ['in_stock', 'made_to_order', 'out_of_stock', ''], default: '' },
+  // Product brochure PDF (Cloudinary/https or /uploads URL)
+  brochureUrl: { type: String, default: '' }
 }, {
   timestamps: true
 });

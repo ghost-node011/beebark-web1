@@ -7,14 +7,14 @@ import TopBar from '../components/TopBar';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { FiBell, FiUserPlus, FiUserCheck, FiCheck, FiTrash2, FiRss } from 'react-icons/fi';
+import { FiBell, FiUserPlus, FiUserCheck, FiCheck, FiTrash2, FiRss, FiTag } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config/api';
 import { SkeletonRows } from '../components/Skeletons';
 import { notificationText, timeAgo } from '../components/NotificationBell';
 import FollowButton from '../components/FollowButton';
 
-const ICONS = { connection_request: FiUserPlus, connection_accepted: FiUserCheck, follow: FiRss };
+const ICONS = { connection_request: FiUserPlus, connection_accepted: FiUserCheck, follow: FiRss, quote_request: FiTag };
 
 const groupOf = (d) => {
   const date = new Date(d);
