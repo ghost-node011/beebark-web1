@@ -11,7 +11,7 @@ import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import { FiUser, FiLock, FiSlash, FiLogOut, FiPauseCircle, FiTrash2, FiChevronRight, FiBell, FiCalendar } from 'react-icons/fi';
+import { FiUser, FiLock, FiSlash, FiLogOut, FiPauseCircle, FiTrash2, FiChevronRight, FiBell, FiCalendar, FiBriefcase } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { SkeletonRows } from '../components/Skeletons';
 import { API_URL } from '../config/api';
@@ -48,6 +48,19 @@ const Settings = () => {
       .then((res) => setBlocked(res.data.blocked || []))
       .catch(() => setBlocked([]));
   }, []);
+
+  const setJobsView = async (value) => {
+    const previous = user?.jobsView === 'list' ? 'list' : 'swipe';
+    if (value === previous) return;
+    setUser((u) => ({ ...u, jobsView: value }));
+    try {
+      await axios.put(`${API_URL}/api/profile/update`, { jobsView: value });
+      toast.success(value === 'list' ? 'Jobs for you will show as a list' : 'Jobs for you will show as swipe cards');
+    } catch {
+      setUser((u) => ({ ...u, jobsView: previous }));
+      toast.error('Could not save this setting');
+    }
+  };
 
   const togglePrivacy = async (field, value) => {
     setUser((u) => ({ ...u, [field]: value }));
@@ -147,6 +160,27 @@ const Settings = () => {
                 </div>
               ))}
               <p className="text-xs text-gray-400">Your résumé is always private.</p>
+            </div>
+          </Section>
+
+          <Section icon={FiBriefcase} title="Jobs">
+            <p className="text-sm font-medium text-black">How "Jobs for you" looks</p>
+            <p className="text-xs text-gray-500 mb-3">Swipe through one job at a time, or see them all in a list like All jobs.</p>
+            <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Jobs for you view">
+              {[
+                { value: 'swipe', label: 'Swipe cards', hint: 'Right to apply, left to pass' },
+                { value: 'list', label: 'List', hint: 'Scroll and open any job' }
+              ].map((o) => {
+                const active = (user?.jobsView === 'list' ? 'list' : 'swipe') === o.value;
+                return (
+                  <button key={o.value} type="button" role="radio" aria-checked={active} onClick={() => setJobsView(o.value)}
+                    data-testid={`jobs-view-${o.value}`}
+                    className={`rounded-xl border px-3 py-2.5 text-left transition ${active ? 'border-black bg-black text-white' : 'border-gray-200 bg-white text-black hover:border-gray-300'}`}>
+                    <span className="block text-sm font-medium">{o.label}</span>
+                    <span className={`block text-xs ${active ? 'text-white/70' : 'text-gray-500'}`}>{o.hint}</span>
+                  </button>
+                );
+              })}
             </div>
           </Section>
 

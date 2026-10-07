@@ -37,6 +37,7 @@ import ApplicantsDialog from '../components/jobs/ApplicantsDialog';
 import SavedAnswersDialog from '../components/jobs/SavedAnswersDialog';
 import PendingApplications from '../components/jobs/PendingApplications';
 import SwipeDeck from '../components/jobs/SwipeDeck';
+import { SkeletonRows } from '../components/Skeletons';
 import ScreeningQuestionsEditor, { questionsError, questionsPayload } from '../components/jobs/ScreeningQuestionsEditor';
 
 // Roles that can post; students can't (the backend also allows anyone with a "hire" intent)
@@ -287,7 +288,7 @@ const Jobs = () => {
   const [search, setSearch] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();
   const isDesktop = useIsDesktop();
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const copy = getCopy(user);
   const myId = user?.id || user?._id;
   const isRecruiter = user?.role === 'recruiter';
@@ -421,8 +422,15 @@ const Jobs = () => {
   }, [tab, jobs, applicationJobs, myJobs, search]);
 
   const isListTab = LIST_TABS.includes(tab);
+  // "Jobs for you" as a plain list instead of the swipe deck (Settings → Jobs)
+  const forYouList = tab === 'foryou' && user?.jobsView === 'list';
+  const forYouJobs = useMemo(
+    () => (forYouList ? recommendedJobs.filter((j) => matches(j, search.trim())) : []),
+    [forYouList, recommendedJobs, search]
+  );
   // Desktop always shows something on the right; phones show the list until a job is tapped
-  const effectiveId = deepLinkId || (isDesktop && isListTab ? listForTab[0]?._id : null);
+  const effectiveId = deepLinkId || (isDesktop && isListTab ? listForTab[0]?._id : null)
+    || (isDesktop && forYouList ? forYouJobs[0]?._id : null);
 
   const listJob = useMemo(() => {
     if (!effectiveId) return null;
@@ -464,16 +472,28 @@ const Jobs = () => {
   const openJob = useCallback((job) => {
     const id = job?._id || job?.id;
     if (!id) return;
-    setSearchParams((p) => { p.set('job', id); return p; }, { replace: true });
+    // Pin the current tab, so opening a job from "Jobs for you" doesn't fall back to All jobs
+    setSearchParams((p) => { if (!p.get('tab')) p.set('tab', tab); p.set('job', id); return p; }, { replace: true });
     if (!window.matchMedia?.('(min-width: 1024px)').matches) window.scrollTo({ top: 0 });
-  }, [setSearchParams]);
+  }, [setSearchParams, tab]);
+
+  const toggleJobsView = async () => {
+    const next = user?.jobsView === 'list' ? 'swipe' : 'list';
+    setUser((u) => ({ ...u, jobsView: next }));
+    try {
+      await axios.put(`${API_URL}/api/profile/update`, { jobsView: next }, { silent: true });
+    } catch {
+      setUser((u) => ({ ...u, jobsView: next === 'list' ? 'swipe' : 'list' }));
+      toast.error('Could not save this setting');
+    }
+  };
 
   const closeJob = useCallback(() => {
     setSearchParams((p) => { p.delete('job'); return p; }, { replace: true });
   }, [setSearchParams]);
 
   // A job link from another tab (e.g. a shared link while on "Jobs for you") opens in a dialog there
-  const detailInDialog = !isListTab && !!deepLinkId;
+  const detailInDialog = !isListTab && !forYouList && !!deepLinkId;
 
   const handleUploadResume = async (e) => {
     const file = e.target.files[0];
@@ -751,7 +771,7 @@ const Jobs = () => {
             {(!isRecruiter || pending.length > 0) && tabButton('pending', <>Needs your answers{pending.length > 0 && countPill(pending.length, true)}</>, { 'data-testid': 'tab-pending' })}
             {showPostedTab && tabButton('posted', <>Posted{countPill(myJobs.length, tab === 'posted')}</>, { 'data-testid': 'posted-jobs-tab' })}
           </div>
-          {tab !== 'foryou' && (
+          {(tab !== 'foryou' || forYouList) && (
             <div className="relative lg:w-72">
               <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7a7067]" />
               <Input
@@ -769,13 +789,11 @@ const Jobs = () => {
         {/* Jobs for you: swipe deck */}
         {tab === 'foryou' && (
           <>
-            {/*
-              Previous list view for Jobs for you — kept so it can be restored
-              (render it instead of <SwipeDeck /> below):
-
-              <div className="lg:grid lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:gap-6 lg:items-start">
-                <div className={`${deepLinkId ? 'hidden lg:block' : ''} space-y-3 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-1`}>
-                  {recommendedJobs.filter((j) => matches(j, search.trim())).map((job) => (
+            {forYouList ? (
+              <div className="lg:grid lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:gap-6 lg:items-start" data-testid="foryou-list">
+                <div className={`${deepLinkId ? 'hidden lg:block' : ''} space-y-3 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-1 lg:pb-4`}>
+                  {recLoading && recommendedJobs.length === 0 && <SkeletonRows rows={4} />}
+                  {forYouJobs.map((job) => (
                     <JobListItem
                       key={job._id}
                       job={job}
@@ -786,9 +804,9 @@ const Jobs = () => {
                       onReport={setReportJob}
                     />
                   ))}
-                  {recommendedJobs.length === 0 && (
+                  {!recLoading && forYouJobs.length === 0 && (
                     <div className="rounded-2xl border border-[#ebe6df] bg-white text-center py-12 px-4 text-[#7a7067]">
-                      Upload your résumé to get AI-powered job recommendations
+                      {search.trim() ? 'No matching jobs' : 'No recommendations yet'}
                     </div>
                   )}
                 </div>
@@ -796,16 +814,24 @@ const Jobs = () => {
                   <JobDetail {...detailProps} onBack={closeJob} />
                 </div>
               </div>
-            */}
-            <SwipeDeck
-              jobs={recommendedJobs}
-              appliedIds={appliedJobIds}
-              loading={recLoading}
-              onApplied={handleApplied}
-              onDetails={openJob}
-              onBrowseAll={() => setTab('all')}
-              paused={!!deepLinkId || !!applyJob}
-            />
+            ) : (
+              <SwipeDeck
+                jobs={recommendedJobs}
+                appliedIds={appliedJobIds}
+                loading={recLoading}
+                onApplied={handleApplied}
+                onDetails={openJob}
+                onBrowseAll={() => setTab('all')}
+                paused={!!deepLinkId || !!applyJob}
+              />
+            )}
+            <p className="text-center text-xs text-[#7a7067] mt-3">
+              {forYouList ? 'Prefer swiping?' : 'Prefer a list?'}{' '}
+              <button type="button" onClick={toggleJobsView} className="font-medium text-black underline underline-offset-2" data-testid="jobs-view-toggle">
+                {forYouList ? 'Switch to swipe view' : 'Switch to list view'}
+              </button>
+              <span className="hidden sm:inline"> · also in Settings</span>
+            </p>
             {!recLoading && recommendedJobs.length === 0 && !resumeReview && !isRecruiter && (
               <p className="text-center text-sm text-[#7a7067] mt-4">Tip: upload your résumé above to get AI-matched jobs here.</p>
             )}

@@ -153,6 +153,7 @@ router.get('/me', auth, async (req, res) => {
       galleryPublic: user.settings?.galleryPublic ?? true,
       activityPublic: user.settings?.activityPublic || false,
       readReceipts: user.settings?.readReceipts !== false,
+      jobsView: user.settings?.jobsView === 'list' ? 'list' : 'swipe',
       publicProfile: user.settings?.publicProfile !== false,
       followerCount: (user.followers || []).length,
       followingCount: (user.following || []).length,
@@ -518,7 +519,7 @@ router.get('/:userId', auth, async (req, res) => {
 
 router.put('/update', auth, async (req, res) => {
   try {
-    const { name, bio, pronouns, profilePic, coverPhoto, skills, experience, education, location, intent, industries, specialization, projectTypeFocus, markets, analyticsPublic, galleryPublic, activityPublic, readReceipts, publicProfile, careerStage, headline, contact, socialLinks, languages, availability, business, associatedProfessionals } = req.body;
+    const { name, bio, pronouns, profilePic, coverPhoto, skills, experience, education, location, intent, industries, specialization, projectTypeFocus, markets, analyticsPublic, galleryPublic, activityPublic, readReceipts, jobsView, publicProfile, careerStage, headline, contact, socialLinks, languages, availability, business, associatedProfessionals } = req.body;
     const VALID_INTENT = ['learn', 'network', 'hire', 'get_hired'];
     const VALID_INDUSTRY = ['architecture', 'interiors', 'construction', 'real_estate', 'related'];
     const asTagList = (arr) => arr.map((s) => String(s).trim()).filter(Boolean).slice(0, 20);
@@ -549,6 +550,7 @@ router.put('/update', auth, async (req, res) => {
     if (typeof galleryPublic === 'boolean') updateData['settings.galleryPublic'] = galleryPublic;
     if (typeof activityPublic === 'boolean') updateData['settings.activityPublic'] = activityPublic;
     if (typeof readReceipts === 'boolean') updateData['settings.readReceipts'] = readReceipts;
+    if (jobsView === 'swipe' || jobsView === 'list') updateData['settings.jobsView'] = jobsView;
     if (typeof publicProfile === 'boolean') updateData['settings.publicProfile'] = publicProfile;
 
     if (Array.isArray(availability) || Array.isArray(associatedProfessionals)) {
