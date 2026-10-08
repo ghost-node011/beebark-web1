@@ -16,7 +16,7 @@ installAxiosProgress();
 const {
   Login, Register, VerifyEmail, Onboarding, ForgotPassword, LinkedInCallback, PrivacyPolicy, PhoneLogin,
   Dashboard, Feed, Portfolio, PublicPortfolio, PortfolioCv, Profile, PublicProfile, Connections, Chat, Jobs, News,
-  Official, Meetings, MeetingRoom, Settings, Notifications, CalendarPage, Listings, ListingDetail, Search
+  Official, Meetings, MeetingRoom, Settings, Notifications, Listings, ListingDetail, Search
 } = Pages;
 
 // Redirects replace the current history entry, so Back never bounces into a redirect loop
@@ -91,7 +91,6 @@ function App() {
               <Route path="/meetings" element={<Meetings />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/notifications" element={<Notifications />} />
-              <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/listings" element={<Listings />} />
               <Route path="/listing/:id" element={<ListingDetail />} />
               <Route path="/search" element={<Search />} />

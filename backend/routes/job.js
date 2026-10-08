@@ -53,6 +53,10 @@ const jobFieldsFromBody = (body = {}, partial = false) => {
   if (has('company')) out.company = clip(body.company, 150);
   if (has('location')) out.location = clip(body.location, 150);
   if (has('salary')) out.salary = clip(body.salary, 80);
+  if (out.salary) {
+    const rest = out.salary.replace(/(?<![a-z])(lpa|lakhs?|lacs?|l|k|cr|crores?|per|month|monthly|months|year|yearly|annum|pa|pm|ctc|rs|inr|to|and|upto|up|stipend|fixed|plus|incentives?|negotiable)(?![a-z])/gi, ' ').replace(/[\d₹$.,/\-–—+()\s]/g, '');
+    if (!/\d/.test(out.salary) || rest) out.error = 'Salary must be a number, e.g. ₹40,000/month or ₹6–8 LPA';
+  }
   if (has('employmentType')) out.employmentType = pick(body.employmentType, EMPLOYMENT_TYPES);
   if (has('workplace')) out.workplace = pick(body.workplace, WORKPLACES);
   if (has('experienceLevel')) out.experienceLevel = pick(body.experienceLevel, EXPERIENCE_LEVELS);
@@ -97,6 +101,7 @@ router.post('/create', auth, async (req, res) => {
     }
 
     const fields = jobFieldsFromBody(req.body);
+    if (fields.error) return res.status(400).json({ error: fields.error });
 
     if (!fields.title || !fields.description || !fields.company) {
       return res.status(400).json({ error: 'Title, description, and company are required' });
@@ -457,6 +462,7 @@ router.put('/:jobId', auth, async (req, res) => {
     }
 
     const fields = jobFieldsFromBody(req.body, true);
+    if (fields.error) return res.status(400).json({ error: fields.error });
     for (const key of ['title', 'description', 'company']) {
       if (key in fields && !fields[key]) {
         return res.status(400).json({ error: 'Title, description, and company are required' });

@@ -33,6 +33,8 @@ import { Switch } from '../components/ui/switch';
 import { AutocompleteInput, LocationInput } from '../components/AutocompleteInput';
 import { AVAILABILITY_LABELS, PROFICIENCY, EMPLOYMENT_TYPES, BUSINESS_TYPES, TEAM_SIZES } from '../config/profileOptions';
 import { personHeadline } from '../utils/personHeadline';
+import SkillPicker from '../components/SkillPicker';
+import { checkPhone, checkYear, digitsOnly } from '../utils/validation';
 
 const ROLE_LABELS = {
   student: 'Student',
@@ -51,6 +53,33 @@ const EMPTY_EDUCATION = { school: '', degree: '', field: '', duration: '', descr
 const selectClass = 'w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400';
 
 const weekTrend = (pct) => (pct === undefined ? '' : pct > 0 ? `+${pct}% this week` : pct < 0 ? `${pct}% this week` : 'Same as last week');
+
+// "2019 - 2024" → ['2019', '2024'] (older entries were free text)
+const splitYears = (duration) => {
+  const years = String(duration || '').match(/\d{4}/g) || [];
+  return [years[0] || '', years[1] || ''];
+};
+const eduYearErrors = (d) => {
+  const sy = d.startYear ?? splitYears(d.duration)[0];
+  const ey = d.endYear ?? splitYears(d.duration)[1];
+  const out = {};
+  const se = checkYear(sy, { allowFuture: 0 });
+  const ee = checkYear(ey, { allowFuture: 7 });
+  if (se) out.startYear = se;
+  if (ee) out.endYear = ee;
+  if (!se && !ee && sy && ey && Number(ey) < Number(sy)) out.endYear = 'End year is before the start year';
+  return out;
+};
+
+// Problems that stop a save, keyed by field
+const fieldErrors = (form) => {
+  const out = {};
+  for (const [key, label] of [['phone', 'Phone'], ['whatsapp', 'WhatsApp']]) {
+    const { error } = checkPhone(form.contact?.[key]);
+    if (error) out[`contact.${key}`] = `${label}: ${error}`;
+  }
+  return out;
+};
 
 const emptyFormFromUser = (user) => ({
   name: user?.name || '',
@@ -118,8 +147,8 @@ const Profile = () => {
   const [formData, setFormData] = useState(emptyFormFromUser(null));
   const [editingSection, setEditingSection] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [showErrors, setShowErrors] = useState(false);
 
-  const [newSkill, setNewSkill] = useState('');
   const [tagInputs, setTagInputs] = useState({ specialization: '', projectTypeFocus: '', markets: '' });
   // Experience / education being added (index -1) or edited (index >= 0)
   const [expDraft, setExpDraft] = useState(null); // { index, ...fields }
@@ -172,6 +201,13 @@ const Profile = () => {
   // Shared by every section's Save button — sends the whole (already-synced)
   // formData object; the backend only applies the fields it recognizes.
   const saveFields = async (fields = {}) => {
+    const errors = fieldErrors(formData);
+    if (Object.keys(errors).length) {
+      setShowErrors(true);
+      toast.error(Object.values(errors)[0]);
+      return false;
+    }
+    setShowErrors(false);
     setSaving(true);
     try {
       await axios.put(`${API_URL}/api/profile/update`, { ...formData, ...fields });
@@ -212,6 +248,14 @@ const Profile = () => {
   };
 
   const handleCoverPhotoFile = async (file) => {
+    if (!/^image\/(jpeg|png|webp|gif)$/.test(file.type)) {
+      toast.error('Please choose a JPG, PNG or WebP image');
+      return;
+    }
+    if (file.size > 18 * 1024 * 1024) {
+      toast.error('That image is too large. Please choose one under 18 MB.');
+      return;
+    }
     setUploadingCover(true);
     const body = new FormData();
     body.append('image', file);
@@ -267,13 +311,6 @@ const Profile = () => {
     }
   };
 
-  const handleAddSkill = () => {
-    if (newSkill.trim() && !formData.skills.includes(newSkill.trim())) {
-      setFormData({ ...formData, skills: [...formData.skills, newSkill.trim()] });
-      setNewSkill('');
-    }
-  };
-
   const handleRemoveSkill = (skill) => {
     setFormData({ ...formData, skills: formData.skills.filter((s) => s !== skill) });
   };
@@ -307,8 +344,16 @@ const Profile = () => {
   };
 
   const saveEducation = async () => {
-    const { index, ...entry } = eduDraft;
+    const { index, startYear, endYear, ...entry } = eduDraft;
+    delete entry.showYearErrors;
     if (!entry.school.trim() || !entry.degree.trim()) return toast.error('Add a school and degree');
+    const yearErrors = eduYearErrors(eduDraft);
+    if (Object.keys(yearErrors).length) {
+      setEduDraft((d) => ({ ...d, showYearErrors: true }));
+      return toast.error(Object.values(yearErrors)[0]);
+    }
+    const [sy, ey] = [startYear ?? splitYears(entry.duration)[0], endYear ?? splitYears(entry.duration)[1]];
+    entry.duration = sy && ey ? `${sy} – ${ey}` : sy || ey || '';
     const next = index >= 0 ? formData.education.map((e, i) => (i === index ? entry : e)) : [...formData.education, entry];
     if (await saveFields({ education: next })) setEduDraft(null);
   };
@@ -460,6 +505,7 @@ const Profile = () => {
   const visibleGalleryItems = galleryCategory === 'All' ? galleryPreview.items : galleryPreview.items.filter((i) => i.category === galleryCategory);
 
   const edit = (key) => setEditingSection(key);
+  const liveErrors = fieldErrors(formData);
 
   return (
     <div className={`min-h-screen ${PAGE_BG}`} data-testid="profile-page">
@@ -494,8 +540,8 @@ const Profile = () => {
               </>
             }
             headerExtra={
-              <label className="absolute bottom-3 right-3 cursor-pointer" data-testid="cover-photo-upload">
-                <input type="file" accept="image/*" onChange={(e) => e.target.files[0] && handleCoverPhotoFile(e.target.files[0])} className="hidden" disabled={uploadingCover} />
+              <label className="absolute top-3 right-3 z-20 cursor-pointer" data-testid="cover-photo-upload">
+                <input type="file" accept="image/*" onChange={(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) handleCoverPhotoFile(f); }} className="hidden" disabled={uploadingCover} />
                 <span className="flex items-center gap-1.5 text-xs font-medium text-white bg-black/50 hover:bg-black/70 backdrop-blur-sm rounded-lg px-3 py-1.5 transition">
                   <FiCamera className="w-3.5 h-3.5" />{uploadingCover ? 'Uploading...' : 'Change cover'}
                 </span>
@@ -592,7 +638,11 @@ const Profile = () => {
                   ].map(({ k, label, type, ph }) => (
                     <div key={k} className="space-y-1">
                       <Label className="text-xs text-gray-500">{label}</Label>
-                      <Input type={type} value={formData.contact[k]} onChange={(e) => setFormData((f) => ({ ...f, contact: { ...f.contact, [k]: e.target.value } }))} placeholder={ph} data-testid={`contact-${k}`} />
+                      <Input type={type} value={formData.contact[k]} onChange={(e) => setFormData((f) => ({ ...f, contact: { ...f.contact, [k]: e.target.value } }))} placeholder={ph} data-testid={`contact-${k}`}
+                        inputMode={type === 'tel' ? 'tel' : undefined} maxLength={type === 'tel' ? 16 : undefined}
+                        aria-invalid={!!(showErrors && liveErrors[`contact.${k}`])}
+                        className={showErrors && liveErrors[`contact.${k}`] ? 'border-red-400 focus-visible:ring-red-300' : ''} />
+                      {showErrors && liveErrors[`contact.${k}`] && <p className="text-xs text-red-600" data-testid={`contact-${k}-error`}>{liveErrors[`contact.${k}`]}</p>}
                     </div>
                   ))}
                 </div>
@@ -796,22 +846,14 @@ const Profile = () => {
                 editContent={
                   <div className="space-y-3">
                     <ResumeImport onImported={handleResumeImported} />
-                    <div className="flex gap-2">
-                      <AutocompleteInput
-                        field="skill"
-                        wrapperClassName="flex-1"
-                        value={newSkill}
-                        onChange={setNewSkill}
-                        onBlur={(e) => skillSuggest.check(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSkill())}
-                        placeholder="Add a skill"
-                        data-testid="skill-input"
-                      />
-                      <Button onClick={handleAddSkill} type="button" className="bg-yellow-500 hover:bg-yellow-600 shrink-0" data-testid="add-skill-button">Add</Button>
-                    </div>
+                    <SkillPicker
+                      skills={formData.skills}
+                      onAdd={(skill) => setFormData((f) => ({ ...f, skills: [...f.skills, skill] }))}
+                      onBlur={(e) => skillSuggest.check(e.target.value)}
+                    />
                     <SuggestChip
                       suggestion={skillSuggest.suggestion}
-                      onAccept={(corrected) => { setNewSkill(corrected); skillSuggest.dismiss(); }}
+                      onAccept={(corrected) => { if (!formData.skills.includes(corrected)) setFormData((f) => ({ ...f, skills: [...f.skills, corrected] })); skillSuggest.dismiss(); }}
                       onAcceptAlternative={(alt) => { if (!formData.skills.includes(alt)) setFormData((f) => ({ ...f, skills: [...f.skills, alt] })); }}
                       onDismiss={skillSuggest.dismiss}
                     />
@@ -956,9 +998,20 @@ const Profile = () => {
                         <AutocompleteInput field="field" value={eduDraft.field} onChange={(v) => setEduDraft((d) => ({ ...d, field: v }))} placeholder="e.g. Architecture" />
                       </div>
                     </div>
-                    <div className="space-y-1">
-                      <Label>Years</Label>
-                      <Input value={eduDraft.duration} onChange={(e) => setEduDraft((d) => ({ ...d, duration: e.target.value }))} placeholder="e.g. 2019 - 2024" />
+                    <div className="grid grid-cols-2 gap-3">
+                      {[['startYear', 'Start year', 'e.g. 2019', 0], ['endYear', 'End year (or expected)', 'e.g. 2024', 1]].map(([key, label, ph, i]) => {
+                        const value = eduDraft[key] ?? splitYears(eduDraft.duration)[i];
+                        const err = eduDraft.showYearErrors && eduYearErrors(eduDraft)[key];
+                        return (
+                          <div key={key} className="space-y-1">
+                            <Label>{label}</Label>
+                            <Input value={value} inputMode="numeric" maxLength={4} placeholder={ph}
+                              onChange={(e) => setEduDraft((d) => ({ ...d, startYear: d.startYear ?? splitYears(d.duration)[0], endYear: d.endYear ?? splitYears(d.duration)[1], [key]: digitsOnly(e.target.value) }))}
+                              aria-invalid={!!err} className={err ? 'border-red-400' : ''} data-testid={`edu-${key}`} />
+                            {err && <p className="text-xs text-red-600">{err}</p>}
+                          </div>
+                        );
+                      })}
                     </div>
                     <div className="space-y-1">
                       <Label>Description</Label>

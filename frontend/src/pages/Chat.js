@@ -7,6 +7,8 @@ import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Input } from '../components/ui/input';
+import { Button } from '../components/ui/button';
+import { refreshBadges } from '../hooks/useNavBadges';
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator
 } from '../components/ui/dropdown-menu';
@@ -25,7 +27,8 @@ const FILTERS = [
   { id: 'unread', label: 'Unread' },
   { id: 'starred', label: 'Starred' },
   { id: 'jobs', label: 'Jobs' },
-  { id: 'archived', label: 'Archived' }
+  { id: 'archived', label: 'Archived' },
+  { id: 'blocked', label: 'Blocked' }
 ];
 
 const EMPTY_TEXT = {
@@ -33,7 +36,8 @@ const EMPTY_TEXT = {
   unread: "You're all caught up.",
   starred: 'Star important conversations to find them here.',
   jobs: 'Conversations with people you hired or applied to will show here.',
-  archived: 'Nothing archived.'
+  archived: 'Nothing archived.',
+  blocked: "You haven't blocked anyone."
 };
 
 const sameDay = (a, b) => a.toDateString() === b.toDateString();
@@ -159,6 +163,7 @@ const Chat = () => {
   const [selected, setSelected] = useState(null); // a conversation row
   const [messages, setMessages] = useState([]);
   const [blocked, setBlocked] = useState(false);
+  const reconnectPeople = useRef({}); // unblocked people stay in the Blocked list until you leave it
   const [newMessage, setNewMessage] = useState('');
   const [reportOpen, setReportOpen] = useState(false);
   const [infoFor, setInfoFor] = useState(null);
@@ -177,7 +182,44 @@ const Chat = () => {
   const selectedIdRef = useRef(null);
   selectedIdRef.current = selected?.person?._id || null;
 
+  // People you blocked: listed under the Blocked filter, and unblockable from an open chat
+  const [blockedPeople, setBlockedPeople] = useState([]);
+  const [reconnect, setReconnect] = useState({}); // personId -> 'unblocked' | 'requested'
+  const fetchBlocked = useCallback(() => axios.get(`${API_URL}/api/account/blocked`, { silent: true })
+    .then((res) => setBlockedPeople(res.data.blocked || []))
+    .catch(() => {}), []);
+  useEffect(() => { fetchBlocked(); }, [fetchBlocked]);
+  useEffect(() => { if (filter !== 'blocked') setReconnect({}); }, [filter]);
+
+  const unblockPerson = async (person) => {
+    try {
+      await axios.delete(`${API_URL}/api/account/block/${person._id}`);
+      setBlockedPeople((list) => list.filter((p) => p._id !== person._id));
+      setReconnect((r) => ({ ...r, [person._id]: 'unblocked' }));
+      if (selected?.person._id === person._id) setBlocked(false);
+      refreshUser?.();
+      toast.success(`${person.name} is unblocked. Connect again to message each other.`);
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Could not unblock');
+    }
+  };
+
+  const connectAgain = async (person) => {
+    try {
+      await axios.post(`${API_URL}/api/connections/send-request/${person._id}`);
+      setReconnect((r) => ({ ...r, [person._id]: 'requested' }));
+      toast.success(`Connection request sent to ${person.name}`);
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Could not send the request');
+    }
+  };
+
   const fetchConversations = useCallback(async () => {
+    if (filter === 'blocked') {
+      await fetchBlocked();
+      setLoadingList(false);
+      return;
+    }
     try {
       const res = await axios.get(`${API_URL}/api/messages/conversations`, { params: { filter, q: query.trim() || undefined } });
       setConversations(res.data.conversations || []);
@@ -189,7 +231,7 @@ const Chat = () => {
     } finally {
       setLoadingList(false);
     }
-  }, [filter, query]);
+  }, [filter, query, fetchBlocked]);
 
   useEffect(() => {
     const t = setTimeout(fetchConversations, query ? 250 : 0);
@@ -224,6 +266,7 @@ const Chat = () => {
       const res = await axios.get(`${API_URL}/api/messages/${row.person._id}`);
       setMessages(res.data.messages || []);
       setBlocked(!!res.data.blocked);
+      refreshBadges();
       if (row.unread) {
         setConversations((list) => list.map((c) => (c.person._id === row.person._id ? { ...c, unread: 0 } : c)));
         setTotals((t) => ({ ...t, unread: Math.max(0, (t.unread || 0) - 1), unreadMessages: Math.max(0, (t.unreadMessages || 0) - row.unread) }));
@@ -478,8 +521,9 @@ const Chat = () => {
     if (!window.confirm(`Block ${row.person.name}? They won't be able to message or find you, and your connection will be removed.`)) return;
     try {
       await axios.post(`${API_URL}/api/account/block/${row.person._id}`);
-      toast.success(`${row.person.name} is blocked. You can unblock them in Settings.`);
+      toast.success(`${row.person.name} is blocked. You can unblock them under Blocked.`);
       setSelected(null);
+      fetchBlocked();
       refreshUser?.();
       fetchConversations();
     } catch (error) {
@@ -553,7 +597,33 @@ const Chat = () => {
             </div>
           </div>
           <div className="flex-1 overflow-y-auto">
-            {loadingList ? (
+            {filter === 'blocked' ? (
+              <div data-testid="blocked-people">
+                {[...blockedPeople, ...Object.keys(reconnect).filter((id) => !blockedPeople.some((p) => p._id === id)).map((id) => reconnectPeople.current[id]).filter(Boolean)]
+                  .filter((p) => !query.trim() || p.name?.toLowerCase().includes(query.trim().toLowerCase()))
+                  .map((p) => {
+                    const state = reconnect[p._id];
+                    if (!state) reconnectPeople.current[p._id] = p;
+                    return (
+                      <div key={p._id} className="flex items-center gap-3 px-4 py-3" data-testid={`blocked-${p._id}`}>
+                        <Avatar className="w-11 h-11 shrink-0">
+                          <AvatarImage src={p.profilePic} />
+                          <AvatarFallback className="bg-gray-300">{p.name?.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="truncate font-semibold text-black">{p.name}</p>
+                          <p className="text-xs text-gray-500">{state === 'requested' ? 'Request sent' : state === 'unblocked' ? 'Unblocked' : 'Blocked'}</p>
+                        </div>
+                        {!state && <Button size="sm" variant="outline" onClick={() => unblockPerson(p)} data-testid={`unblock-${p._id}`}>Unblock</Button>}
+                        {state === 'unblocked' && <Button size="sm" onClick={() => connectAgain(p)} className="bg-yellow-400 hover:bg-yellow-500 text-black" data-testid={`reconnect-${p._id}`}>Connect</Button>}
+                      </div>
+                    );
+                  })}
+                {blockedPeople.length === 0 && Object.keys(reconnect).length === 0 && (
+                  <p className="px-6 py-12 text-center text-sm text-gray-500">{EMPTY_TEXT.blocked}</p>
+                )}
+              </div>
+            ) : loadingList ? (
               <SkeletonRows rows={7} />
             ) : conversations.length > 0 ? conversations.map((row) => {
               const active = selected?.person._id === row.person._id;
@@ -722,7 +792,14 @@ const Chat = () => {
 
               <div className="border-t p-3 sm:p-4 bg-white">
                 {blocked ? (
-                  <p className="text-center text-sm text-gray-500 py-2">You can't reply to this conversation.</p>
+                  blockedPeople.some((p) => p._id === selected.person._id) ? (
+                    <div className="flex flex-wrap items-center justify-center gap-3 py-1">
+                      <p className="text-sm text-gray-500">You blocked {selected.person.name}.</p>
+                      <Button size="sm" variant="outline" onClick={() => unblockPerson(selected.person)} data-testid="chat-unblock">Unblock</Button>
+                    </div>
+                  ) : (
+                    <p className="text-center text-sm text-gray-500 py-2">You can't reply to this conversation.</p>
+                  )
                 ) : (
                   <form onSubmit={handleSendMessage} className="space-y-2">
                     {pendingFiles.length > 0 && (

@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { FiBell, FiUserPlus, FiUserCheck, FiRss, FiTag } from 'react-icons/fi';
+import { FiBell, FiUserPlus, FiUserCheck, FiUserX, FiRss, FiTag } from 'react-icons/fi';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { API_URL } from '../config/api';
 
 const MESSAGES = {
   connection_request: (name) => `${name} sent you a connection request`,
   connection_accepted: (name) => `${name} accepted your connection request`,
+  connection_declined: (name) => `${name} declined your connection request`,
   follow: (name) => `${name} started following you`,
   quote_request: (name, n) => `${name} asked for a quote${n?.meta?.itemTitle ? ` for ${n.meta.itemTitle}` : ''}${n?.meta?.message ? `: "${n.meta.message.slice(0, 120)}"` : ''}`
 };
@@ -15,6 +16,7 @@ const MESSAGES = {
 const ICONS = {
   connection_request: FiUserPlus,
   connection_accepted: FiUserCheck,
+  connection_declined: FiUserX,
   follow: FiRss,
   quote_request: FiTag
 };

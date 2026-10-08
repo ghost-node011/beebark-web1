@@ -38,6 +38,19 @@ const TEXT_FIELDS = [
   { key: 'contactInfo', label: 'Contact shown', max: 160, placeholder: 'e.g. hello@yourstudio.com · +91 98xxx xxxxx' }
 ];
 
+// One-tap chips for values already used (instead of a browser dropdown arrow)
+const QuickPicks = ({ options, value, onPick }) => {
+  const list = (options || []).filter((o) => o && o.toLowerCase() !== String(value || '').trim().toLowerCase()).slice(0, 8);
+  if (!list.length) return null;
+  return (
+    <div className="mt-1.5 flex flex-wrap gap-1.5">
+      {list.map((o) => (
+        <button key={o} type="button" onClick={() => onPick(o)} className="rounded-full border border-gray-200 bg-white px-2.5 py-0.5 text-xs text-gray-600 hover:border-black hover:text-black">{o}</button>
+      ))}
+    </div>
+  );
+};
+
 const Portfolio = () => {
   const { user } = useAuth();
   const copy = getCopy(user);
@@ -689,10 +702,8 @@ const Portfolio = () => {
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <Label htmlFor="pf-category">Category</Label>
-                <Input id="pf-category" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} list="category-suggestions" placeholder="e.g. Residential" />
-                <datalist id="category-suggestions">
-                  {existingCategories.map((c) => <option key={c} value={c} />)}
-                </datalist>
+                <Input id="pf-category" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} maxLength={60} autoComplete="off" placeholder="e.g. Residential" data-testid="pf-category" />
+                <QuickPicks options={existingCategories} value={form.category} onPick={(c) => setForm({ ...form, category: c })} />
               </div>
               <div>
                 <Label htmlFor="pf-status">Status</Label>
@@ -711,10 +722,8 @@ const Portfolio = () => {
             </div>
             <div>
               <Label htmlFor="pf-section">Section</Label>
-              <Input id="pf-section" value={form.section} maxLength={80} onChange={(e) => setForm({ ...form, section: e.target.value })} list="section-suggestions" placeholder={isProductForm ? 'e.g. Floor tiles' : 'e.g. Residential'} data-testid="pf-section" />
-              <datalist id="section-suggestions">
-                {sectionSuggestions.map((c) => <option key={c} value={c} />)}
-              </datalist>
+              <Input id="pf-section" value={form.section} maxLength={80} autoComplete="off" onChange={(e) => setForm({ ...form, section: e.target.value })} placeholder={isProductForm ? 'e.g. Floor tiles' : 'e.g. Residential'} data-testid="pf-section" />
+              <QuickPicks options={sectionSuggestions} value={form.section} onPick={(c) => setForm({ ...form, section: c })} />
               <p className="mt-1 text-xs text-gray-400">Items with the same section are shown together under that heading.</p>
             </div>
             <div>

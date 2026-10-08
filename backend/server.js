@@ -134,7 +134,6 @@ app.use('/api/meetings', meetingRoutes);
 app.use('/api/stories', storyRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/account', require('./routes/account'));
-app.use('/api/calendar', require('./routes/calendar'));
 app.use('/api/listings', require('./routes/listing'));
 app.use('/api/people', require('./routes/people'));
 app.use('/api/follow', require('./routes/follow'));

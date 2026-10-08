@@ -11,7 +11,7 @@ import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import { FiUser, FiLock, FiSlash, FiLogOut, FiPauseCircle, FiTrash2, FiChevronRight, FiBell, FiCalendar, FiBriefcase } from 'react-icons/fi';
+import { FiUser, FiLock, FiSlash, FiLogOut, FiPauseCircle, FiTrash2, FiChevronRight, FiBell, FiBriefcase } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { SkeletonRows } from '../components/Skeletons';
 import { API_URL } from '../config/api';
@@ -138,8 +138,7 @@ const Settings = () => {
             <div className="divide-y divide-gray-100 border-y border-gray-100">
               {[
                 { to: '/profile', label: 'Edit profile', icon: FiUser },
-                { to: '/notifications', label: 'Notifications', icon: FiBell },
-                { to: '/calendar', label: 'Calendar', icon: FiCalendar }
+                { to: '/notifications', label: 'Notifications', icon: FiBell }
               ].map((l) => (
                 <Link key={l.to} to={l.to} className="flex items-center gap-3 py-3 text-sm text-black hover:bg-gray-50 -mx-2 px-2 rounded">
                   <l.icon className="w-4 h-4 text-gray-500" /><span className="flex-1">{l.label}</span><FiChevronRight className="text-gray-400" />

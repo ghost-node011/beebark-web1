@@ -24,6 +24,7 @@ import { useAuth } from '../context/AuthContext';
 import { personHeadline } from '../utils/personHeadline';
 import { SkeletonCards } from '../components/Skeletons';
 import Highlight, { searchWords } from '../components/Highlight';
+import { refreshBadges } from '../hooks/useNavBadges';
 import FollowButton, { toggleFollow, followersLabel } from '../components/FollowButton';
 
 // "3d ago" style label for a date, or '' when there isn't one
@@ -203,31 +204,37 @@ const Connections = () => {
 
   // Results update as you type (name, role, company, skills, city)
   const searchSeq = useRef(0);
+  const runSearch = useCallback(async (term) => {
+    const seq = ++searchSeq.current;
+    setSearching(true);
+    try {
+      const response = await axios.get(`${API_URL}/api/people/search`, { params: { q: term, limit: 30 }, silent: true });
+      if (seq !== searchSeq.current) return; // a newer search has started
+      setSearchResults(response.data.people || []);
+      setHasSearched(true);
+      setActiveTab('search');
+    } catch {
+      toast.error('Search failed');
+    } finally {
+      if (seq === searchSeq.current) setSearching(false);
+    }
+  }, []);
   useEffect(() => {
     const term = searchQuery.trim();
     if (!term) return undefined;
-    const t = setTimeout(async () => {
-      const seq = ++searchSeq.current;
-      setSearching(true);
-      try {
-        const response = await axios.get(`${API_URL}/api/people/search`, { params: { q: term, limit: 30 }, silent: true });
-        if (seq !== searchSeq.current) return; // a newer search has started
-        setSearchResults(response.data.people || []);
-        setHasSearched(true);
-        setActiveTab('search');
-      } catch {
-        toast.error('Search failed');
-      } finally {
-        if (seq === searchSeq.current) setSearching(false);
-      }
-    }, 200);
+    const t = setTimeout(() => runSearch(term), 200);
     return () => clearTimeout(t);
-  }, [searchQuery]);
+  }, [searchQuery, runSearch]);
 
+  // Search button / Enter: search now and show the results
   const handleSearch = (e) => {
     e?.preventDefault();
-    navigate(`/search${searchQuery.trim() ? `?q=${encodeURIComponent(searchQuery.trim())}` : ''}`);
+    const term = searchQuery.trim();
+    if (!term) return;
+    runSearch(term);
+    setActiveTab('search');
   };
+  const openAdvanced = () => navigate(`/search${searchQuery.trim() ? `?q=${encodeURIComponent(searchQuery.trim())}` : ''}`);
 
   const handleConnect = async (userId) => {
     setBusyId(userId);
@@ -254,6 +261,7 @@ const Connections = () => {
     setBusyId(requesterId);
     try {
       await axios.post(`${API_URL}/api/connections/accept-request/${requesterId}`);
+      refreshBadges();
       toast.success('Request accepted!');
       patchPerson(requesterId, { isConnected: true, requestReceived: false });
       setPendingRequests((list) => list.filter((r) => r._id !== requesterId));
@@ -271,6 +279,7 @@ const Connections = () => {
     setBusyId(requesterId);
     try {
       await axios.post(`${API_URL}/api/connections/reject-request/${requesterId}`);
+      refreshBadges();
       toast.success('Invitation ignored');
       patchPerson(requesterId, { requestReceived: false });
       setPendingRequests((list) => list.filter((r) => r._id !== requesterId));
@@ -450,10 +459,21 @@ const Connections = () => {
                 </button>
               )}
             </div>
+            {searchQuery.trim() && (
+              <Button
+                type="submit"
+                className="h-12 bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-4 sm:px-6 rounded-xl shrink-0"
+                data-testid="search-button"
+              >
+                <FiSearch className="w-4 h-4 sm:mr-2" /><span className="hidden sm:inline">Search</span>
+              </Button>
+            )}
             <Button
-              type="submit"
-              className="h-12 bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-4 sm:px-6 rounded-xl shrink-0"
-              data-testid="search-button"
+              type="button"
+              variant="outline"
+              onClick={openAdvanced}
+              className="h-12 bg-white font-semibold px-4 rounded-xl shrink-0"
+              data-testid="advanced-search-button"
               title="Search with filters (role, industry, location, open to)"
             >
               <FiSliders className="w-4 h-4 sm:mr-2" /><span className="hidden sm:inline">Advanced</span>

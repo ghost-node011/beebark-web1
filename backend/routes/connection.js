@@ -138,6 +138,7 @@ router.post('/reject-request/:requesterId', auth, async (req, res) => {
     if (!requester) {
       return res.status(404).json({ error: 'User not found' });
     }
+    const wasPending = currentUser.pendingRequests.some((id) => id.toString() === requesterId);
 
     currentUser.pendingRequests = currentUser.pendingRequests.filter(
       id => id.toString() !== requesterId
@@ -148,6 +149,11 @@ router.post('/reject-request/:requesterId', auth, async (req, res) => {
 
     await currentUser.save();
     await requester.save();
+
+    // Let the sender know, so they aren't left waiting
+    if (wasPending) {
+      await Notification.create({ recipient: requesterId, actor: req.userId, type: 'connection_declined' });
+    }
 
     res.json({ message: 'Connection request rejected' });
   } catch (error) {

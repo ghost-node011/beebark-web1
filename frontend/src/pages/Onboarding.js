@@ -8,6 +8,7 @@ import ResumeImport from '../components/ResumeImport';
 import { ROLES } from '../config/roles';
 import { intentsFor, INDUSTRIES } from '../config/onboarding';
 import { LocationInput } from '../components/AutocompleteInput';
+import SkillPicker from '../components/SkillPicker';
 import { SuggestChip, useSuggestChip } from '../components/ai/SuggestChip';
 
 const TOTAL_STEPS = 4;
@@ -62,7 +63,6 @@ const Onboarding = () => {
   const [detectedLocation, setDetectedLocation] = useState('');
   const [nameMismatch, setNameMismatch] = useState(null);
   const [skills, setSkills] = useState(user?.skills || []);
-  const [skillInput, setSkillInput] = useState('');
   const [checkingField, setCheckingField] = useState(false);
 
   const selectIndustry = (value) => {
@@ -108,19 +108,6 @@ const Onboarding = () => {
   };
 
   const back = () => setStep((s) => Math.max(0, s - 1));
-
-  const addSkill = () => {
-    const v = skillInput.trim();
-    if (v && !skills.includes(v)) setSkills([...skills, v]);
-    setSkillInput('');
-  };
-
-  const handleSkillKey = (e) => {
-    if (e.key === 'Enter' || e.key === ',') {
-      e.preventDefault();
-      addSkill();
-    }
-  };
 
   const finish = async () => {
     setSaving(true);
@@ -353,18 +340,7 @@ const Onboarding = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-black mb-1">Skills / interests</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={skillInput}
-                      onChange={(e) => setSkillInput(e.target.value)}
-                      onKeyDown={handleSkillKey}
-                      placeholder="Type a skill and press Enter"
-                      className="flex-1 rounded-xl border-2 border-gray-200 p-3 text-sm focus:border-yellow-400 focus:outline-none"
-                      data-testid="skill-input"
-                    />
-                    <button type="button" onClick={addSkill} className="btn-black rounded-xl px-4 text-sm">Add</button>
-                  </div>
+                  <SkillPicker skills={skills} onAdd={(skill) => setSkills((list) => [...list, skill])} inputClassName="h-12 rounded-xl border-2 border-gray-200 focus-visible:ring-0 focus-visible:border-yellow-400" />
                   {skills.length > 0 && (
                     <div className="mt-3 flex flex-wrap gap-2">
                       {skills.map((s) => (

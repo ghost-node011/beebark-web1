@@ -6,17 +6,20 @@ import { useUI } from '../context/UIContext';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import {
   FiHome, FiMessageCircle, FiUsers, FiLayers, FiBriefcase,
-  FiVideo, FiX, FiImage, FiFileText, FiSend, FiCalendar, FiHome as FiProperty, FiSettings
+  FiVideo, FiX, FiImage, FiFileText, FiSend, FiHome as FiProperty, FiSettings
 } from 'react-icons/fi';
 import { getCopy } from '../config/roleDomainCopy';
 import { personHeadline } from '../utils/personHeadline';
 import { preloadPath } from '../lib/pages';
+import useNavBadges from '../hooks/useNavBadges';
 
 const SidebarFrame = () => {
   const { user } = useAuth();
   const { sidebarOpen, setSidebarOpen } = useUI();
   const close = () => setSidebarOpen(false);
   const copy = getCopy(user);
+  const badges = useNavBadges();
+  const countFor = { messages: badges.messages, connections: badges.connections, jobs: badges.jobs };
 
   const menuItems = [
     { id: 'dashboard', path: '/dashboard', icon: FiHome, label: 'Dashboard' },
@@ -30,12 +33,10 @@ const SidebarFrame = () => {
     // { id: 'reels', path: '/reels', icon: FiFilm, label: 'Reels' },
     // { id: 'projects', path: '/projects', icon: FiTrendingUp, label: 'Projects Center' },
     { id: 'jobs', path: '/jobs', icon: FiBriefcase, label: copy.jobsLabel },
-    { id: 'calendar', path: '/calendar', icon: FiCalendar, label: 'Calendar' },
     { id: 'news', path: '/news', icon: FiFileText, label: 'News' },
     { id: 'official', path: '/official', icon: FiSend, label: '@BeeBark Official' },
     // { id: 'store', path: '/store', icon: FiShoppingBag, label: 'Store' },
     // { id: 'rent', path: '/rent', icon: FiDollarSign, label: 'Rent & Sell' },
-    // { id: 'events', path: '/events', icon: FiCalendar, label: 'Events' },
     // { id: 'memories', path: '/memories', icon: FiImage, label: 'Memories' },
     // { id: 'wallet', path: '/wallet', icon: FiDollarSign, label: 'Wallet & Economy' },
     // { id: 'meetings', path: '/meetings', icon: FiVideo, label: 'Meetings' },
@@ -87,7 +88,13 @@ const SidebarFrame = () => {
                 data-testid={`sidebar-${item.id}`}
               >
                 <Icon className="w-5 h-5" />
-                <span>{item.label}</span>
+                <span className="flex-1">{item.label}</span>
+                {countFor[item.id] > 0 && (
+                  <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center"
+                    aria-label={`${countFor[item.id]} new`} data-testid={`sidebar-badge-${item.id}`}>
+                    {countFor[item.id] > 99 ? '99+' : countFor[item.id]}
+                  </span>
+                )}
               </NavLink>
             );
           })}

@@ -4,6 +4,33 @@ const auth = require('../middleware/auth');
 const mongoose = require('mongoose');
 const Notification = require('../models/Notification');
 
+// Counts for the dots in the sidebar: unread chats, connection invitations,
+// job applications waiting for your answers, unread notifications
+router.get('/badges', auth, async (req, res) => {
+  try {
+    const User = require('../models/User');
+    const Message = require('../models/Message');
+    const PendingApplication = require('../models/PendingApplication');
+    const me = await User.findById(req.userId).select('connections pendingRequests blockedUsers').lean();
+    if (!me) return res.status(404).json({ error: 'Not found' });
+    const blocked = new Set((me.blockedUsers || []).map(String));
+    const connections = (me.connections || []).filter((id) => !blocked.has(String(id)));
+    const [chatSenders, jobs, notifications] = await Promise.all([
+      connections.length ? Message.distinct('sender', { receiver: me._id, read: false, sender: { $in: connections } }) : [],
+      PendingApplication.countDocuments({ user: me._id, status: 'needs_answers' }),
+      Notification.countDocuments({ recipient: me._id, read: false })
+    ]);
+    res.json({
+      messages: chatSenders.length,
+      connections: (me.pendingRequests || []).length,
+      jobs,
+      notifications
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to load counts' });
+  }
+});
+
 // ?page&limit&filter=unread — the bell shows the first 30, the Notifications page pages through all
 router.get('/', auth, async (req, res) => {
   try {

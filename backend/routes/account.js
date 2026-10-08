@@ -10,6 +10,7 @@ const Post = require('../models/Post');
 const Story = require('../models/Story');
 const Job = require('../models/Job');
 const ConversationState = require('../models/ConversationState');
+// Calendar was removed; deleting an account still clears any events saved before that
 const CalendarEvent = require('../models/CalendarEvent');
 const Listing = require('../models/Listing');
 

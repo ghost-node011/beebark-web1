@@ -33,7 +33,6 @@ export const Pages = {
   MeetingRoom: page(() => import('../pages/MeetingRoom')),
   Settings: page(() => import('../pages/Settings')),
   Notifications: page(() => import('../pages/Notifications')),
-  CalendarPage: page(() => import('../pages/Calendar')),
   Listings: page(() => import('../pages/Listings')),
   ListingDetail: page(() => import('../pages/ListingDetail')),
   Search: page(() => import('../pages/Search'))
@@ -51,7 +50,6 @@ const BY_PATH = {
   '/official': Pages.Official,
   '/settings': Pages.Settings,
   '/notifications': Pages.Notifications,
-  '/calendar': Pages.CalendarPage,
   '/listings': Pages.Listings,
   '/search': Pages.Search
 };

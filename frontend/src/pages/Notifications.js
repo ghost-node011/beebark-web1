@@ -7,14 +7,15 @@ import TopBar from '../components/TopBar';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { FiBell, FiUserPlus, FiUserCheck, FiCheck, FiTrash2, FiRss, FiTag } from 'react-icons/fi';
+import { FiBell, FiUserPlus, FiUserCheck, FiUserX, FiCheck, FiTrash2, FiRss, FiTag } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config/api';
 import { SkeletonRows } from '../components/Skeletons';
 import { notificationText, timeAgo } from '../components/NotificationBell';
 import FollowButton from '../components/FollowButton';
+import { refreshBadges } from '../hooks/useNavBadges';
 
-const ICONS = { connection_request: FiUserPlus, connection_accepted: FiUserCheck, follow: FiRss, quote_request: FiTag };
+const ICONS = { connection_request: FiUserPlus, connection_accepted: FiUserCheck, connection_declined: FiUserX, follow: FiRss, quote_request: FiTag };
 
 const groupOf = (d) => {
   const date = new Date(d);
@@ -92,6 +93,7 @@ const Notifications = () => {
     try {
       await axios.post(`${API_URL}/api/connections/${accept ? 'accept' : 'reject'}-request/${id}`);
       setHandled((h) => ({ ...h, [id]: accept ? 'accepted' : 'declined' }));
+      refreshBadges();
       markRead(n);
       refreshUser?.();
       toast.success(accept ? `You're now connected with ${n.actor.name}` : 'Request declined');

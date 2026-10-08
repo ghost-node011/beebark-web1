@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useUI } from '../context/UIContext';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { FiLogOut, FiMenu, FiUser, FiSettings, FiCalendar, FiBell, FiChevronDown } from 'react-icons/fi';
+import { FiLogOut, FiMenu, FiUser, FiSettings, FiBell, FiChevronDown } from 'react-icons/fi';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -15,11 +15,13 @@ import {
 import ProfileCompletionBadge from './ProfileCompletionBadge';
 import NotificationBell from './NotificationBell';
 import PeopleSearchBox from './PeopleSearchBox';
+import { useBadgeTotal } from '../hooks/useNavBadges';
 import { personHeadline } from '../utils/personHeadline';
 
 const TopBarFrame = () => {
   const { user, logout, logoutAll } = useAuth();
   const { setSidebarOpen } = useUI();
+  const badgeTotal = useBadgeTotal();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -38,11 +40,12 @@ const TopBarFrame = () => {
         {/* Hamburger (mobile only) */}
         <button
           onClick={() => setSidebarOpen(true)}
-          className="lg:hidden p-2 -ml-1 text-slate-600 hover:bg-slate-100 rounded-lg shrink-0"
-          aria-label="Open menu"
+          className="relative lg:hidden p-2 -ml-1 text-slate-600 hover:bg-slate-100 rounded-lg shrink-0"
+          aria-label={badgeTotal ? `Open menu, ${badgeTotal} new` : 'Open menu'}
           data-testid="open-sidebar"
         >
           <FiMenu className="w-6 h-6" />
+          {badgeTotal > 0 && <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" data-testid="menu-badge" />}
         </button>
 
         <PeopleSearchBox />
@@ -80,7 +83,6 @@ const TopBarFrame = () => {
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => navigate('/profile')}><FiUser className="mr-2" />View profile</DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate('/notifications')}><FiBell className="mr-2" />Notifications</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate('/calendar')}><FiCalendar className="mr-2" />Calendar</DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate('/settings')} data-testid="menu-settings"><FiSettings className="mr-2" />Settings & privacy</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} data-testid="logout-this-device"><FiLogOut className="mr-2" />Log out</DropdownMenuItem>

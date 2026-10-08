@@ -77,13 +77,26 @@ function cleanBusiness(b) {
 const withHttps = (v) => (v && !/^https?:\/\//i.test(v) ? `https://${v}` : v);
 const validUrl = (v) => { try { const u = new URL(v); return /^https?:$/.test(u.protocol) && u.hostname.includes('.'); } catch { return false; } };
 
+// Indian numbers: 10 digits, optionally with +91 / 91 / 0 in front. Returns
+// "+91 98765 43210", '' for empty, or null when the number is invalid.
+function cleanPhone(raw) {
+  const text = clip(raw, 30);
+  if (!text) return '';
+  if (/[^\d+\-\s().]/.test(text)) return null;
+  let digits = text.replace(/\D/g, '');
+  if (digits.length === 12 && digits.startsWith('91')) digits = digits.slice(2);
+  else if (digits.length === 11 && digits.startsWith('0')) digits = digits.slice(1);
+  if (digits.length !== 10) return null;
+  return `+91 ${digits.slice(0, 5)} ${digits.slice(5)}`;
+}
+
 function cleanContact(c) {
   const email = clip(c?.email, 120).toLowerCase();
   const website = withHttps(clip(c?.website, 200));
   return {
     email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : '',
-    phone: clip(c?.phone, 20).replace(/[^\d+\-\s()]/g, ''),
-    whatsapp: clip(c?.whatsapp, 20).replace(/[^\d+]/g, ''),
+    phone: cleanPhone(c?.phone) || '',
+    whatsapp: cleanPhone(c?.whatsapp) || '',
     website: validUrl(website) ? website : '',
     address: clip(c?.address, 240),
     visibility: ['everyone', 'connections', 'only_me'].includes(c?.visibility) ? c.visibility : 'connections'
@@ -106,14 +119,8 @@ function cleanSocialLinks(list) {
 const PERSON_CARD = 'name username profilePic role careerStage specialization accountStatus';
 const toCard = (c) => ({ _id: c._id, name: c.name, username: c.username, profilePic: c.profilePic, role: c.role, careerStage: c.careerStage, specialization: c.specialization || [] });
 
-router.get('/me', auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.userId)
-      .select('-password')
-      .populate('connections', 'name email profilePic bio');
-    
-    // Transform user object to include 'id' (consistent with login response)
-    const userResponse = {
+// The signed-in user as the app keeps it (settings flattened, derived fields added)
+const meResponse = (user) => ({
       id: user._id,
       name: user.name,
       username: user.username,
@@ -172,9 +179,14 @@ router.get('/me', auth, async (req, res) => {
         scoredAt: user.resume.scoredAt
       } : null,
       jobPreferences: user.jobPreferences
-    };
-    
-    res.json({ user: userResponse });
+});
+
+router.get('/me', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId)
+      .select('-password')
+      .populate('connections', 'name email profilePic bio');
+    res.json({ user: meResponse(user) });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch profile', message: error.message });
   }
@@ -451,6 +463,7 @@ router.get('/activity', auth, async (req, res) => {
 // Suggests what other members already use (so spellings stay consistent),
 // topped up with common values.
 const COMMON = {
+  school: ['School of Planning and Architecture, Delhi', 'School of Planning and Architecture, Bhopal', 'School of Planning and Architecture, Vijayawada', 'CEPT University, Ahmedabad', 'Sir J.J. College of Architecture, Mumbai', 'IIT Kharagpur', 'IIT Roorkee', 'IIT Bombay', 'IIT Delhi', 'IIT Madras', 'IIT Kanpur', 'IIT Guwahati', 'NIT Trichy', 'NIT Calicut', 'NIT Patna', 'NIT Raipur', 'NIT Hamirpur', 'NIT Jaipur (MNIT)', 'Visvesvaraya NIT, Nagpur', 'Jamia Millia Islamia, New Delhi', 'Chandigarh College of Architecture', 'Rizvi College of Architecture, Mumbai', 'Kamla Raheja Vidyanidhi Institute for Architecture, Mumbai', 'Academy of Architecture, Mumbai', 'L.S. Raheja School of Architecture, Mumbai', 'Bharati Vidyapeeth College of Architecture, Pune', 'Dr. D.Y. Patil College of Architecture, Pune', 'BNCA (Dr. Bhanuben Nanavati College of Architecture), Pune', 'Sinhgad College of Architecture, Pune', 'MIT School of Architecture, Pune', 'Manipal School of Architecture and Planning', 'RV College of Architecture, Bengaluru', 'BMS College of Architecture, Bengaluru', 'MS Ramaiah Institute of Technology, Bengaluru', 'Anna University, Chennai', 'SRM Institute of Science and Technology', 'Sushant University, Gurugram', 'Amity School of Architecture and Planning', 'Lovely Professional University', 'Chitkara University', 'Indian Institute of Engineering Science and Technology, Shibpur', 'Jadavpur University, Kolkata', 'Aligarh Muslim University', 'Delhi Technological University', 'Guru Gobind Singh Indraprastha University', 'Sushant School of Art and Architecture', 'Vastu Kala Academy, New Delhi', 'Apeejay Institute of Technology, School of Architecture', 'Gateway College of Architecture and Design, Sonipat', 'National Institute of Design, Ahmedabad', 'NIFT Delhi', 'Pearl Academy', 'Srishti Manipal Institute of Art, Design and Technology', 'MIT Institute of Design, Pune', 'Symbiosis Institute of Design, Pune', 'JNAFAU, Hyderabad', 'Osmania University, Hyderabad', 'Kerala University (College of Engineering, Trivandrum)', 'Thiagarajar College of Engineering, Madurai', 'Government College of Architecture, Lucknow', 'Faculty of Architecture, AKTU, Lucknow', 'Rachana Sansad Academy of Architecture, Mumbai', 'Pillai College of Architecture, Navi Mumbai', 'Vivekanand Education Society’s College of Architecture, Mumbai', 'Smt. Manoramabai Mundle College of Architecture, Nagpur', 'Maulana Azad NIT, Bhopal', 'Birla Institute of Technology, Mesra', 'Indian Institute of Technology (BHU), Varanasi', 'Goa College of Architecture', 'Nirma University, Ahmedabad', 'Anant National University, Ahmedabad', 'Faculty of Architecture, MSU Baroda', 'Sarvajanik College of Engineering and Technology, Surat', 'Mumbai University', 'Pune University (SPPU)', 'Delhi University', 'Christ University, Bengaluru'],
   degree: ['B.Arch', 'M.Arch', 'B.Des', 'M.Des', 'B.Tech', 'M.Tech', 'B.E.', 'Diploma', 'B.Planning', 'M.Planning', 'MBA', 'B.Sc', 'M.Sc', 'BBA', 'Ph.D'],
   field: ['Architecture', 'Interior Design', 'Civil Engineering', 'Urban Planning', 'Landscape Architecture', 'Construction Management', 'Real Estate', 'Structural Engineering', 'Product Design', 'Building Services'],
   title: ['Architect', 'Junior Architect', 'Senior Architect', 'Principal Architect', 'Interior Designer', 'Project Manager', 'Site Engineer', 'Civil Engineer', 'Structural Engineer', 'Quantity Surveyor', 'Real Estate Agent', 'Sales Manager', 'Design Intern', 'Architecture Intern', 'BIM Modeler', '3D Visualizer', 'Draftsman', 'Contractor', 'Urban Planner', 'Landscape Architect'],
@@ -536,7 +549,12 @@ router.put('/update', auth, async (req, res) => {
     if (Array.isArray(education)) updateData.education = cleanEducation(education);
     if (Array.isArray(languages)) updateData.languages = cleanLanguages(languages);
     if (headline !== undefined) updateData.headline = clip(headline, 140);
-    if (contact && typeof contact === 'object') updateData.contact = cleanContact(contact);
+    if (contact && typeof contact === 'object') {
+      for (const [key, label] of [['phone', 'Phone'], ['whatsapp', 'WhatsApp']]) {
+        if (cleanPhone(contact[key]) === null) return res.status(400).json({ error: `${label} number must have 10 digits`, field: `contact.${key}` });
+      }
+      updateData.contact = cleanContact(contact);
+    }
     if (Array.isArray(socialLinks)) updateData.socialLinks = cleanSocialLinks(socialLinks);
     if (business && typeof business === 'object') updateData.business = cleanBusiness(business);
     if (Array.isArray(intent)) updateData.intent = intent.filter((i) => VALID_INTENT.includes(i));
@@ -570,9 +588,10 @@ router.put('/update', auth, async (req, res) => {
       req.userId,
       updateData,
       { new: true, runValidators: true }
-    ).select('-password');
+    ).select('-password').populate('connections', 'name email profilePic bio');
 
-    res.json({ message: 'Profile updated successfully', user });
+    // Same shape as /me, so the app's copy keeps the privacy flags etc.
+    res.json({ message: 'Profile updated successfully', user: meResponse(user) });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update profile', message: error.message });
   }

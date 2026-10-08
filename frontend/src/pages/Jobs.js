@@ -38,6 +38,7 @@ import SavedAnswersDialog from '../components/jobs/SavedAnswersDialog';
 import PendingApplications from '../components/jobs/PendingApplications';
 import SwipeDeck from '../components/jobs/SwipeDeck';
 import { SkeletonRows } from '../components/Skeletons';
+import { checkSalary } from '../utils/validation';
 import ScreeningQuestionsEditor, { questionsError, questionsPayload } from '../components/jobs/ScreeningQuestionsEditor';
 
 // Roles that can post; students can't (the backend also allows anyone with a "hire" intent)
@@ -97,6 +98,8 @@ const JobForm = ({ initial, submitLabel, onSubmit }) => {
   const [skillInput, setSkillInput] = useState('');
   const [saving, setSaving] = useState(false);
   const set = (key) => (value) => setForm((f) => ({ ...f, [key]: value }));
+  const [showSalaryError, setShowSalaryError] = useState(false);
+  const salaryError = showSalaryError ? checkSalary(form.salary) : '';
 
   const addSkill = () => {
     const skill = skillInput.trim().replace(/,$/, '').slice(0, 40);
@@ -110,6 +113,8 @@ const JobForm = ({ initial, submitLabel, onSubmit }) => {
     e.preventDefault();
     const qErr = questionsError(form.questions);
     if (qErr) { toast.error(qErr); return; }
+    const salaryErr = checkSalary(form.salary);
+    if (salaryErr) { setShowSalaryError(true); toast.error(salaryErr); return; }
     setSaving(true);
     try {
       await onSubmit({ ...form, applyBy: form.applyBy || null, questions: questionsPayload(form.questions) });
@@ -135,7 +140,9 @@ const JobForm = ({ initial, submitLabel, onSubmit }) => {
         </div>
         <div>
           <Label>Salary</Label>
-          <Input value={form.salary} onChange={(e) => set('salary')(e.target.value)} maxLength={80} placeholder="e.g. ₹6–8 LPA or ₹40,000/month" data-testid="job-form-salary" />
+          <Input value={form.salary} onChange={(e) => set('salary')(e.target.value)} maxLength={80} placeholder="e.g. ₹6–8 LPA or ₹40,000/month" data-testid="job-form-salary"
+            aria-invalid={!!salaryError} className={salaryError ? 'border-red-400' : ''} onBlur={() => setShowSalaryError(true)} />
+          {salaryError && <p className="mt-1 text-xs text-red-600" data-testid="job-form-salary-error">{salaryError}</p>}
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
