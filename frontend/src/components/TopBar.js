@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useUI } from '../context/UIContext';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { FiLogOut, FiMenu, FiUser, FiSettings, FiBell, FiChevronDown } from 'react-icons/fi';
+import { FiLogOut, FiMenu, FiUser, FiSettings, FiBell, FiChevronDown, FiGrid, FiPlus, FiCheckCircle } from 'react-icons/fi';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -16,12 +16,15 @@ import ProfileCompletionBadge from './ProfileCompletionBadge';
 import NotificationBell from './NotificationBell';
 import PeopleSearchBox from './PeopleSearchBox';
 import { useBadgeTotal } from '../hooks/useNavBadges';
+import { usePages } from '../context/PagesContext';
+import CompanyLogo from './company/CompanyLogo';
 import { personHeadline } from '../utils/personHeadline';
 
 const TopBarFrame = () => {
   const { user, logout, logoutAll } = useAuth();
   const { setSidebarOpen } = useUI();
   const badgeTotal = useBadgeTotal();
+  const { pages, acting, setActingAs } = usePages();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -52,7 +55,13 @@ const TopBarFrame = () => {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-        <ProfileCompletionBadge />
+        {acting ? (
+          <button type="button" onClick={() => navigate(`/company/${acting.slug}/admin`)}
+            className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-yellow-300 bg-yellow-50 px-3 py-1.5 text-xs font-semibold text-black hover:bg-yellow-100 max-w-[14rem]"
+            data-testid="acting-as-pill" title="You're managing this company page">
+            <FiGrid className="w-3.5 h-3.5 shrink-0" /><span className="truncate">Acting as {acting.name}</span>
+          </button>
+        ) : <ProfileCompletionBadge />}
         <NotificationBell />
 
         <DropdownMenu>
@@ -63,24 +72,43 @@ const TopBarFrame = () => {
               data-testid="account-menu"
             >
               <div className="text-right hidden md:block max-w-[12rem]">
-                <p className="font-semibold text-sm text-black leading-tight truncate">{user?.name}</p>
-                <p className="text-xs text-slate-500 truncate">{personHeadline(user)}</p>
+                <p className="font-semibold text-sm text-black leading-tight truncate">{acting ? acting.name : user?.name}</p>
+                <p className="text-xs text-slate-500 truncate">{acting ? 'Company page' : personHeadline(user)}</p>
               </div>
-              <Avatar className="w-9 h-9">
-                <AvatarImage src={user?.profilePic} />
-                <AvatarFallback className="bg-yellow-400 text-black font-semibold">
-                  {user?.name?.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
+              {acting ? <CompanyLogo page={acting} className="w-9 h-9" rounded="rounded-lg" text="text-xs" /> : (
+                <Avatar className="w-9 h-9">
+                  <AvatarImage src={user?.profilePic} />
+                  <AvatarFallback className="bg-yellow-400 text-black font-semibold">
+                    {user?.name?.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+              )}
               <FiChevronDown className="w-4 h-4 text-slate-500 hidden sm:block" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-60">
-            <div className="px-2 py-2">
-              <p className="text-sm font-semibold text-black truncate">{user?.name}</p>
-              <p className="text-xs text-slate-500 truncate">{user?.email}</p>
-            </div>
+          <DropdownMenuContent align="end" className="w-72">
+            <p className="px-2 pt-1.5 pb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">{pages.length ? 'Switch to' : 'Your account'}</p>
+            <DropdownMenuItem onClick={() => { setActingAs(null); navigate('/dashboard'); }} className="gap-3 py-2" data-testid="switch-personal">
+              <Avatar className="w-9 h-9">
+                <AvatarImage src={user?.profilePic} />
+                <AvatarFallback className="bg-yellow-400 text-black font-semibold">{user?.name?.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <span className="flex-1 min-w-0"><span className="block text-sm font-semibold text-black truncate">{user?.name}</span><span className="block text-xs text-slate-500">Personal profile</span></span>
+              {!acting && <FiCheckCircle className="w-4 h-4 text-yellow-500" />}
+            </DropdownMenuItem>
+            {pages.map((p) => (
+              <DropdownMenuItem key={p._id} onClick={() => { setActingAs(p._id); navigate(`/company/${p.slug}/admin`); }} className="gap-3 py-2" data-testid={`switch-page-${p.slug}`}>
+                <CompanyLogo page={p} className="w-9 h-9" rounded="rounded-lg" text="text-xs" />
+                <span className="flex-1 min-w-0"><span className="block text-sm font-semibold text-black truncate">{p.name}</span><span className="block text-xs text-slate-500">Company page · {p.role === 'owner' ? 'Owner' : 'Admin'}</span></span>
+                {acting?._id === p._id && <FiCheckCircle className="w-4 h-4 text-yellow-500" />}
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuItem onClick={() => navigate('/company/new')} className="gap-3 py-2 text-slate-700" data-testid="menu-create-page">
+              <span className="w-9 h-9 rounded-lg border border-dashed border-slate-300 flex items-center justify-center"><FiPlus className="w-4 h-4" /></span>
+              Create a company page
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
+            {acting && <DropdownMenuItem onClick={() => navigate(`/company/${acting.slug}`)}><FiGrid className="mr-2" />View company page</DropdownMenuItem>}
             <DropdownMenuItem onClick={() => navigate('/profile')}><FiUser className="mr-2" />View profile</DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate('/notifications')}><FiBell className="mr-2" />Notifications</DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate('/settings')} data-testid="menu-settings"><FiSettings className="mr-2" />Settings & privacy</DropdownMenuItem>

@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const Job = require('../models/Job');
+const Company = require('../models/Company');
+const { isAdmin: isPageAdmin } = require('./company');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 const { uploadDocument, uploadToCloudinary } = require('../config/cloudinary');
@@ -67,6 +69,18 @@ const jobFieldsFromBody = (body = {}, partial = false) => {
 };
 
 const POSTER_FIELDS = 'name company profilePic username headline';
+const PAGE_FIELDS = 'name slug logo verified';
+
+// "Post as" a company Page you manage: the job shows the Page's name and logo
+async function applyCompanyPage(fields, pageId, userId) {
+  if (!pageId) return null;
+  if (!mongoose.isValidObjectId(pageId)) return 'Invalid page';
+  const page = await Company.findById(pageId).select('name owner admins').lean();
+  if (!page || !isPageAdmin(page, userId)) return 'You can only post jobs for pages you manage';
+  fields.companyPage = page._id;
+  fields.company = page.name;
+  return null;
+}
 
 // What anyone browsing sees of a job: no applicant records or answers, and
 // never the poster's ideal answers
@@ -96,12 +110,14 @@ router.post('/create', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
 
-    if (!canPostJobs(user)) {
+    if (!canPostJobs(user) && !req.body.companyPage) {
       return res.status(403).json({ error: 'Only professionals, firms or members hiring can post jobs' });
     }
 
     const fields = jobFieldsFromBody(req.body);
     if (fields.error) return res.status(400).json({ error: fields.error });
+    const pageErr = await applyCompanyPage(fields, req.body.companyPage, req.userId);
+    if (pageErr) return res.status(403).json({ error: pageErr });
 
     if (!fields.title || !fields.description || !fields.company) {
       return res.status(400).json({ error: 'Title, description, and company are required' });
@@ -114,6 +130,7 @@ router.post('/create', auth, async (req, res) => {
 
     await job.save();
     await job.populate('postedBy', 'name email profilePic username');
+    await job.populate('companyPage', PAGE_FIELDS);
 
     evaluateAutoApplyForJob(job).catch((e) => console.error('Auto-apply trigger error:', e.message));
 
@@ -135,7 +152,7 @@ router.get('/list', auth, async (req, res) => {
     if (req.query.type) filter.employmentType = { $in: String(req.query.type).split(',') };
 
     const jobs = await Job.find(filter)
-      .populate('postedBy', POSTER_FIELDS)
+      .populate('postedBy', POSTER_FIELDS).populate('companyPage', PAGE_FIELDS)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -169,7 +186,7 @@ router.get('/recommended', auth, async (req, res) => {
       'applicants.user': { $ne: req.userId },
       _id: { $nin: [...(user?.jobPreferences?.passedJobs || []), ...waiting] }
     })
-      .populate('postedBy', POSTER_FIELDS);
+      .populate('postedBy', POSTER_FIELDS).populate('companyPage', PAGE_FIELDS);
 
     const recommendations = await getJobRecommendationsLLM(user, allJobs);
 
@@ -183,6 +200,7 @@ router.get('/my/posted', auth, async (req, res) => {
   try {
     const jobs = await Job.find({ postedBy: req.userId })
       .populate('applicants.user', 'name email profilePic')
+      .populate('companyPage', PAGE_FIELDS)
       .sort({ createdAt: -1 });
 
     res.json({ jobs });
@@ -280,7 +298,7 @@ router.get('/my/applications', auth, async (req, res) => {
     const jobs = await Job.find({
       'applicants.user': req.userId
     })
-    .populate('postedBy', 'name company profilePic')
+    .populate('postedBy', 'name company profilePic').populate('companyPage', PAGE_FIELDS)
     .sort({ createdAt: -1 });
 
     const applications = jobs.map(job => {
@@ -422,7 +440,7 @@ router.get('/:jobId', auth, async (req, res) => {
     }
 
     const job = await Job.findById(req.params.jobId)
-      .populate('postedBy', 'name email profilePic company username')
+      .populate('postedBy', 'name email profilePic company username').populate('companyPage', PAGE_FIELDS)
       .populate('applicants.user', 'name email profilePic bio');
 
     if (!job) {
@@ -463,6 +481,11 @@ router.put('/:jobId', auth, async (req, res) => {
 
     const fields = jobFieldsFromBody(req.body, true);
     if (fields.error) return res.status(400).json({ error: fields.error });
+    if (Object.prototype.hasOwnProperty.call(req.body, 'companyPage')) {
+      const pageErr = await applyCompanyPage(fields, req.body.companyPage, req.userId);
+      if (pageErr) return res.status(403).json({ error: pageErr });
+      if (!fields.companyPage) fields.companyPage = undefined;
+    }
     for (const key of ['title', 'description', 'company']) {
       if (key in fields && !fields[key]) {
         return res.status(400).json({ error: 'Title, description, and company are required' });
@@ -479,6 +502,7 @@ router.put('/:jobId', auth, async (req, res) => {
     Object.assign(job, fields);
     await job.save();
     await job.populate('postedBy', 'name email profilePic username');
+    await job.populate('companyPage', PAGE_FIELDS);
     await job.populate('applicants.user', 'name email profilePic');
 
     if (reopened) evaluateAutoApplyForJob(job).catch((e) => console.error('Auto-apply trigger error:', e.message));

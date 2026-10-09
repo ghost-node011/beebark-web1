@@ -19,7 +19,7 @@ import {
   FiGlobe as FiLanguage, FiHome, FiCheckCircle, FiX, FiShare2, FiBookmark, FiCalendar, FiLink
 } from 'react-icons/fi';
 import { FaLinkedin } from 'react-icons/fa6';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { API_URL } from '../config/api';
 import { INTENTS, INDUSTRIES, intentsFor } from '../config/onboarding';
 import ResumeImport from '../components/ResumeImport';
@@ -27,13 +27,16 @@ import { SuggestChip, useSuggestChip } from '../components/ai/SuggestChip';
 import { InfoBlock } from '../components/profile/ProfileWidgets';
 import { ProfileHero, ProfileTabs, VisibilityPill, PillFilter, PAGE_BG, SOCIAL } from '../components/profile/ProfileShell';
 import ShareMenu from '../components/ShareMenu';
-import { sortExperience, AvailabilityChips, LanguagesList, BusinessDetails, PeopleGrid, AnalyticsCards, ProjectGrid, ExperienceCard, ListingCards, JobRows, ContactInfoDialog, ActivityCards, ReadMore } from '../components/profile/ProfileSections';
+import { sortExperience, AvailabilityChips, LanguagesList, PeopleGrid, AnalyticsCards, ProjectGrid, ExperienceCard, ListingCards, JobRows, ContactInfoDialog, ActivityCards, ReadMore } from '../components/profile/ProfileSections';
 import { heroBtn } from '../components/profile/ProfileShell';
 import { Switch } from '../components/ui/switch';
 import { AutocompleteInput, LocationInput } from '../components/AutocompleteInput';
-import { AVAILABILITY_LABELS, PROFICIENCY, EMPLOYMENT_TYPES, BUSINESS_TYPES, TEAM_SIZES } from '../config/profileOptions';
+import { AVAILABILITY_LABELS, PROFICIENCY, EMPLOYMENT_TYPES } from '../config/profileOptions';
 import { personHeadline } from '../utils/personHeadline';
 import SkillPicker from '../components/SkillPicker';
+import CompanyInput from '../components/company/CompanyInput';
+import CompanyLogo from '../components/company/CompanyLogo';
+import { usePages } from '../context/PagesContext';
 import { checkPhone, checkYear, digitsOnly } from '../utils/validation';
 
 const ROLE_LABELS = {
@@ -144,6 +147,8 @@ const SectionCard = ({ title, icon: Icon, sectionKey, editingSection, onEditClic
 
 const Profile = () => {
   const { user, setUser } = useAuth();
+  const { pages: myPages, setActingAs } = usePages();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState(emptyFormFromUser(null));
   const [editingSection, setEditingSection] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -154,7 +159,6 @@ const Profile = () => {
   const [expDraft, setExpDraft] = useState(null); // { index, ...fields }
   const [eduDraft, setEduDraft] = useState(null);
   const [langDraft, setLangDraft] = useState({ name: '', proficiency: '' });
-  const [serviceInput, setServiceInput] = useState('');
   const [myConnections, setMyConnections] = useState(null);
   const [removingResume, setRemovingResume] = useState(false);
   const [nameMismatch, setNameMismatch] = useState(null); // { detectedName, currentName }
@@ -379,13 +383,6 @@ const Profile = () => {
     [field]: f[field].includes(value) ? f[field].filter((v) => v !== value) : [...f[field], value]
   }));
 
-  const setBusiness = (patch) => setFormData((f) => ({ ...f, business: { ...f.business, ...patch } }));
-  const addService = () => {
-    const v = serviceInput.trim();
-    if (v && !formData.business.services.includes(v)) setBusiness({ services: [...formData.business.services, v] });
-    setServiceInput('');
-  };
-
   const editAssociated = () => {
     // Start from what's shown now, so the first edit keeps the current people
     setFormData((f) => ({ ...f, associatedProfessionals: user?.associatedProfessionals?.length ? f.associatedProfessionals : galleryPreview.associatedProfessionals.map((p) => p._id) }));
@@ -499,7 +496,6 @@ const Profile = () => {
   const intentLabels = labelsFrom(user?.intent, INTENTS);
   const intentOptions = intentsFor(user);
   const availabilityOptions = user?.availabilityOptions || [];
-  const showBusiness = user?.role !== 'student';
   const sortedExperience = sortExperience(formData.experience);
   const galleryCategories = [...new Set(galleryPreview.items.map((i) => i.category).filter(Boolean))];
   const visibleGalleryItems = galleryCategory === 'All' ? galleryPreview.items : galleryPreview.items.filter((i) => i.category === galleryCategory);
@@ -922,7 +918,7 @@ const Profile = () => {
                       </div>
                       <div className="space-y-1">
                         <Label>Company *</Label>
-                        <AutocompleteInput field="company" value={expDraft.company} onChange={(v) => setExpDraft((d) => ({ ...d, company: v }))} placeholder="e.g. Studio Lotus" data-testid="exp-company" />
+                        <CompanyInput value={expDraft.company} pageId={expDraft.companyPage || null} onChange={(name, pageId) => setExpDraft((d) => ({ ...d, company: name, companyPage: pageId || undefined, page: undefined }))} />
                       </div>
                       <div className="space-y-1">
                         <Label>Employment type</Label>
@@ -1073,56 +1069,32 @@ const Profile = () => {
                 {formData.languages.length > 0 ? <LanguagesList languages={formData.languages} /> : <p className="text-slate-500">No languages added yet</p>}
               </SectionCard>
 
-              {showBusiness && (
-                <SectionCard
-                  title="Business" sectionKey="business" editingSection={editingSection} icon={FiHome}
-                  onEditClick={() => edit('business')} onCancel={cancelSection}
-                  onSave={() => (formData.business.name.trim() || !Object.values(formData.business).some((v) => (Array.isArray(v) ? v.length : String(v).trim()))
-                    ? saveSection()
-                    : toast.error('Add your business name'))}
-                  saving={saving}
-                  editContent={
-                    <div className="space-y-3" data-testid="business-form">
-                      <p className="text-sm text-gray-500">Run a studio, practice or firm? Add it here so clients and talent can find it.</p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="space-y-1"><Label>Business name</Label><Input value={formData.business.name} onChange={(e) => setBusiness({ name: e.target.value })} placeholder="e.g. Sharma Design Studio" data-testid="business-name" /></div>
-                        <div className="space-y-1">
-                          <Label>Type</Label>
-                          <select value={formData.business.type} onChange={(e) => setBusiness({ type: e.target.value })} className={selectClass}>
-                            <option value="">Select</option>
-                            {BUSINESS_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-                          </select>
-                        </div>
-                        <div className="space-y-1"><Label>Website</Label><Input value={formData.business.website} onChange={(e) => setBusiness({ website: e.target.value })} placeholder="yourstudio.com" /></div>
-                        <div className="space-y-1"><Label>Founded</Label><Input value={formData.business.founded} onChange={(e) => setBusiness({ founded: e.target.value.replace(/\D/g, '').slice(0, 4) })} placeholder="e.g. 2018" inputMode="numeric" /></div>
-                        <div className="space-y-1">
-                          <Label>Team size</Label>
-                          <select value={formData.business.teamSize} onChange={(e) => setBusiness({ teamSize: e.target.value })} className={selectClass}>
-                            <option value="">Select</option>
-                            {TEAM_SIZES.map((t) => <option key={t} value={t}>{t}</option>)}
-                          </select>
-                        </div>
-                        <div className="space-y-1"><Label>Address</Label><LocationInput value={formData.business.address} onChange={(v) => setBusiness({ address: v })} placeholder="Office location" /></div>
+              <Card className="p-5 sm:p-8 rounded-2xl border-black/5 shadow-sm" data-testid="company-pages-section">
+                <div className="flex items-center justify-between mb-4 gap-3">
+                  <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 font-serif flex items-center gap-2"><FiHome className="w-4 h-4" />Company pages</h3>
+                  <Link to={user?.business?.name && !myPages.length ? '/company/new?from=business' : '/company/new'} className="inline-flex items-center gap-1.5 rounded-lg bg-yellow-400 px-3 py-1.5 text-sm font-semibold text-black hover:bg-yellow-500" data-testid="profile-create-page">
+                    <FiPlus className="w-4 h-4" />Create
+                  </Link>
+                </div>
+                {myPages.length ? (
+                  <div className="divide-y divide-gray-100">
+                    {myPages.map((p) => (
+                      <div key={p._id} className="flex items-center gap-3 py-3">
+                        <CompanyLogo page={p} className="w-11 h-11" text="text-sm" />
+                        <Link to={`/company/${p.slug}`} className="flex-1 min-w-0">
+                          <span className="block font-semibold text-black truncate hover:underline">{p.name}</span>
+                          <span className="block text-sm text-gray-500 truncate">{p.followerCount} follower{p.followerCount === 1 ? '' : 's'} · {p.role === 'owner' ? 'Owner' : 'Admin'}</span>
+                        </Link>
+                        <Button size="sm" variant="outline" onClick={() => { setActingAs(p._id); navigate(`/company/${p.slug}/admin`); }}>Manage</Button>
                       </div>
-                      <div className="space-y-1">
-                        <Label>Services</Label>
-                        <div className="flex gap-2">
-                          <Input value={serviceInput} onChange={(e) => setServiceInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addService())} placeholder="e.g. Residential interiors" spellCheck />
-                          <Button type="button" onClick={addService} className="bg-yellow-400 hover:bg-yellow-500 text-black shrink-0">Add</Button>
-                        </div>
-                        <div className="flex flex-wrap gap-2 pt-1">
-                          {formData.business.services.map((v) => (
-                            <Badge key={v} className="bg-gray-100 text-gray-800 hover:bg-gray-200 cursor-pointer" onClick={() => setBusiness({ services: formData.business.services.filter((x) => x !== v) })}>{v} ×</Badge>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="space-y-1"><Label>About the business</Label><Textarea value={formData.business.about} onChange={(e) => setBusiness({ about: e.target.value })} rows={3} spellCheck placeholder="What you do, who you work with" /></div>
-                    </div>
-                  }
-                >
-                  {user?.business?.name ? <BusinessDetails business={user.business} /> : <p className="text-slate-500">No business added. Add your studio, practice or firm.</p>}
-                </SectionCard>
-              )}
+                    ))}
+                  </div>
+                ) : user?.business?.name ? (
+                  <p className="text-slate-500">You added <b className="text-slate-800">{user.business.name}</b> as your business. <Link to="/company/new?from=business" className="font-semibold text-black underline">Turn it into a company page</Link> so people can follow it and your team can list it in their Experience.</p>
+                ) : (
+                  <p className="text-slate-500">Run a studio, firm, developer or supply business? Create its page so people can follow it, your team can add it to their Experience, and you can post jobs as the company.</p>
+                )}
+              </Card>
 
               <Card className="p-5 sm:p-8 rounded-2xl border-black/5 shadow-sm" data-testid="resume-section">
                 <div className="flex items-center justify-between mb-4 gap-3">

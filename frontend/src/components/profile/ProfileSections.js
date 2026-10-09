@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import CompanyLogo from '../company/CompanyLogo';
 import { toast } from 'sonner';
 import {
   FiGlobe, FiMapPin, FiUsers, FiCalendar, FiExternalLink, FiMail, FiPhone, FiCopy, FiLock, FiChevronDown,
@@ -111,10 +112,16 @@ export const ExperienceCard = ({ exp, actions }) => {
   return (
     <div className={`rounded-2xl border bg-white pf-hover ${open ? 'border-[#f3d27a]' : 'border-[#e8e2da]'}`}>
       <div className="flex items-start gap-4 p-5 sm:p-6">
-        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl pf-soft flex items-center justify-center shrink-0"><FiBriefcaseAlt className="w-6 h-6 text-[#3a322b]" /></div>
+        {exp.page ? (
+          <Link to={`/company/${exp.page.slug}`} className="shrink-0" aria-label={exp.page.name} data-testid="exp-company-link">
+            <CompanyLogo page={exp.page} className="w-12 h-12 sm:w-14 sm:h-14" text="text-sm" />
+          </Link>
+        ) : <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl pf-soft flex items-center justify-center shrink-0"><FiBriefcaseAlt className="w-6 h-6 text-[#3a322b]" /></div>}
         <button type="button" onClick={() => hasMore && setOpen((o) => !o)} className="flex-1 min-w-0 text-left" aria-expanded={open}>
           <p className="pf-serif text-lg sm:text-xl font-semibold text-[#2b2622]">{exp.title}</p>
-          <p className="text-[16px] sm:text-[17px] pf-muted">{exp.company}</p>
+          <p className="text-[16px] sm:text-[17px] pf-muted">
+            {exp.page ? exp.page.name : exp.company}
+          </p>
           <p className="mt-1.5 flex flex-wrap items-center gap-x-5 gap-y-1 text-[15px] pf-muted">
             <span>{yearsOf(exp)}</span>
             {exp.location && <span className="inline-flex items-center gap-1.5"><FiMapPin className="w-4 h-4" />{exp.location}</span>}

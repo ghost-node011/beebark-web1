@@ -21,6 +21,8 @@ const jobSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  // Posted on behalf of a company Page (the poster is one of its admins)
+  companyPage: { type: mongoose.Schema.Types.ObjectId, ref: 'Company', index: true },
   postedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

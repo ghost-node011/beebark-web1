@@ -1,17 +1,19 @@
 import { useInLayout } from '../context/LayoutContext';
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useUI } from '../context/UIContext';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import {
   FiHome, FiMessageCircle, FiUsers, FiLayers, FiBriefcase,
-  FiVideo, FiX, FiImage, FiFileText, FiSend, FiHome as FiProperty, FiSettings
+  FiVideo, FiX, FiImage, FiFileText, FiSend, FiHome as FiProperty, FiSettings, FiGrid
 } from 'react-icons/fi';
 import { getCopy } from '../config/roleDomainCopy';
 import { personHeadline } from '../utils/personHeadline';
 import { preloadPath } from '../lib/pages';
 import useNavBadges from '../hooks/useNavBadges';
+import { usePages } from '../context/PagesContext';
+import CompanyLogo from './company/CompanyLogo';
 
 const SidebarFrame = () => {
   const { user } = useAuth();
@@ -21,7 +23,21 @@ const SidebarFrame = () => {
   const badges = useNavBadges();
   const countFor = { messages: badges.messages, connections: badges.connections, jobs: badges.jobs };
 
-  const menuItems = [
+  const { acting, setActingAs } = usePages();
+  const navigate = useNavigate();
+  const location = useLocation();
+  // Managing a company Page: its own menu
+  const pageItems = acting && [
+    { id: 'page-dashboard', path: `/company/${acting.slug}/admin`, icon: FiHome, label: 'Page dashboard', end: true },
+    { id: 'page-view', path: `/company/${acting.slug}`, icon: FiGrid, label: 'Company page', end: true },
+    { id: 'messages', path: '/chat', icon: FiMessageCircle, label: 'Messages' },
+    { id: 'jobs', path: '/jobs?tab=posted', icon: FiBriefcase, label: 'Hiring' },
+    { id: 'portfolio', path: '/portfolio', icon: FiImage, label: acting.type === 'supplier' ? 'Product catalogue' : 'Projects' },
+    { id: 'news', path: '/news', icon: FiFileText, label: 'News' },
+    { id: 'page-settings', path: `/company/${acting.slug}/admin?tab=edit`, icon: FiSettings, label: 'Page settings' }
+  ];
+
+  const personalItems = [
     { id: 'dashboard', path: '/dashboard', icon: FiHome, label: 'Dashboard' },
     { id: 'messages', path: '/chat', icon: FiMessageCircle, label: 'Messages' },
     { id: 'connections', path: '/connections', icon: FiUsers, label: copy.connectionsLabel },
@@ -42,6 +58,7 @@ const SidebarFrame = () => {
     // { id: 'meetings', path: '/meetings', icon: FiVideo, label: 'Meetings' },
     { id: 'settings', path: '/settings', icon: FiSettings, label: 'Settings' },
   ];
+  const menuItems = pageItems || personalItems;
 
   return (
     <>
@@ -77,14 +94,18 @@ const SidebarFrame = () => {
             const Icon = item.icon;
             return (
               <NavLink
-                key={item.path}
+                key={item.id}
                 to={item.path}
+                end={item.end}
                 onClick={close}
                 onMouseEnter={() => preloadPath(item.path)}
                 onFocus={() => preloadPath(item.path)}
-                className={({ isActive }) =>
-                  `sidebar-item ${isActive ? 'active' : ''}`
-                }
+                className={({ isActive }) => {
+                  // Links with a query (?tab=…) only count as active when the query matches too
+                  const [, query] = item.path.split('?');
+                  const on = query ? isActive && location.search.includes(query) : isActive && !(item.end && location.search.includes('tab=edit'));
+                  return `sidebar-item ${on ? 'active' : ''}`;
+                }}
                 data-testid={`sidebar-${item.id}`}
               >
                 <Icon className="w-5 h-5" />
@@ -101,6 +122,20 @@ const SidebarFrame = () => {
         </nav>
 
         <div className="border-t border-slate-200 p-4 shrink-0">
+          {acting ? (
+            <div className="space-y-1">
+              <NavLink to={`/company/${acting.slug}`} onClick={close} className="flex items-center space-x-3 p-3 hover:bg-slate-50 rounded-lg">
+                <CompanyLogo page={acting} className="w-10 h-10" rounded="rounded-lg" text="text-sm" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm text-black truncate">{acting.name}</p>
+                  <p className="text-xs text-slate-500 truncate">Acting as page</p>
+                </div>
+              </NavLink>
+              <button type="button" onClick={() => { setActingAs(null); close(); navigate('/dashboard'); }} className="w-full text-left text-xs font-medium text-slate-600 hover:text-black px-3 py-1.5" data-testid="switch-back-personal">
+                Switch back to {user?.name?.split(' ')[0] || 'your profile'}
+              </button>
+            </div>
+          ) : (
           <NavLink to="/profile" onClick={close} className="flex items-center space-x-3 p-3 hover:bg-slate-50 rounded-lg">
             <Avatar className="w-10 h-10">
               <AvatarImage src={user?.profilePic} />
@@ -113,6 +148,7 @@ const SidebarFrame = () => {
               <p className="text-xs text-slate-500 truncate">{personHeadline(user)}</p>
             </div>
           </NavLink>
+          )}
         </div>
       </div>
     </>

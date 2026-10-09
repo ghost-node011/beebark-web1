@@ -1,8 +1,9 @@
 import React, { Suspense, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import { UIProvider } from './context/UIContext';
+import { PagesProvider } from './context/PagesContext';
 import { Toaster } from './components/ui/sonner';
 import AppLayout from './components/AppLayout';
 import BeeLoader from './components/BeeLoader';
@@ -16,7 +17,7 @@ installAxiosProgress();
 const {
   Login, Register, VerifyEmail, Onboarding, ForgotPassword, LinkedInCallback, PrivacyPolicy, PhoneLogin,
   Dashboard, Feed, Portfolio, PublicPortfolio, PortfolioCv, Profile, PublicProfile, Connections, Chat, Jobs, News,
-  Official, Meetings, MeetingRoom, Settings, Notifications, Listings, ListingDetail, Search
+  Official, Meetings, MeetingRoom, Settings, Notifications, Listings, ListingDetail, Search, CompanyPage, CompanyNew, CompanyAdmin
 } = Pages;
 
 // Redirects replace the current history entry, so Back never bounces into a redirect loop
@@ -50,6 +51,14 @@ const PublicRoute = ({ children }) => {
   return user ? <Go to="/dashboard" /> : children;
 };
 
+// /c/:slug: visitors get the open page, members the in-app one
+const OpenCompany = () => {
+  const { user, loading } = useAuth();
+  const { slug } = useParams();
+  if (loading) return <BeeLoader size="full" />;
+  return user ? <Go to={`/company/${slug}`} /> : <CompanyPage open />;
+};
+
 // Pages outside the app frame (sign-in, public portfolio) show the loader on their own
 const Standalone = ({ children }) => <Suspense fallback={<BeeLoader size="full" />}>{children}</Suspense>;
 
@@ -58,6 +67,7 @@ function App() {
     <Router>
       <AuthProvider>
         <SocketProvider>
+          <PagesProvider>
           <UIProvider>
           <Toaster position="top-right" richColors />
           <TopProgressBar />
@@ -77,6 +87,8 @@ function App() {
             <Route path="/portfolio/:username/cv" element={<PortfolioCv />} />
             {/* Public profile anyone can open (shared on LinkedIn etc.); signed-in people get the in-app one */}
             <Route path="/in/:username" element={<PublicProfile open />} />
+            {/* Shareable company page; signed-in people are sent to the in-app one */}
+            <Route path="/c/:slug" element={<OpenCompany />} />
             <Route element={<PrivateRoute />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/feed" element={<Feed />} />
@@ -94,6 +106,9 @@ function App() {
               <Route path="/listings" element={<Listings />} />
               <Route path="/listing/:id" element={<ListingDetail />} />
               <Route path="/search" element={<Search />} />
+              <Route path="/company/new" element={<CompanyNew />} />
+              <Route path="/company/:slug" element={<CompanyPage />} />
+              <Route path="/company/:slug/admin" element={<CompanyAdmin />} />
               {['/reels', '/projects', '/store', '/rent', '/events', '/memories', '/wallet'].map((p) => (
                 <Route key={p} path={p} element={<Go to="/dashboard" />} />
               ))}
@@ -105,6 +120,7 @@ function App() {
           </Routes>
           </Standalone>
           </UIProvider>
+          </PagesProvider>
         </SocketProvider>
       </AuthProvider>
     </Router>

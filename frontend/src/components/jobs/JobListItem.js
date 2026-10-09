@@ -5,6 +5,8 @@ import { companyInitial, idOf, isClosed, jobChips, questionCount, timeAgo } from
 
 export const CompanySquare = ({ job, size = 'md' }) => {
   const cls = size === 'lg' ? 'w-14 h-14 text-2xl rounded-2xl' : size === 'sm' ? 'w-10 h-10 text-base rounded-xl' : 'w-12 h-12 text-lg rounded-xl';
+  const page = job?.companyPage && typeof job.companyPage === 'object' ? job.companyPage : null;
+  if (page?.logo) return <img src={page.logo} alt="" className={`${cls} object-cover border border-[#ebe6df] bg-white shrink-0`} />;
   return (
     <div className={`${cls} bg-[#FFF3D1] text-[#8a6100] font-bold flex items-center justify-center shrink-0 pf-serif`} aria-hidden="true">
       {companyInitial(job)}

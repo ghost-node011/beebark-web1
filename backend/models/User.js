@@ -94,7 +94,9 @@ const userSchema = new mongoose.Schema({
     location: { type: String, default: '' },
     startDate: { type: String, default: '' }, // "YYYY-MM"
     endDate: { type: String, default: '' }, // "YYYY-MM"; empty when current
-    current: { type: Boolean, default: false }
+    current: { type: Boolean, default: false },
+    // Set when the company was picked from a BeeBark company Page
+    companyPage: { type: mongoose.Schema.Types.ObjectId, ref: 'Company', index: true }
   }],
   education: [{
     school: String,

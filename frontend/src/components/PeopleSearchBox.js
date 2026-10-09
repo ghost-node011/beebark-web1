@@ -5,6 +5,7 @@ import { FiSearch, FiClock, FiX, FiArrowRight } from 'react-icons/fi';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { API_URL } from '../config/api';
 import { personHeadline } from '../utils/personHeadline';
+import CompanyLogo from './company/CompanyLogo';
 import Highlight, { searchWords } from './Highlight';
 
 const RECENT_KEY = 'beebark.recentSearches';
@@ -25,6 +26,7 @@ const PeopleSearchBox = () => {
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
   const [results, setResults] = useState([]);
+  const [companies, setCompanies] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [active, setActive] = useState(-1);
@@ -34,9 +36,12 @@ const PeopleSearchBox = () => {
 
   useEffect(() => {
     const term = q.trim();
-    if (!term) { setResults([]); setTotal(0); return undefined; }
+    if (!term) { setResults([]); setCompanies([]); setTotal(0); return undefined; }
     setLoading(true);
     const t = setTimeout(() => {
+      axios.get(`${API_URL}/api/companies/search`, { params: { q: term }, silent: true })
+        .then((res) => setCompanies((res.data.pages || []).slice(0, 3)))
+        .catch(() => setCompanies([]));
       axios.get(`${API_URL}/api/people/search`, { params: { q: term, limit: 7 }, silent: true })
         .then((res) => { setResults(res.data.people || []); setTotal(res.data.total || 0); setActive(-1); })
         .catch(() => {})
@@ -147,7 +152,22 @@ const PeopleSearchBox = () => {
                   </span>
                 </button>
               ))}
-              {!loading && rows.length === 0 && <p className="px-4 py-4 text-sm text-slate-500">No people match “{q.trim()}”.</p>}
+              {!loading && rows.length === 0 && companies.length === 0 && <p className="px-4 py-4 text-sm text-slate-500">No people match “{q.trim()}”.</p>}
+              {companies.length > 0 && (
+                <div className="border-t border-slate-100 py-1" data-testid="search-companies">
+                  <p className="px-4 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">Companies</p>
+                  {companies.map((c) => (
+                    <button key={c._id} type="button" onClick={() => { setOpen(false); setQ(''); navigate(`/company/${c.slug}`); }}
+                      className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-slate-50" data-testid={`search-company-${c.slug}`}>
+                      <CompanyLogo page={c} className="w-10 h-10" rounded="rounded-lg" text="text-xs" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm text-slate-700"><Highlight text={c.name} words={words} /></span>
+                        <span className="block truncate text-xs text-slate-500">{[c.tagline, c.locations?.[0]].filter(Boolean).join(' · ') || 'Company page'}</span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
               <button
                 type="button"
                 onClick={() => goAll()}

@@ -39,6 +39,8 @@ import PendingApplications from '../components/jobs/PendingApplications';
 import SwipeDeck from '../components/jobs/SwipeDeck';
 import { SkeletonRows } from '../components/Skeletons';
 import { checkSalary } from '../utils/validation';
+import { usePages } from '../context/PagesContext';
+import CompanyLogo from '../components/company/CompanyLogo';
 import ScreeningQuestionsEditor, { questionsError, questionsPayload } from '../components/jobs/ScreeningQuestionsEditor';
 
 // Roles that can post; students can't (the backend also allows anyone with a "hire" intent)
@@ -49,7 +51,7 @@ const LIST_TABS = ['all', 'applied', 'posted']; // list + detail layout ("foryou
 
 const EMPTY_FORM = {
   title: '', description: '', company: '', location: '', salary: '',
-  employmentType: '', workplace: '', experienceLevel: '', skills: [], applyBy: '', questions: []
+  employmentType: '', workplace: '', experienceLevel: '', skills: [], applyBy: '', questions: [], companyPage: ''
 };
 
 const formFromJob = (job) => ({
@@ -57,6 +59,7 @@ const formFromJob = (job) => ({
   ...Object.fromEntries(Object.keys(EMPTY_FORM).map((k) => [k, job?.[k] ?? EMPTY_FORM[k]])),
   skills: job?.skills || [],
   applyBy: job?.applyBy ? String(job.applyBy).slice(0, 10) : '',
+  companyPage: job?.companyPage ? String(job.companyPage._id || job.companyPage) : '',
   questions: (job?.questions || []).map((q) => ({
     ...q, key: q._id, options: q.options || [], idealAnswer: q.idealAnswer || '', required: !!q.required
   }))
@@ -93,8 +96,13 @@ const OptionSelect = ({ value, onChange, options, placeholder, testId }) => (
 );
 
 // Shared by "Post a job" and "Edit job"
-const JobForm = ({ initial, submitLabel, onSubmit }) => {
-  const [form, setForm] = useState(initial || EMPTY_FORM);
+const JobForm = ({ initial, submitLabel, onSubmit, pages = [], defaultPage = null }) => {
+  const [form, setForm] = useState(() => {
+    const start = initial || EMPTY_FORM;
+    if (initial || !defaultPage) return start;
+    return { ...start, companyPage: defaultPage._id, company: defaultPage.name, location: start.location || defaultPage.locations?.[0] || '' };
+  });
+  const postAsPage = pages.find((p) => p._id === form.companyPage) || null;
   const [skillInput, setSkillInput] = useState('');
   const [saving, setSaving] = useState(false);
   const set = (key) => (value) => setForm((f) => ({ ...f, [key]: value }));
@@ -117,7 +125,8 @@ const JobForm = ({ initial, submitLabel, onSubmit }) => {
     if (salaryErr) { setShowSalaryError(true); toast.error(salaryErr); return; }
     setSaving(true);
     try {
-      await onSubmit({ ...form, applyBy: form.applyBy || null, questions: questionsPayload(form.questions) });
+      const { companyPage, ...rest } = form;
+      await onSubmit({ ...rest, applyBy: form.applyBy || null, questions: questionsPayload(form.questions), ...(companyPage || initial ? { companyPage: companyPage || null } : {}) });
     } finally {
       setSaving(false);
     }
@@ -125,13 +134,32 @@ const JobForm = ({ initial, submitLabel, onSubmit }) => {
 
   return (
     <form onSubmit={submit} className="space-y-4 mt-4 pf-page">
+      {pages.length > 0 && (
+        <div>
+          <Label>Post as</Label>
+          <div className="mt-1 flex flex-wrap gap-2" role="radiogroup" data-testid="job-post-as">
+            {[{ _id: '', name: 'Yourself' }, ...pages].map((p) => {
+              const active = (form.companyPage || '') === p._id;
+              return (
+                <button key={p._id || 'me'} type="button" role="radio" aria-checked={active}
+                  onClick={() => setForm((f) => ({ ...f, companyPage: p._id, company: p._id ? p.name : (f.companyPage ? '' : f.company) }))}
+                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm ${active ? 'border-[#2b2622] bg-[#2b2622] text-white' : 'border-[#e3ddd5] bg-white text-[#2b2622] hover:border-[#cfc6bb]'}`}
+                  data-testid={`job-post-as-${p._id ? p.slug : 'me'}`}>
+                  {p._id ? <CompanyLogo page={p} className="w-5 h-5" rounded="rounded" text="text-[8px]" /> : null}{p.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
       <div>
         <Label>Job Title</Label>
         <Input value={form.title} onChange={(e) => set('title')(e.target.value)} maxLength={150} required data-testid="job-form-title" />
       </div>
       <div>
         <Label>Company</Label>
-        <Input value={form.company} onChange={(e) => set('company')(e.target.value)} maxLength={150} required data-testid="job-form-company" />
+        <Input value={postAsPage ? postAsPage.name : form.company} onChange={(e) => set('company')(e.target.value)} maxLength={150} required disabled={!!postAsPage} data-testid="job-form-company" />
+        {postAsPage && <p className="mt-1 text-xs text-[#7a7067]">The job shows {postAsPage.name}'s page and logo.</p>}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
@@ -296,10 +324,13 @@ const Jobs = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const isDesktop = useIsDesktop();
   const { user, setUser } = useAuth();
+  const { pages: myPages, acting } = usePages();
+  const asParam = searchParams.get('as');
+  const postAsDefault = myPages.find((p) => p._id === asParam) || acting || null;
   const copy = getCopy(user);
   const myId = user?.id || user?._id;
   const isRecruiter = user?.role === 'recruiter';
-  const canPost = POSTING_ROLES.includes(user?.role) || (user?.role !== 'student' && user?.intent?.includes?.('hire'));
+  const canPost = POSTING_ROLES.includes(user?.role) || (user?.role !== 'student' && user?.intent?.includes?.('hire')) || myPages.length > 0;
   const showPostedTab = canPost || myJobs.length > 0;
   const isMine = useCallback((job) => !!myId && String(idOf(job?.postedBy)) === String(myId), [myId]);
   const deepLinkId = searchParams.get('job');
@@ -307,6 +338,13 @@ const Jobs = () => {
   // Students land on the swipe deck; everyone else on the full list (a ?job= link opens the list)
   const defaultTab = user?.role === 'student' && !deepLinkId ? 'foryou' : 'all';
   const tab = TABS.includes(tabParam) && (tabParam !== 'posted' || showPostedTab) ? tabParam : defaultTab;
+
+  // "Post a job" from a company Page lands here with ?post=1&as=<page>
+  useEffect(() => {
+    if (searchParams.get('post') !== '1' || !canPost) return;
+    setShowPostDialog(true);
+    setSearchParams((p) => { p.delete('post'); return p; }, { replace: true });
+  }, [searchParams, canPost, setSearchParams]);
 
   const setTab = (next) => {
     setSearchParams((p) => {
@@ -672,7 +710,7 @@ const Jobs = () => {
                 <DialogHeader>
                   <DialogTitle className="pf-serif text-2xl">Post a New Job</DialogTitle>
                 </DialogHeader>
-                {showPostDialog && <JobForm submitLabel="Post Job" onSubmit={handlePostJob} />}
+                {showPostDialog && <JobForm key={postAsDefault?._id || "me"} submitLabel="Post Job" onSubmit={handlePostJob} pages={myPages} defaultPage={postAsDefault} />}
               </DialogContent>
             </Dialog>
           )}
@@ -965,7 +1003,7 @@ const Jobs = () => {
             <DialogHeader>
               <DialogTitle className="pf-serif text-2xl">Edit job</DialogTitle>
             </DialogHeader>
-            {editingJob && <JobForm key={editingJob._id} initial={formFromJob(editingJob)} submitLabel="Save changes" onSubmit={handleEditJob} />}
+            {editingJob && <JobForm key={editingJob._id} initial={formFromJob(editingJob)} submitLabel="Save changes" onSubmit={handleEditJob} pages={myPages} />}
           </DialogContent>
         </Dialog>
 

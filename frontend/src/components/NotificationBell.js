@@ -9,6 +9,7 @@ const MESSAGES = {
   connection_request: (name) => `${name} sent you a connection request`,
   connection_accepted: (name) => `${name} accepted your connection request`,
   connection_declined: (name) => `${name} declined your connection request`,
+  page_admin: (name, n) => `${name} made you an admin of ${n?.meta?.pageName || 'a company page'}`,
   follow: (name) => `${name} started following you`,
   quote_request: (name, n) => `${name} asked for a quote${n?.meta?.itemTitle ? ` for ${n.meta.itemTitle}` : ''}${n?.meta?.message ? `: "${n.meta.message.slice(0, 120)}"` : ''}`
 };

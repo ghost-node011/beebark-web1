@@ -2,6 +2,9 @@ const express = require('express');
 const path = require('path');
 const router = express.Router();
 const User = require('../models/User');
+const mongoose = require('mongoose');
+const Company = require('../models/Company');
+const { firmToPage } = require('../utils/firmToPage');
 const auth = require('../middleware/auth');
 const { uploadDocument, uploadToCloudinary } = require('../config/cloudinary');
 const { parseResume } = require('../utils/resumeParser');
@@ -32,7 +35,8 @@ function cleanExperience(list) {
       location: clip(e?.location, 120),
       startDate,
       endDate,
-      current
+      current,
+      ...(mongoose.isValidObjectId(e?.companyPage) ? { companyPage: String(e.companyPage) } : {})
     };
   }).filter((e) => e.title || e.company);
 }
@@ -119,6 +123,16 @@ function cleanSocialLinks(list) {
 const PERSON_CARD = 'name username profilePic role careerStage specialization accountStatus';
 const toCard = (c) => ({ _id: c._id, name: c.name, username: c.username, profilePic: c.profilePic, role: c.role, careerStage: c.careerStage, specialization: c.specialization || [] });
 
+// Experience entries with their company Page's name, address and logo
+async function withPages(experience) {
+  const list = (experience || []).map((e) => (typeof e.toObject === 'function' ? e.toObject() : { ...e }));
+  const ids = list.map((e) => e.companyPage).filter(Boolean);
+  if (!ids.length) return list;
+  const pages = await Company.find({ _id: { $in: ids } }).select('name slug logo').lean();
+  const byId = new Map(pages.map((p) => [String(p._id), p]));
+  return list.map((e) => (e.companyPage && byId.has(String(e.companyPage)) ? { ...e, page: byId.get(String(e.companyPage)) } : e));
+}
+
 // The signed-in user as the app keeps it (settings flattened, derived fields added)
 const meResponse = (user) => ({
       id: user._id,
@@ -183,10 +197,13 @@ const meResponse = (user) => ({
 
 router.get('/me', auth, async (req, res) => {
   try {
+    if (['firm', 'company'].includes(req.user?.role)) {
+      await firmToPage(req.user).catch((e) => console.error('Firm to page failed:', e.message));
+    }
     const user = await User.findById(req.userId)
       .select('-password')
       .populate('connections', 'name email profilePic bio');
-    res.json({ user: meResponse(user) });
+    res.json({ user: { ...meResponse(user), experience: await withPages(user.experience) } });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch profile', message: error.message });
   }
@@ -327,7 +344,7 @@ async function buildProfile(username, viewerId, { visitor = '', countView = true
       projectTypeFocus: user.projectTypeFocus || [],
       markets: user.markets || [],
       activeProjects: activeProjects(items),
-      experience: user.experience || [],
+      experience: await withPages(user.experience),
       education: user.education || [],
       careerStage: user.careerStage || '',
       headline: user.headline || '',
@@ -545,7 +562,20 @@ router.put('/update', auth, async (req, res) => {
     if (location !== undefined) updateData.location = String(location).slice(0, 120);
     if (profilePic !== undefined) updateData.profilePic = profilePic;
     if (Array.isArray(skills)) updateData.skills = asTagList(skills).slice(0, 30);
-    if (Array.isArray(experience)) updateData.experience = cleanExperience(experience);
+    if (Array.isArray(experience)) {
+      updateData.experience = cleanExperience(experience);
+      // Only real Pages can be linked; the company name follows the Page
+      const ids = updateData.experience.map((e) => e.companyPage).filter(Boolean);
+      if (ids.length) {
+        const pages = await Company.find({ _id: { $in: ids } }).select('name').lean();
+        const nameOf = new Map(pages.map((p) => [String(p._id), p.name]));
+        updateData.experience = updateData.experience.map((e) => {
+          if (!e.companyPage) return e;
+          if (!nameOf.has(e.companyPage)) { const { companyPage, ...rest } = e; return rest; }
+          return { ...e, company: nameOf.get(e.companyPage) };
+        });
+      }
+    }
     if (Array.isArray(education)) updateData.education = cleanEducation(education);
     if (Array.isArray(languages)) updateData.languages = cleanLanguages(languages);
     if (headline !== undefined) updateData.headline = clip(headline, 140);
@@ -591,7 +621,7 @@ router.put('/update', auth, async (req, res) => {
     ).select('-password').populate('connections', 'name email profilePic bio');
 
     // Same shape as /me, so the app's copy keeps the privacy flags etc.
-    res.json({ message: 'Profile updated successfully', user: meResponse(user) });
+    res.json({ message: 'Profile updated successfully', user: { ...meResponse(user), experience: await withPages(user.experience) } });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update profile', message: error.message });
   }

@@ -38,8 +38,9 @@ const JobDetail = ({
   const closed = isClosed(job);
   const poster = job.postedBy && typeof job.postedBy === 'object' ? job.postedBy : null;
   const posterPath = poster?.username ? `/profile/${poster.username}` : null;
+  const page = job.companyPage && typeof job.companyPage === 'object' ? job.companyPage : null;
   const meta = [
-    job.company,
+    page ? null : job.company,
     job.location,
     job.createdAt ? `posted ${timeAgo(job.createdAt)}` : null,
     typeof job.applicantCount === 'number' ? `${job.applicantCount} applicant${job.applicantCount === 1 ? '' : 's'}` : null
@@ -79,7 +80,10 @@ const JobDetail = ({
         <CompanySquare job={job} size="lg" />
         <div className="min-w-0 flex-1">
           <h2 className="pf-serif text-2xl sm:text-3xl leading-tight text-[#2b2622] break-words">{job.title}</h2>
-          <p className="text-sm text-[#7a7067] mt-1 break-words">{meta.join(' · ')}</p>
+          <p className="text-sm text-[#7a7067] mt-1 break-words">
+            {page && <><Link to={`/company/${page.slug}`} className="font-medium text-[#2b2622] hover:underline" data-testid="job-company-page">{page.name}</Link>{meta.length ? ' · ' : ''}</>}
+            {meta.join(' · ')}
+          </p>
         </div>
       </div>
 

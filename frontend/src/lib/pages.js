@@ -35,7 +35,10 @@ export const Pages = {
   Notifications: page(() => import('../pages/Notifications')),
   Listings: page(() => import('../pages/Listings')),
   ListingDetail: page(() => import('../pages/ListingDetail')),
-  Search: page(() => import('../pages/Search'))
+  Search: page(() => import('../pages/Search')),
+  CompanyPage: page(() => import('../pages/CompanyPage')),
+  CompanyNew: page(() => import('../pages/CompanyNew')),
+  CompanyAdmin: page(() => import('../pages/CompanyAdmin'))
 };
 
 // Sidebar paths → page, for preloading on hover

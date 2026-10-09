@@ -11,10 +11,12 @@ import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import { FiUser, FiLock, FiSlash, FiLogOut, FiPauseCircle, FiTrash2, FiChevronRight, FiBell, FiBriefcase } from 'react-icons/fi';
+import { FiUser, FiLock, FiSlash, FiLogOut, FiPauseCircle, FiTrash2, FiChevronRight, FiBell, FiBriefcase, FiGrid, FiPlus } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { SkeletonRows } from '../components/Skeletons';
 import { API_URL } from '../config/api';
+import { usePages } from '../context/PagesContext';
+import CompanyLogo from '../components/company/CompanyLogo';
 
 const PRIVACY = [
   { field: 'analyticsPublic', label: 'Show my profile analytics', hint: 'Profile views and counts on your profile' },
@@ -23,8 +25,18 @@ const PRIVACY = [
   { field: 'readReceipts', label: 'Read receipts', hint: "Let people see when you've read their messages. If you turn this off, you won't see theirs either." }
 ];
 
-const Section = ({ icon: Icon, title, children, tone }) => (
-  <Card className={`p-6 ${tone === 'danger' ? 'border-red-200' : ''}`}>
+const NAV = [
+  { id: 'account', label: 'Account', icon: FiUser },
+  { id: 'pages', label: 'Company pages', icon: FiGrid },
+  { id: 'privacy', label: 'Privacy', icon: FiLock },
+  { id: 'jobs', label: 'Job settings', icon: FiBriefcase },
+  { id: 'blocked', label: 'Blocked people', icon: FiSlash },
+  { id: 'signout', label: 'Sign out', icon: FiLogOut },
+  { id: 'close', label: 'Close account', icon: FiPauseCircle, danger: true }
+];
+
+const Section = ({ id, icon: Icon, title, children, tone }) => (
+  <Card id={`settings-${id}`} className={`p-6 scroll-mt-24 ${tone === 'danger' ? 'border-red-200' : ''}`}>
     <h2 className={`text-lg font-semibold font-serif flex items-center gap-2 mb-4 ${tone === 'danger' ? 'text-red-700' : 'text-slate-900'}`}>
       <Icon className="w-4 h-4" />{title}
     </h2>
@@ -35,6 +47,7 @@ const Section = ({ icon: Icon, title, children, tone }) => (
 const Settings = () => {
   const { user, setUser, logout, logoutAll } = useAuth();
   const navigate = useNavigate();
+  const { pages, setActingAs } = usePages();
   const [blocked, setBlocked] = useState(null);
   const [deactivateOpen, setDeactivateOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -118,13 +131,26 @@ const Settings = () => {
       <Sidebar />
       <TopBar />
       <div className="lg:ml-64 mt-16 p-4 sm:p-6 lg:p-8">
-        <div className="max-w-2xl mx-auto space-y-6">
-          <div>
+        <div className="max-w-5xl mx-auto">
+          <div className="mb-6">
             <h1 className="text-2xl sm:text-3xl font-bold text-black">Settings</h1>
-            <p className="text-gray-600 mt-1">Manage your account, privacy and the people you've blocked.</p>
+            <p className="text-gray-600 mt-1">Manage your account, company pages, privacy and job preferences.</p>
           </div>
+          <div className="lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-8 lg:items-start">
+          {/* Section menu (a scrolling row of chips on phones) */}
+          <nav className="mb-6 lg:mb-0 lg:sticky lg:top-24 flex lg:flex-col gap-1 overflow-x-auto -mx-4 px-4 lg:mx-0 lg:px-0 lg:rounded-2xl lg:border lg:border-gray-200 lg:bg-white lg:p-2" aria-label="Settings sections">
+            {NAV.map((n) => (
+              <a key={n.id} href={`#settings-${n.id}`}
+                onClick={(e) => { e.preventDefault(); document.getElementById(`settings-${n.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
+                className={`shrink-0 flex items-center gap-2.5 rounded-full lg:rounded-lg border lg:border-0 border-gray-200 bg-white lg:bg-transparent px-3 py-2 text-sm font-medium hover:bg-gray-50 ${n.danger ? 'text-red-600' : 'text-gray-700'}`}
+                data-testid={`settings-nav-${n.id}`}>
+                <n.icon className="w-4 h-4" />{n.label}
+              </a>
+            ))}
+          </nav>
+          <div className="space-y-6 min-w-0">
 
-          <Section icon={FiUser} title="Account">
+          <Section id="account" icon={FiUser} title="Account">
             <div className="flex items-center gap-3 mb-4">
               <Avatar className="w-12 h-12">
                 <AvatarImage src={user?.profilePic} />
@@ -147,7 +173,24 @@ const Settings = () => {
             </div>
           </Section>
 
-          <Section icon={FiLock} title="Privacy">
+          <Section id="pages" icon={FiGrid} title="Company pages">
+            {pages.length ? (
+              <div className="divide-y divide-gray-100 border-y border-gray-100">
+                {pages.map((p) => (
+                  <Link key={p._id} to={`/company/${p.slug}/admin?tab=edit`} onClick={() => setActingAs(p._id)} className="flex items-center gap-3 py-3 text-sm text-black hover:bg-gray-50 -mx-2 px-2 rounded">
+                    <CompanyLogo page={p} className="w-9 h-9" rounded="rounded-lg" text="text-xs" />
+                    <span className="flex-1 min-w-0"><span className="block font-medium truncate">{p.name}</span><span className="block text-xs text-gray-500">{p.role === 'owner' ? 'Owner' : 'Admin'} · Page settings</span></span>
+                    <FiChevronRight className="text-gray-400" />
+                  </Link>
+                ))}
+              </div>
+            ) : <p className="text-sm text-gray-500">You don't manage any company pages yet.</p>}
+            <Link to="/company/new" className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-yellow-400 px-3 py-2 text-sm font-semibold text-black hover:bg-yellow-500" data-testid="settings-create-page">
+              <FiPlus className="w-4 h-4" />Create a company page
+            </Link>
+          </Section>
+
+          <Section id="privacy" icon={FiLock} title="Privacy">
             <div className="space-y-4">
               {PRIVACY.map((p) => (
                 <div key={p.field} className="flex items-center justify-between gap-4">
@@ -162,7 +205,7 @@ const Settings = () => {
             </div>
           </Section>
 
-          <Section icon={FiBriefcase} title="Jobs">
+          <Section id="jobs" icon={FiBriefcase} title="Jobs">
             <p className="text-sm font-medium text-black">How "Jobs for you" looks</p>
             <p className="text-xs text-gray-500 mb-3">Swipe through one job at a time, or see them all in a list like All jobs.</p>
             <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Jobs for you view">
@@ -183,7 +226,7 @@ const Settings = () => {
             </div>
           </Section>
 
-          <Section icon={FiSlash} title="Blocked people">
+          <Section id="blocked" icon={FiSlash} title="Blocked people">
             {blocked === null ? (
               <SkeletonRows rows={2} className="-mx-4" />
             ) : blocked.length === 0 ? (
@@ -204,14 +247,14 @@ const Settings = () => {
             )}
           </Section>
 
-          <Section icon={FiLogOut} title="Sign out">
+          <Section id="signout" icon={FiLogOut} title="Sign out">
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" onClick={() => { logout(); navigate('/login', { replace: true }); }}>Log out</Button>
               <Button variant="outline" onClick={signOutEverywhere}>Log out from all devices</Button>
             </div>
           </Section>
 
-          <Section icon={FiPauseCircle} title="Close account" tone="danger">
+          <Section id="close" icon={FiPauseCircle} title="Close account" tone="danger">
             <div className="space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
                 <div>
@@ -231,6 +274,8 @@ const Settings = () => {
               </div>
             </div>
           </Section>
+          </div>
+          </div>
         </div>
       </div>
 

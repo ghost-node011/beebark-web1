@@ -23,7 +23,8 @@ const {
 } = require('../utils/email');
 
 // Roles a user may self-select at signup (others are reserved/legacy)
-const SELECTABLE_ROLES = ['student', 'professional', 'firm'];
+// Firms aren't an account type any more: people create company Pages instead
+const SELECTABLE_ROLES = ['student', 'professional'];
 
 const signToken = (user) =>
   jwt.sign(

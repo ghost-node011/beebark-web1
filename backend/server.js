@@ -126,6 +126,7 @@ app.use('/api/posts', postRoutes);
 app.use('/api/connections', connectionRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/jobs', jobRoutes);
+app.use('/api/companies', require('./routes/company'));
 app.use('/api/messages', messageRoutes);
 app.use('/api/upload', uploadRoutes);
 // Files stored locally when Cloudinary isn't configured (local development)

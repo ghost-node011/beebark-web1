@@ -3,8 +3,10 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import {
   Check, ArrowRight, Zap, MapPin, GraduationCap, Users, BriefcaseBusiness, Building2,
-  Briefcase, UserRound, Store, ChevronRight, Megaphone, Image as ImageIcon, FileText, ExternalLink
+  Briefcase, UserRound, Store, ChevronRight, Megaphone, Image as ImageIcon, FileText, ExternalLink,
+  Plus, Upload, Search, Gauge, Eye
 } from 'lucide-react';
+import { notificationText, timeAgo } from '../components/NotificationBell';
 import ResumeImport from '../components/ResumeImport';
 import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar';
@@ -12,6 +14,14 @@ import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config/api';
 import { STAGES, INDUSTRY_LABEL, getVariant, unsplash } from '../config/dashboardVariants';
 import FollowButton, { followersLabel } from '../components/FollowButton';
+
+const HERO_IMAGE = {
+  architecture: '1600585154340-be6161a56a0c',
+  interiors: '1618221195710-dd6b41faaea6',
+  construction: '1541888946425-d81bb19240f5',
+  real_estate: '1545324418-cc1a3fa10c00'
+};
+const greeting = () => { const h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; };
 
 const STAGE_ICONS = { GraduationCap, Users, BriefcaseBusiness, Building2, Briefcase, UserRound, Store };
 
@@ -158,15 +168,58 @@ const Dashboard = () => {
       <TopBar />
 
       <main className="mt-16 p-4 sm:p-6 lg:ml-64 lg:p-8" data-testid="dashboard">
-        {/* Heading and stage chips */}
-        <div className="flex flex-col gap-4">
-          <div className="min-w-0">
-            <p className="text-sm text-slate-500" data-testid="dashboard-breadcrumb">
-              {INDUSTRY_LABEL[v.industry]} / {isStudent ? 'Student' : 'Professional'}
-            </p>
-            <h1 className="font-display mt-1 text-3xl font-black tracking-tight text-black sm:text-4xl" data-testid="dashboard-title">{v.title}</h1>
-            <p className="mt-2 max-w-3xl text-slate-600">{v.subtitle}</p>
+        {/* Welcome */}
+        <section className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white" data-testid="dashboard-hero">
+          <div className="absolute inset-y-0 right-0 hidden w-1/2 sm:block"
+            style={{ backgroundImage: `url(${unsplash(HERO_IMAGE[v.industry] || HERO_IMAGE.architecture, 1400)})`, backgroundSize: 'cover', backgroundPosition: 'center', WebkitMaskImage: 'linear-gradient(90deg, transparent 0%, #000 45%)', maskImage: 'linear-gradient(90deg, transparent 0%, #000 45%)' }} />
+          <div className="relative p-6 sm:p-8 sm:max-w-[55%]">
+            <p className="text-sm text-slate-500" data-testid="dashboard-breadcrumb">{INDUSTRY_LABEL[v.industry]} / {isStudent ? 'Student' : 'Professional'}</p>
+            <h1 className="font-display mt-1 text-3xl font-black tracking-tight text-black sm:text-4xl" data-testid="dashboard-title">{greeting()}, {user?.name?.split(' ')[0] || 'there'}!</h1>
+            <p className="mt-2 text-slate-600">{v.subtitle}</p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Link to="/portfolio" className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-4 py-2.5 text-sm font-semibold text-black hover:bg-yellow-500" data-testid="hero-add-project"><Plus className="h-4 w-4" />Add project</Link>
+              <a href="#dashboard-resume" onClick={(e) => { e.preventDefault(); document.querySelector('[data-testid="dashboard-resume"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }}
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-black hover:bg-slate-50"><Upload className="h-4 w-4" />{user?.resume?.url ? 'Update résumé' : 'Upload résumé'}</a>
+              <Link to="/jobs" className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-black hover:bg-slate-50"><Search className="h-4 w-4" />Find jobs</Link>
+            </div>
           </div>
+        </section>
+
+        {/* Numbers */}
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4" data-testid="dashboard-stats">
+          {[
+            { icon: Gauge, value: completion ? `${completion.percent}%` : '–', label: 'Profile strength', note: completion && completion.percent < 100 ? 'Keep going!' : 'Looking good', to: '/profile' },
+            { icon: FileText, value: data?.summary?.applications ?? '–', label: 'Applications', note: data?.summary?.applicationsWeek ? `+${data.summary.applicationsWeek} this week` : 'Apply to jobs', to: '/jobs?tab=applied' },
+            { icon: Eye, value: data?.summary?.views30 ?? '–', label: 'Profile views', note: data?.summary?.viewsWeek ? `+${data.summary.viewsWeek} this week` : 'Last 30 days', to: '/profile' },
+            data?.summary?.pendingAnswers
+              ? { icon: Zap, value: data.summary.pendingAnswers, label: 'Need your answers', note: 'Applications waiting', to: '/jobs?tab=pending' }
+              : { icon: Users, value: data?.stats?.connectionCount ?? '–', label: 'Connections', note: 'Grow your network', to: '/connections' }
+          ].map((c) => (
+            <Link key={c.label} to={c.to} className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 hover:border-yellow-400 transition">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-yellow-50"><c.icon className="h-5 w-5 text-yellow-600" /></span>
+              <p className="mt-3 text-2xl font-black text-black">{c.value}</p>
+              <p className="text-sm font-medium text-slate-700">{c.label}</p>
+              <p className="text-xs text-slate-500">{c.note}</p>
+            </Link>
+          ))}
+        </div>
+
+        {/* Recent activity */}
+        {data?.recentActivity?.length > 0 && (
+          <Panel title="Recent activity" action={<ViewAll to="/notifications" />} className="mt-6">
+            <ul className="divide-y divide-slate-100">
+              {data.recentActivity.map((n) => (
+                <li key={n._id} className="flex items-center gap-3 py-2.5">
+                  <Initials name={n.actor.name} src={n.actor.profilePic} size="h-9 w-9" />
+                  <p className="flex-1 min-w-0 text-sm text-slate-700">{notificationText(n)}</p>
+                  <span className="shrink-0 text-xs text-slate-400">{timeAgo(n.createdAt)}</span>
+                </li>
+              ))}
+            </ul>
+          </Panel>
+        )}
+
+        <div className="mt-6 flex flex-col gap-4">
           <div className="flex flex-wrap gap-2" role="group" aria-label="Where you are now">
             {STAGES[audience].map((s) => {
               const Icon = STAGE_ICONS[s.icon];

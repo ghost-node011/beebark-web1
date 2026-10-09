@@ -3,6 +3,9 @@ const auth = require('../middleware/auth');
 const User = require('../models/User');
 const Job = require('../models/Job');
 const PortfolioItem = require('../models/PortfolioItem');
+const ProfileEvent = require('../models/ProfileEvent');
+const PendingApplication = require('../models/PendingApplication');
+const Notification = require('../models/Notification');
 const { computeProfileCompletion } = require('../utils/dashboardInsights');
 const { getConnectionSuggestions } = require('../utils/recommendationEngine');
 
@@ -65,9 +68,23 @@ router.get('/', auth, async (req, res) => {
       ? [...jobs.filter(isEntry), ...jobs.filter((j) => !isEntry(j))]
       : [...jobs.filter((j) => !isEntry(j)), ...jobs.filter(isEntry)];
 
+    // Numbers for the top of the dashboard
+    const monthAgo = new Date(Date.now() - 30 * 86400000);
+    const weekAgo = new Date(Date.now() - 7 * 86400000);
+    const [applications, applicationsWeek, views30, viewsWeek, pendingAnswers, recent] = await Promise.all([
+      Job.countDocuments({ 'applicants.user': user._id }),
+      Job.countDocuments({ applicants: { $elemMatch: { user: user._id, appliedAt: { $gte: weekAgo } } } }),
+      ProfileEvent.countDocuments({ owner: user._id, type: 'view', createdAt: { $gte: monthAgo } }),
+      ProfileEvent.countDocuments({ owner: user._id, type: 'view', createdAt: { $gte: weekAgo } }),
+      PendingApplication.countDocuments({ user: user._id, status: 'needs_answers' }),
+      Notification.find({ recipient: user._id }).sort({ createdAt: -1 }).limit(4).populate('actor', 'name username profilePic').lean()
+    ]);
+
     res.json({
       industry,
       audience,
+      summary: { applications, applicationsWeek, views30, viewsWeek, pendingAnswers },
+      recentActivity: recent.filter((n) => n.actor).map((n) => ({ _id: n._id, type: n.type, actor: n.actor, meta: n.meta, createdAt: n.createdAt })),
       careerStage: user.careerStage || '',
       completion: computeProfileCompletion(user),
       featuredJob: ordered[0] ? jobCard(ordered[0]) : null,
