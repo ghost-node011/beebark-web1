@@ -21,8 +21,8 @@ const DeckCard = ({ job, expanded, onToggleExpand }) => {
       <div className="flex items-start gap-3">
         <CompanySquare job={job} size="lg" />
         <div className="min-w-0 flex-1">
-          <h3 className="pf-serif text-2xl leading-tight text-[#16324F] break-words">{job.title}</h3>
-          <p className="text-sm text-[#526174] mt-1 break-words">
+          <h3 className="pf-serif text-2xl leading-tight text-[#32281F] break-words">{job.title}</h3>
+          <p className="text-sm text-[#6B625A] mt-1 break-words">
             {job.company}
             {job.location ? <> · <FiMapPin className="inline w-3 h-3 -mt-0.5" /> {job.location}</> : null}
           </p>
@@ -31,30 +31,30 @@ const DeckCard = ({ job, expanded, onToggleExpand }) => {
 
       <div className="flex flex-wrap gap-2 mt-3">
         {typeof job.matchScore === 'number' && (
-          <span className="inline-flex items-center gap-1 text-xs rounded-full bg-[#16324F] text-white font-bold px-3 py-1"><FiZap className="w-3 h-3" />{job.matchScore}% match</span>
+          <span className="inline-flex items-center gap-1 text-xs rounded-full bg-[#32281F] text-white font-bold px-3 py-1"><FiZap className="w-3 h-3" />{job.matchScore}% match</span>
         )}
-        {chips.map((c) => <span key={c} className="text-xs rounded-full border border-[#e2dbd2] text-[#16324F] px-3 py-1">{c}</span>)}
+        {chips.map((c) => <span key={c} className="text-xs rounded-full border border-[#e2dbd2] text-[#32281F] px-3 py-1">{c}</span>)}
       </div>
 
-      {job.matchReason && <p className="text-sm text-[#16324F] mt-3 rounded-xl bg-[#FFFBF0] border border-[#f5e2ad] px-3 py-2 break-words">{job.matchReason}</p>}
+      {job.matchReason && <p className="text-sm text-[#32281F] mt-3 rounded-xl bg-[#FFFBF0] border border-[#f5e2ad] px-3 py-2 break-words">{job.matchReason}</p>}
 
-      <div className="mt-3 space-y-1 text-sm text-[#16324F]">
-        {job.salary && <p className="flex items-center gap-2"><FaMoneyBillWave className="text-[#526174] shrink-0" />{inrSalary(job.salary)}</p>}
-        {job.applyBy && <p className="flex items-center gap-2"><FiCalendar className="text-[#526174] shrink-0" />Apply by {shortDate(job.applyBy)}</p>}
-        {qs > 0 && <p className="flex items-center gap-2 text-[#526174]"><FiHelpCircle className="shrink-0" />{qs} question{qs === 1 ? '' : 's'} to answer</p>}
+      <div className="mt-3 space-y-1 text-sm text-[#32281F]">
+        {job.salary && <p className="flex items-center gap-2"><FaMoneyBillWave className="text-[#6B625A] shrink-0" />{inrSalary(job.salary)}</p>}
+        {job.applyBy && <p className="flex items-center gap-2"><FiCalendar className="text-[#6B625A] shrink-0" />Apply by {shortDate(job.applyBy)}</p>}
+        {qs > 0 && <p className="flex items-center gap-2 text-[#6B625A]"><FiHelpCircle className="shrink-0" />{qs} question{qs === 1 ? '' : 's'} to answer</p>}
       </div>
 
       {job.skills?.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mt-3">
-          {job.skills.slice(0, 8).map((s) => <span key={s} className="text-xs rounded-full bg-[#EEF2F6] text-[#16324F] px-2.5 py-0.5">{s}</span>)}
+          {job.skills.slice(0, 8).map((s) => <span key={s} className="text-xs rounded-full bg-[#F2EFEC] text-[#32281F] px-2.5 py-0.5">{s}</span>)}
         </div>
       )}
 
       <div className={`mt-3 min-h-0 flex-1 ${expanded ? 'overflow-y-auto overscroll-contain pr-1' : 'overflow-hidden'}`} data-scrollable={expanded || undefined}>
-        <p className={`text-sm leading-relaxed text-[#16324F] whitespace-pre-line break-words ${expanded ? '' : 'line-clamp-6'}`}>{job.description}</p>
+        <p className={`text-sm leading-relaxed text-[#32281F] whitespace-pre-line break-words ${expanded ? '' : 'line-clamp-6'}`}>{job.description}</p>
       </div>
       {job.description && (
-        <button type="button" onClick={onToggleExpand} className="self-start text-sm font-semibold text-[#16324F] underline underline-offset-2 mt-2" data-testid={`swipe-expand-${job._id}`}>
+        <button type="button" onClick={onToggleExpand} className="self-start text-sm font-semibold text-[#32281F] underline underline-offset-2 mt-2" data-testid={`swipe-expand-${job._id}`}>
           {expanded ? 'Show less' : 'Read full description'}
         </button>
       )}
@@ -201,7 +201,7 @@ const SwipeDeck = ({ jobs, appliedIds, loading, onApplied, onDetails, onBrowseAl
   if (loading && !jobs.length) {
     return (
       <div className="mx-auto w-full max-w-md" data-testid="swipe-deck" aria-busy="true">
-        <div className="h-[30rem] rounded-3xl bg-white border border-[#DCE3EB] animate-pulse" />
+        <div className="h-[30rem] rounded-3xl bg-white border border-[#E6E1DB] animate-pulse" />
       </div>
     );
   }
@@ -224,7 +224,7 @@ const SwipeDeck = ({ jobs, appliedIds, loading, onApplied, onDetails, onBrowseAl
                 <div
                   key={job._id}
                   aria-hidden="true"
-                  className={`absolute inset-x-0 top-0 h-[calc(100%-1rem)] rounded-3xl border border-[#DCE3EB] shadow-sm p-5 overflow-hidden pointer-events-none transition-transform duration-300 ${depth === 2 ? 'bg-[#faf8f5]' : 'bg-white'}`}
+                  className={`absolute inset-x-0 top-0 h-[calc(100%-1rem)] rounded-3xl border border-[#E6E1DB] shadow-sm p-5 overflow-hidden pointer-events-none transition-transform duration-300 ${depth === 2 ? 'bg-[#faf8f5]' : 'bg-white'}`}
                   style={{ transform: `translateY(${depth * 10}px) scale(${1 - depth * 0.04})` }}
                 >
                   {/* Solid card, faded content: cards further back never show through */}
@@ -235,7 +235,7 @@ const SwipeDeck = ({ jobs, appliedIds, loading, onApplied, onDetails, onBrowseAl
             <div
               key={top._id}
               data-testid={`swipe-card-${top._id}`}
-              className="absolute inset-x-0 top-0 h-[calc(100%-1rem)] rounded-3xl border border-[#DCE3EB] bg-white shadow-lg p-5 overflow-hidden cursor-grab active:cursor-grabbing"
+              className="absolute inset-x-0 top-0 h-[calc(100%-1rem)] rounded-3xl border border-[#E6E1DB] bg-white shadow-lg p-5 overflow-hidden cursor-grab active:cursor-grabbing"
               style={{
                 transform: `translate(${x}px, ${y}px) rotate(${rot}deg)`,
                 transition: drag.active && !flying ? 'none' : `transform ${flying ? FLY_MS : 250}ms ${flying ? 'ease-in' : 'cubic-bezier(.2,1.4,.4,1)'}`,
@@ -253,31 +253,31 @@ const SwipeDeck = ({ jobs, appliedIds, loading, onApplied, onDetails, onBrowseAl
           </div>
 
           <div className="flex items-center justify-center gap-3 sm:gap-4 mt-2">
-            <button type="button" onClick={undo} disabled={!history.length} className="w-11 h-11 rounded-full bg-white border border-[#DCE3EB] text-[#526174] flex items-center justify-center shadow-sm hover:text-[#16324F] disabled:opacity-40" aria-label="Undo last pass" data-testid="swipe-undo">
+            <button type="button" onClick={undo} disabled={!history.length} className="w-11 h-11 rounded-full bg-white border border-[#E6E1DB] text-[#6B625A] flex items-center justify-center shadow-sm hover:text-[#32281F] disabled:opacity-40" aria-label="Undo last pass" data-testid="swipe-undo">
               <FiRotateCcw className="w-5 h-5" />
             </button>
             <button type="button" onClick={() => fly('left')} className="w-16 h-16 rounded-full bg-white border-2 border-red-200 text-red-500 flex items-center justify-center shadow-md hover:bg-red-50" aria-label="Pass" data-testid="swipe-pass">
               <FiX className="w-8 h-8" />
             </button>
-            <button type="button" onClick={() => fly('right')} className="w-16 h-16 rounded-full bg-[#16324F] border-2 border-[#F2B21B] text-white flex items-center justify-center shadow-md hover:bg-[#e0a312]" aria-label="Apply" data-testid="swipe-apply">
+            <button type="button" onClick={() => fly('right')} className="w-16 h-16 rounded-full bg-[#32281F] border-2 border-[#F2B21B] text-white flex items-center justify-center shadow-md hover:bg-[#e0a312]" aria-label="Apply" data-testid="swipe-apply">
               <FiCheck className="w-8 h-8" />
             </button>
-            <button type="button" onClick={() => onDetails(top)} className="w-11 h-11 rounded-full bg-white border border-[#DCE3EB] text-[#526174] flex items-center justify-center shadow-sm hover:text-[#16324F]" aria-label="Details" data-testid="swipe-details">
+            <button type="button" onClick={() => onDetails(top)} className="w-11 h-11 rounded-full bg-white border border-[#E6E1DB] text-[#6B625A] flex items-center justify-center shadow-sm hover:text-[#32281F]" aria-label="Details" data-testid="swipe-details">
               <FiInfo className="w-5 h-5" />
             </button>
           </div>
-          <p className="text-center text-xs text-[#526174] mt-3">
+          <p className="text-center text-xs text-[#6B625A] mt-3">
             Swipe right to apply, left to pass · <span className="hidden sm:inline">← → keys work too · </span>{queue.length} left
           </p>
         </>
       ) : (
-        <div className="rounded-3xl border border-[#DCE3EB] bg-white text-center px-6 py-14" data-testid="swipe-empty">
-          <p className="pf-serif text-2xl text-[#16324F]">You're all caught up</p>
-          <p className="text-sm text-[#526174] mt-2">New matches appear here as jobs are posted. Upload or update your résumé to sharpen them.</p>
+        <div className="rounded-3xl border border-[#E6E1DB] bg-white text-center px-6 py-14" data-testid="swipe-empty">
+          <p className="pf-serif text-2xl text-[#32281F]">You're all caught up</p>
+          <p className="text-sm text-[#6B625A] mt-2">New matches appear here as jobs are posted. Upload or update your résumé to sharpen them.</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2 mt-6">
-            <button type="button" onClick={onBrowseAll} className="rounded-full bg-[#16324F] text-white px-5 py-2 text-sm font-semibold" data-testid="swipe-browse-all">Browse all jobs</button>
+            <button type="button" onClick={onBrowseAll} className="rounded-full bg-[#32281F] text-white px-5 py-2 text-sm font-semibold" data-testid="swipe-browse-all">Browse all jobs</button>
             {history.length > 0 && (
-              <button type="button" onClick={undo} className="rounded-full border border-[#e2dbd2] px-5 py-2 text-sm font-medium text-[#16324F]" data-testid="swipe-undo">
+              <button type="button" onClick={undo} className="rounded-full border border-[#e2dbd2] px-5 py-2 text-sm font-medium text-[#32281F]" data-testid="swipe-undo">
                 <FiRotateCcw className="inline mr-1" />Undo last pass
               </button>
             )}

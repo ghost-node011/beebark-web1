@@ -106,7 +106,7 @@ const Notifications = () => {
   let lastGroup = null;
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA]" data-testid="notifications-page">
+    <div className="min-h-screen bg-[#F7F6F4]" data-testid="notifications-page">
       <Sidebar />
       <TopBar />
       <div className="lg:ml-64 mt-16 p-4 sm:p-6 lg:p-8">
@@ -124,7 +124,7 @@ const Notifications = () => {
           <div className="flex gap-2">
             {['all', 'unread'].map((f) => (
               <button key={f} onClick={() => setFilter(f)}
-                className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${filter === f ? 'bg-[#16324F] text-white' : 'bg-white border border-[#DCE3EB] text-[#526174] hover:border-gray-300'}`}>
+                className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${filter === f ? 'bg-[#32281F] text-white' : 'bg-white border border-[#E6E1DB] text-[#6B625A] hover:border-gray-300'}`}>
                 {f === 'all' ? 'All' : 'Unread'}
               </button>
             ))}
@@ -151,7 +151,7 @@ const Notifications = () => {
                     <Link to={n.actor?.username ? `/profile/${n.actor.username}` : '#'} onClick={() => markRead(n)} className="shrink-0">
                       <Avatar className="w-11 h-11">
                         <AvatarImage src={n.actor?.profilePic} />
-                        <AvatarFallback className="bg-[#16324F] text-white font-semibold">{n.actor?.name?.charAt(0) || '?'}</AvatarFallback>
+                        <AvatarFallback className="bg-[#32281F] text-white font-semibold">{n.actor?.name?.charAt(0) || '?'}</AvatarFallback>
                       </Avatar>
                     </Link>
                     <div className="flex-1 min-w-0">
@@ -161,7 +161,7 @@ const Notifications = () => {
                       <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1"><Icon className="w-3 h-3" />{timeAgo(n.createdAt)}</p>
                       {canRespond && (
                         <div className="flex gap-2 mt-2">
-                          <Button size="sm" onClick={() => respond(n, true)} className="bg-[#16324F] hover:bg-[#0F2439] text-white h-8">Accept</Button>
+                          <Button size="sm" onClick={() => respond(n, true)} className="bg-[#32281F] hover:bg-[#221A14] text-white h-8">Accept</Button>
                           <Button size="sm" variant="outline" onClick={() => respond(n, false)} className="h-8">Decline</Button>
                         </div>
                       )}

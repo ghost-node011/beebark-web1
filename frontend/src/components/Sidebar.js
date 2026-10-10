@@ -144,7 +144,7 @@ const SidebarFrame = () => {
           <NavLink to="/profile" onClick={close} className={`flex items-center space-x-3 p-3 hover:bg-slate-50 rounded-lg ${collapsed ? 'lg:justify-center lg:p-1' : ''}`} title={collapsed ? user?.name : undefined}>
             <Avatar className="w-10 h-10">
               <AvatarImage src={user?.profilePic} />
-              <AvatarFallback className="bg-[#16324F] text-white font-semibold">
+              <AvatarFallback className="bg-[#32281F] text-white font-semibold">
                 {user?.name?.charAt(0)}
               </AvatarFallback>
             </Avatar>

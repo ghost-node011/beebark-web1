@@ -78,7 +78,7 @@ const TopBarFrame = () => {
               {acting ? <CompanyLogo page={acting} className="w-9 h-9" rounded="rounded-lg" text="text-xs" /> : (
                 <Avatar className="w-9 h-9">
                   <AvatarImage src={user?.profilePic} />
-                  <AvatarFallback className="bg-[#16324F] text-white font-semibold">
+                  <AvatarFallback className="bg-[#32281F] text-white font-semibold">
                     {user?.name?.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
@@ -91,7 +91,7 @@ const TopBarFrame = () => {
             <DropdownMenuItem onClick={() => { setActingAs(null); navigate('/dashboard'); }} className="gap-3 py-2" data-testid="switch-personal">
               <Avatar className="w-9 h-9">
                 <AvatarImage src={user?.profilePic} />
-                <AvatarFallback className="bg-[#16324F] text-white font-semibold">{user?.name?.charAt(0)}</AvatarFallback>
+                <AvatarFallback className="bg-[#32281F] text-white font-semibold">{user?.name?.charAt(0)}</AvatarFallback>
               </Avatar>
               <span className="flex-1 min-w-0"><span className="block text-sm font-semibold text-black truncate">{user?.name}</span><span className="block text-xs text-slate-500">Personal profile</span></span>
               {!acting && <FiCheckCircle className="w-4 h-4 text-yellow-500" />}

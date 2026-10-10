@@ -128,7 +128,7 @@ const Settings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA]" data-testid="settings-page">
+    <div className="min-h-screen bg-[#F7F6F4]" data-testid="settings-page">
       <Sidebar />
       <TopBar />
       <div className="lg:ml-64 mt-16 p-4 sm:p-6 lg:p-8">
@@ -155,7 +155,7 @@ const Settings = () => {
             <div className="flex items-center gap-3 mb-4">
               <Avatar className="w-12 h-12">
                 <AvatarImage src={user?.profilePic} />
-                <AvatarFallback className="bg-[#16324F] text-white font-semibold">{user?.name?.charAt(0)}</AvatarFallback>
+                <AvatarFallback className="bg-[#32281F] text-white font-semibold">{user?.name?.charAt(0)}</AvatarFallback>
               </Avatar>
               <div className="min-w-0">
                 <p className="font-semibold text-black truncate">{user?.name}</p>
@@ -186,7 +186,7 @@ const Settings = () => {
                 ))}
               </div>
             ) : <p className="text-sm text-gray-500">You don't manage any company pages yet.</p>}
-            {user?.role !== 'student' && <Link to="/company/new" className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-[#16324F] px-3 py-2 text-sm font-semibold text-white hover:bg-[#0F2439]" data-testid="settings-create-page">
+            {user?.role !== 'student' && <Link to="/company/new" className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-[#32281F] px-3 py-2 text-sm font-semibold text-white hover:bg-[#221A14]" data-testid="settings-create-page">
               <FiPlus className="w-4 h-4" />Create a company page
             </Link>}
           </Section>}
@@ -218,7 +218,7 @@ const Settings = () => {
                 return (
                   <button key={o.value} type="button" role="radio" aria-checked={active} onClick={() => setJobsView(o.value)}
                     data-testid={`jobs-view-${o.value}`}
-                    className={`rounded-xl border px-3 py-2.5 text-left transition ${active ? 'border-[#16324F] bg-[#16324F] text-white' : 'border-gray-200 bg-white text-black hover:border-gray-300'}`}>
+                    className={`rounded-xl border px-3 py-2.5 text-left transition ${active ? 'border-[#32281F] bg-[#32281F] text-white' : 'border-gray-200 bg-white text-black hover:border-gray-300'}`}>
                     <span className="block text-sm font-medium">{o.label}</span>
                     <span className={`block text-xs ${active ? 'text-white/70' : 'text-gray-500'}`}>{o.hint}</span>
                   </button>
@@ -290,7 +290,7 @@ const Settings = () => {
           </ul>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => setDeactivateOpen(false)}>Cancel</Button>
-            <Button onClick={deactivate} disabled={busy} className="bg-[#16324F] text-white hover:bg-[#0F2439]" data-testid="deactivate-confirm">{busy ? 'Deactivating...' : 'Deactivate'}</Button>
+            <Button onClick={deactivate} disabled={busy} className="bg-[#32281F] text-white hover:bg-[#221A14]" data-testid="deactivate-confirm">{busy ? 'Deactivating...' : 'Deactivate'}</Button>
           </div>
         </DialogContent>
       </Dialog>

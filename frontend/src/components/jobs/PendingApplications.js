@@ -66,14 +66,14 @@ const PendingCard = ({ pending, onDone, onOpenJob }) => {
   };
 
   return (
-    <div className="rounded-2xl border border-[#DCE3EB] bg-white p-4 sm:p-5" data-testid={`pending-${pending._id}`}>
+    <div className="rounded-2xl border border-[#E6E1DB] bg-white p-4 sm:p-5" data-testid={`pending-${pending._id}`}>
       <div className="flex items-start gap-3">
-        <div className="w-11 h-11 rounded-xl bg-[#EEF2F6] text-[#16324F] font-bold flex items-center justify-center shrink-0">{companyInitial(job)}</div>
+        <div className="w-11 h-11 rounded-xl bg-[#F2EFEC] text-[#32281F] font-bold flex items-center justify-center shrink-0">{companyInitial(job)}</div>
         <div className="min-w-0 flex-1">
-          <button type="button" onClick={() => job._id && onOpenJob(job)} className="text-left font-semibold text-[#16324F] hover:underline break-words">
+          <button type="button" onClick={() => job._id && onOpenJob(job)} className="text-left font-semibold text-[#32281F] hover:underline break-words">
             {job.title || 'Job'}
           </button>
-          <p className="text-sm text-[#526174] break-words">
+          <p className="text-sm text-[#6B625A] break-words">
             {[job.company, job.location].filter(Boolean).join(' · ')}
             {pending.createdAt ? ` · matched ${timeAgo(pending.createdAt)}` : ''}
           </p>
@@ -81,7 +81,7 @@ const PendingCard = ({ pending, onDone, onOpenJob }) => {
         {closed && <span className="text-xs rounded-full bg-gray-100 text-gray-600 px-2 py-0.5 shrink-0">Closed</span>}
       </div>
 
-      <p className="text-sm text-[#16324F] mt-3 flex items-start gap-2">
+      <p className="text-sm text-[#32281F] mt-3 flex items-start gap-2">
         <FiCpu className="mt-0.5 shrink-0 text-[#F2B21B]" />
         Our AI filled what it could. Answer the highlighted question(s) to send your application.
       </p>
@@ -94,17 +94,17 @@ const PendingCard = ({ pending, onDone, onOpenJob }) => {
           return (
             <div
               key={q._id}
-              className={`rounded-xl border p-3 ${errors[q._id] ? 'border-red-300 bg-red-50/40' : needs ? 'border-[#F2B21B] border-2 bg-[#FFFBF0]' : 'border-[#DCE3EB]'}`}
+              className={`rounded-xl border p-3 ${errors[q._id] ? 'border-red-300 bg-red-50/40' : needs ? 'border-[#F2B21B] border-2 bg-[#FFFBF0]' : 'border-[#E6E1DB]'}`}
             >
               <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
-                <p className="text-sm font-medium text-[#16324F] min-w-0 break-words">
+                <p className="text-sm font-medium text-[#32281F] min-w-0 break-words">
                   {q.text}{(q.required || needs) && <span className="text-red-500"> *</span>}
                 </p>
                 {aiFilled && <span className="text-[10px] uppercase tracking-wide font-semibold rounded-full bg-[#EEF2FF] text-[#4338ca] px-2 py-0.5 shrink-0">AI filled — check it</span>}
-                {savedFilled && <span className="text-[10px] uppercase tracking-wide font-semibold rounded-full bg-[#EEF2F6] text-[#16324F] px-2 py-0.5 shrink-0">Saved answer</span>}
+                {savedFilled && <span className="text-[10px] uppercase tracking-wide font-semibold rounded-full bg-[#F2EFEC] text-[#32281F] px-2 py-0.5 shrink-0">Saved answer</span>}
               </div>
               {needs && q.reason && (
-                <p className="text-xs text-[#16324F] mb-2 flex items-start gap-1.5"><FiAlertCircle className="mt-0.5 shrink-0" />{q.reason}</p>
+                <p className="text-xs text-[#32281F] mb-2 flex items-start gap-1.5"><FiAlertCircle className="mt-0.5 shrink-0" />{q.reason}</p>
               )}
               <QuestionInput
                 question={q}
@@ -123,7 +123,7 @@ const PendingCard = ({ pending, onDone, onOpenJob }) => {
         <Button variant="outline" onClick={dismiss} disabled={!!busy} data-testid={`pending-dismiss-${pending._id}`}>
           <FiX className="mr-2" />{busy === 'dismiss' ? 'Removing…' : 'Not interested'}
         </Button>
-        <Button onClick={submit} disabled={!!busy || closed} className="bg-[#16324F] hover:bg-[#0F2439] text-white" data-testid={`pending-submit-${pending._id}`}>
+        <Button onClick={submit} disabled={!!busy || closed} className="bg-[#32281F] hover:bg-[#221A14] text-white" data-testid={`pending-submit-${pending._id}`}>
           <FiSend className="mr-2" />{busy === 'submit' ? 'Sending…' : 'Send application'}
         </Button>
       </div>
@@ -134,13 +134,13 @@ const PendingCard = ({ pending, onDone, onOpenJob }) => {
 /** "Needs your answers" tab body */
 const PendingApplications = ({ pending, loading, onDone, onOpenJob }) => {
   if (loading && !pending.length) {
-    return <div className="space-y-3">{[0, 1].map((i) => <div key={i} className="h-40 rounded-2xl bg-white border border-[#DCE3EB] animate-pulse" />)}</div>;
+    return <div className="space-y-3">{[0, 1].map((i) => <div key={i} className="h-40 rounded-2xl bg-white border border-[#E6E1DB] animate-pulse" />)}</div>;
   }
   if (!pending.length) {
     return (
-      <div className="rounded-2xl border border-[#DCE3EB] bg-white text-center py-12 px-4">
-        <p className="pf-serif text-xl text-[#16324F]">Nothing waiting on you</p>
-        <p className="text-sm text-[#526174] mt-1 max-w-md mx-auto">When auto-apply finds a strong match that asks something only you can answer, it shows up here and we email you.</p>
+      <div className="rounded-2xl border border-[#E6E1DB] bg-white text-center py-12 px-4">
+        <p className="pf-serif text-xl text-[#32281F]">Nothing waiting on you</p>
+        <p className="text-sm text-[#6B625A] mt-1 max-w-md mx-auto">When auto-apply finds a strong match that asks something only you can answer, it shows up here and we email you.</p>
       </div>
     );
   }

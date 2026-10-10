@@ -587,7 +587,7 @@ const Chat = () => {
                     role="tab"
                     aria-selected={filter === f.id}
                     onClick={() => { setFilter(f.id); setSelected(null); }}
-                    className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition ${filter === f.id ? 'bg-[#16324F] text-white' : 'bg-white border border-[#DCE3EB] text-[#526174] hover:border-gray-300'}`}
+                    className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition ${filter === f.id ? 'bg-[#32281F] text-white' : 'bg-white border border-[#E6E1DB] text-[#6B625A] hover:border-gray-300'}`}
                     data-testid={`chat-filter-${f.id}`}
                   >
                     {f.label}{n ? ` ${n}` : ''}
@@ -615,7 +615,7 @@ const Chat = () => {
                           <p className="text-xs text-gray-500">{state === 'requested' ? 'Request sent' : state === 'unblocked' ? 'Unblocked' : 'Blocked'}</p>
                         </div>
                         {!state && <Button size="sm" variant="outline" onClick={() => unblockPerson(p)} data-testid={`unblock-${p._id}`}>Unblock</Button>}
-                        {state === 'unblocked' && <Button size="sm" onClick={() => connectAgain(p)} className="bg-[#16324F] hover:bg-[#0F2439] text-white" data-testid={`reconnect-${p._id}`}>Connect</Button>}
+                        {state === 'unblocked' && <Button size="sm" onClick={() => connectAgain(p)} className="bg-[#32281F] hover:bg-[#221A14] text-white" data-testid={`reconnect-${p._id}`}>Connect</Button>}
                       </div>
                     );
                   })}
@@ -651,7 +651,7 @@ const Chat = () => {
                         <span className="truncate">{row.lastMessage ? `${row.lastMessage.fromMe ? 'You: ' : ''}${row.lastMessage.text}` : personHeadline(row.person)}</span>
                       </p>
                       {row.unread > 0 && (
-                        <span className="shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-[#16324F] text-white text-[11px] font-bold flex items-center justify-center">{row.unread > 99 ? '99+' : row.unread}</span>
+                        <span className="shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-[#32281F] text-white text-[11px] font-bold flex items-center justify-center">{row.unread > 99 ? '99+' : row.unread}</span>
                       )}
                     </div>
                   </div>
@@ -728,7 +728,7 @@ const Chat = () => {
                 </div>
               )}
 
-              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-2 bg-[#F5F7FA]">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-2 bg-[#F7F6F4]">
                 {messages.length === 0 && (
                   <p className="text-center text-sm text-gray-400 py-10">Say hello to {selected.person.name.split(' ')[0]}.</p>
                 )}
@@ -750,7 +750,7 @@ const Chat = () => {
                         <button
                           type="button"
                           onClick={() => (msg.failed ? retry(msg) : mine && setInfoFor(showInfo ? null : (msg.clientId || msg._id)))}
-                          className={`text-left px-4 py-2 rounded-2xl max-w-[80%] sm:max-w-md break-words whitespace-pre-wrap ${mine ? 'bg-[#16324F] text-white rounded-br-sm' : 'bg-[#EEF2F6] text-[#1F2933] rounded-bl-sm cursor-text'} ${msg.failed ? 'ring-2 ring-red-300' : ''}`}
+                          className={`text-left px-4 py-2 rounded-2xl max-w-[80%] sm:max-w-md break-words whitespace-pre-wrap ${mine ? 'bg-[#32281F] text-white rounded-br-sm' : 'bg-[#F2EFEC] text-[#2A221C] rounded-bl-sm cursor-text'} ${msg.failed ? 'ring-2 ring-red-300' : ''}`}
                           title={msg.failed ? 'Tap to retry' : mine ? 'Message info' : undefined}
                           data-testid={mine ? 'my-message' : 'their-message'}
                         >
@@ -815,7 +815,7 @@ const Chat = () => {
                               )}
                             </div>
                             <p className="mt-0.5 truncate text-[10px] text-gray-600">{f.name}</p>
-                            <button type="button" onClick={() => removePending(f.id)} className="absolute -top-1.5 -right-1.5 rounded-full bg-[#16324F] text-white p-0.5" aria-label={`Remove ${f.name}`}><FiX className="w-3 h-3" /></button>
+                            <button type="button" onClick={() => removePending(f.id)} className="absolute -top-1.5 -right-1.5 rounded-full bg-[#32281F] text-white p-0.5" aria-label={`Remove ${f.name}`}><FiX className="w-3 h-3" /></button>
                           </div>
                         ))}
                       </div>
@@ -835,7 +835,7 @@ const Chat = () => {
                       spellCheck
                       data-testid="chat-input"
                     />
-                    <button type="submit" disabled={uploading || (!newMessage.trim() && !pendingFiles.some((f) => f.status === 'done'))} className="w-11 h-11 bg-[#16324F] hover:bg-[#0F2439] disabled:opacity-50 rounded-lg flex items-center justify-center shrink-0 text-white" aria-label="Send" data-testid="chat-send">
+                    <button type="submit" disabled={uploading || (!newMessage.trim() && !pendingFiles.some((f) => f.status === 'done'))} className="w-11 h-11 bg-[#32281F] hover:bg-[#221A14] disabled:opacity-50 rounded-lg flex items-center justify-center shrink-0 text-white" aria-label="Send" data-testid="chat-send">
                       <FiSend className="w-5 h-5 text-black" />
                     </button>
                     </div>

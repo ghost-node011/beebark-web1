@@ -13,7 +13,7 @@ import { idOf, isClosed, jobChips, questionCount, shortDate, timeAgo } from './j
 
 const Section = ({ title, children }) => (
   <section className="pt-5 mt-5 border-t border-[#f0ebe4]">
-    <h3 className="pf-serif text-lg text-[#16324F] mb-3">{title}</h3>
+    <h3 className="pf-serif text-lg text-[#32281F] mb-3">{title}</h3>
     {children}
   </section>
 );
@@ -27,7 +27,7 @@ const JobDetail = ({
 }) => {
   if (!job) {
     return (
-      <div className={`rounded-2xl border border-[#DCE3EB] bg-white p-8 text-center text-[#526174] ${className}`}>
+      <div className={`rounded-2xl border border-[#E6E1DB] bg-white p-8 text-center text-[#6B625A] ${className}`}>
         {loading ? 'Loading…' : 'Select a job to see the details'}
       </div>
     );
@@ -62,16 +62,16 @@ const JobDetail = ({
     primary = <Button disabled className="rounded-full bg-gray-100 text-gray-500"><FiLock className="mr-2" />Closed</Button>;
   } else {
     primary = (
-      <Button onClick={() => onApply(job)} className="rounded-full bg-[#16324F] hover:bg-[#e0a312] text-white font-semibold px-6 h-11" data-testid="job-detail-apply">
+      <Button onClick={() => onApply(job)} className="rounded-full bg-[#32281F] hover:bg-[#e0a312] text-white font-semibold px-6 h-11" data-testid="job-detail-apply">
         Apply{qs > 0 ? '' : ' now'}
       </Button>
     );
   }
 
   return (
-    <article className={`rounded-2xl border border-[#DCE3EB] bg-white p-4 sm:p-6 pf-page ${className}`} data-testid={testId} aria-busy={loading || undefined}>
+    <article className={`rounded-2xl border border-[#E6E1DB] bg-white p-4 sm:p-6 pf-page ${className}`} data-testid={testId} aria-busy={loading || undefined}>
       {onBack && (
-        <button type="button" onClick={onBack} className="lg:hidden inline-flex items-center gap-2 text-sm font-medium text-[#16324F] mb-4 -ml-1 px-1 py-1" data-testid="job-detail-back">
+        <button type="button" onClick={onBack} className="lg:hidden inline-flex items-center gap-2 text-sm font-medium text-[#32281F] mb-4 -ml-1 px-1 py-1" data-testid="job-detail-back">
           <FiArrowLeft />Back to jobs
         </button>
       )}
@@ -79,9 +79,9 @@ const JobDetail = ({
       <div className="flex items-start gap-3 sm:gap-4">
         <CompanySquare job={job} size="lg" />
         <div className="min-w-0 flex-1">
-          <h2 className="pf-serif text-2xl sm:text-3xl leading-tight text-[#16324F] break-words">{job.title}</h2>
-          <p className="text-sm text-[#526174] mt-1 break-words">
-            {page && <><Link to={`/company/${page.slug}`} className="font-medium text-[#16324F] hover:underline" data-testid="job-company-page">{page.name}</Link>{meta.length ? ' · ' : ''}</>}
+          <h2 className="pf-serif text-2xl sm:text-3xl leading-tight text-[#32281F] break-words">{job.title}</h2>
+          <p className="text-sm text-[#6B625A] mt-1 break-words">
+            {page && <><Link to={`/company/${page.slug}`} className="font-medium text-[#32281F] hover:underline" data-testid="job-company-page">{page.name}</Link>{meta.length ? ' · ' : ''}</>}
             {meta.join(' · ')}
           </p>
         </div>
@@ -89,36 +89,36 @@ const JobDetail = ({
 
       <div className="flex flex-wrap items-center gap-2 mt-4">
         {closed && <span className="text-xs rounded-full bg-gray-100 text-gray-600 px-3 py-1">Closed</span>}
-        {chips.map((c) => <span key={c} className="text-xs rounded-full border border-[#e2dbd2] text-[#16324F] px-3 py-1">{c}</span>)}
+        {chips.map((c) => <span key={c} className="text-xs rounded-full border border-[#e2dbd2] text-[#32281F] px-3 py-1">{c}</span>)}
         {typeof job.matchScore === 'number' && (
-          <span className="inline-flex items-center gap-1 text-xs rounded-full bg-[#EEF2F6] text-[#16324F] font-semibold px-3 py-1"><FiZap className="w-3 h-3" />{job.matchScore}% match</span>
+          <span className="inline-flex items-center gap-1 text-xs rounded-full bg-[#F2EFEC] text-[#32281F] font-semibold px-3 py-1"><FiZap className="w-3 h-3" />{job.matchScore}% match</span>
         )}
       </div>
 
-      <div className="mt-4 space-y-1.5 text-sm text-[#16324F]">
-        {job.salary && <p className="flex items-center gap-2"><FaMoneyBillWave className="text-[#526174]" />{inrSalary(job.salary)}</p>}
-        {job.applyBy && <p className="flex items-center gap-2"><FiCalendar className="text-[#526174]" />Apply by {shortDate(job.applyBy)}</p>}
-        {qs > 0 && !mine && <p className="flex items-center gap-2 text-[#526174]"><FiHelpCircle />Asks {qs} screening question{qs === 1 ? '' : 's'}</p>}
+      <div className="mt-4 space-y-1.5 text-sm text-[#32281F]">
+        {job.salary && <p className="flex items-center gap-2"><FaMoneyBillWave className="text-[#6B625A]" />{inrSalary(job.salary)}</p>}
+        {job.applyBy && <p className="flex items-center gap-2"><FiCalendar className="text-[#6B625A]" />Apply by {shortDate(job.applyBy)}</p>}
+        {qs > 0 && !mine && <p className="flex items-center gap-2 text-[#6B625A]"><FiHelpCircle />Asks {qs} screening question{qs === 1 ? '' : 's'}</p>}
       </div>
 
       <div className="flex flex-wrap items-center gap-2 mt-5">
         {primary}
         <ShareMenu path={`/jobs?job=${job._id}`} title={`${job.title} at ${job.company}`} align="start" testId="job-detail-share" />
         {!mine && idOf(job.postedBy) && (
-          <Button variant="ghost" onClick={() => onReport(job)} className="text-[#526174]" data-testid="job-detail-report">
+          <Button variant="ghost" onClick={() => onReport(job)} className="text-[#6B625A]" data-testid="job-detail-report">
             <FiFlag className="mr-2" />Report
           </Button>
         )}
       </div>
 
       {job.matchReason && (
-        <p className="mt-4 text-sm rounded-xl bg-[#FFFBF0] border border-[#f5e2ad] text-[#16324F] p-3">{job.matchReason}</p>
+        <p className="mt-4 text-sm rounded-xl bg-[#FFFBF0] border border-[#f5e2ad] text-[#32281F] p-3">{job.matchReason}</p>
       )}
 
       <Section title="About the job">
         {job.description
-          ? <p className="text-[15px] leading-relaxed text-[#16324F] whitespace-pre-line break-words">{job.description}</p>
-          : <p className="text-sm text-[#526174]">{loading ? 'Loading…' : 'No description.'}</p>}
+          ? <p className="text-[15px] leading-relaxed text-[#32281F] whitespace-pre-line break-words">{job.description}</p>
+          : <p className="text-sm text-[#6B625A]">{loading ? 'Loading…' : 'No description.'}</p>}
       </Section>
 
       {job.skills?.length > 0 && (
@@ -127,7 +127,7 @@ const JobDetail = ({
             {job.skills.map((skill) => {
               const matched = job.matchedSkills?.some?.((m) => String(m).toLowerCase() === String(skill).toLowerCase());
               return (
-                <span key={skill} className={`text-xs rounded-full px-3 py-1 ${matched ? 'bg-[#F2B21B] text-[#16324F] font-semibold' : 'bg-[#EEF2F6] text-[#16324F]'}`}>
+                <span key={skill} className={`text-xs rounded-full px-3 py-1 ${matched ? 'bg-[#F2B21B] text-[#32281F] font-semibold' : 'bg-[#F2EFEC] text-[#32281F]'}`}>
                   {matched && <FiCheckCircle className="inline w-3 h-3 mr-1 -mt-0.5" />}{skill}
                 </span>
               );
@@ -143,18 +143,18 @@ const JobDetail = ({
               <>
                 <Avatar className="w-11 h-11 shrink-0">
                   <AvatarImage src={poster.profilePic} />
-                  <AvatarFallback className="bg-[#EEF2F6] text-[#16324F]">{(poster.name || '?').charAt(0)}</AvatarFallback>
+                  <AvatarFallback className="bg-[#F2EFEC] text-[#32281F]">{(poster.name || '?').charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="min-w-0">
-                  <p className="font-semibold text-[#16324F] truncate">{poster.name || 'BeeBark member'}</p>
-                  {(poster.headline || poster.company) && <p className="text-sm text-[#526174] truncate">{poster.headline || poster.company}</p>}
+                  <p className="font-semibold text-[#32281F] truncate">{poster.name || 'BeeBark member'}</p>
+                  {(poster.headline || poster.company) && <p className="text-sm text-[#6B625A] truncate">{poster.headline || poster.company}</p>}
                 </div>
               </>
             );
             return posterPath ? (
-              <Link to={posterPath} className="flex items-center gap-3 rounded-xl border border-[#DCE3EB] p-3 hover:bg-[#FBFAF8]" data-testid="job-detail-poster">{inner}</Link>
+              <Link to={posterPath} className="flex items-center gap-3 rounded-xl border border-[#E6E1DB] p-3 hover:bg-[#FBFAF8]" data-testid="job-detail-poster">{inner}</Link>
             ) : (
-              <div className="flex items-center gap-3 rounded-xl border border-[#DCE3EB] p-3" data-testid="job-detail-poster">{inner}</div>
+              <div className="flex items-center gap-3 rounded-xl border border-[#E6E1DB] p-3" data-testid="job-detail-poster">{inner}</div>
             );
           })()}
         </Section>

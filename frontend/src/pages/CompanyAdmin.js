@@ -132,14 +132,14 @@ const CompanyAdmin = () => {
       <div className="lg:ml-64 mt-16 p-4 sm:p-6 lg:p-8">
         <div className="max-w-6xl mx-auto space-y-6">
           {/* Welcome */}
-          <div className="relative overflow-hidden rounded-2xl border border-[#DCE3EB] bg-white">
+          <div className="relative overflow-hidden rounded-2xl border border-[#E6E1DB] bg-white">
             <div className="absolute inset-y-0 right-0 w-full sm:w-1/2 opacity-90"
               style={page.cover ? { backgroundImage: `linear-gradient(90deg, #fff 0%, rgba(255,255,255,0.4) 45%, rgba(255,255,255,0) 100%), url(${page.cover})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}} />
             <div className="relative p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center gap-5">
               <CompanyLogo page={page} className="w-16 h-16 sm:w-20 sm:h-20" rounded="rounded-2xl" text="text-2xl" />
               <div className="min-w-0 flex-1">
                 <p className="pf-muted">{greeting()},</p>
-                <h1 className="pf-serif text-3xl sm:text-4xl font-bold text-[#16324F] break-words">{page.name}</h1>
+                <h1 className="pf-serif text-3xl sm:text-4xl font-bold text-[#32281F] break-words">{page.name}</h1>
                 <p className="mt-1 text-sm pf-muted flex flex-wrap gap-x-3">
                   {PAGE_TYPE_LABELS[page.type] && <span className="inline-flex items-center gap-1"><FiGrid />{PAGE_TYPE_LABELS[page.type]}</span>}
                   {page.locations?.[0] && <span>{page.locations[0]}</span>}
@@ -148,20 +148,20 @@ const CompanyAdmin = () => {
               </div>
             </div>
             <div className="relative px-6 sm:px-8 pb-6 flex flex-wrap gap-2">
-              <Link to={`/jobs?post=1&as=${page._id}`} className="inline-flex items-center gap-1.5 rounded-xl bg-[#16324F] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0F2439]" data-testid="admin-post-job"><FiPlus />Post a job</Link>
-              {page.type === 'supplier' && <Link to="/portfolio" className="inline-flex items-center gap-1.5 rounded-xl bg-[#16324F] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0F2439]"><FiPlus />Add product</Link>}
-              {['architecture_firm', 'interior_firm', 'construction'].includes(page.type) && <Link to="/portfolio" className="inline-flex items-center gap-1.5 rounded-xl bg-[#16324F] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0F2439]"><FiPlus />Add project</Link>}
+              <Link to={`/jobs?post=1&as=${page._id}`} className="inline-flex items-center gap-1.5 rounded-xl bg-[#32281F] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#221A14]" data-testid="admin-post-job"><FiPlus />Post a job</Link>
+              {page.type === 'supplier' && <Link to="/portfolio" className="inline-flex items-center gap-1.5 rounded-xl bg-[#32281F] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#221A14]"><FiPlus />Add product</Link>}
+              {['architecture_firm', 'interior_firm', 'construction'].includes(page.type) && <Link to="/portfolio" className="inline-flex items-center gap-1.5 rounded-xl bg-[#32281F] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#221A14]"><FiPlus />Add project</Link>}
               <ShareMenu path={`/c/${page.slug}`} title={`${page.name} on BeeBark`} text={page.tagline} align="start" testId="admin-share"
-                trigger={<button type="button" className="inline-flex items-center gap-1.5 rounded-xl border border-[#DCE3EB] bg-white px-4 py-2.5 text-sm font-medium text-[#16324F]"><FiShare2 />Share page</button>} />
-              <Link to={`/company/${page.slug}?preview=1`} className="inline-flex items-center gap-1.5 rounded-xl border border-[#DCE3EB] bg-white px-4 py-2.5 text-sm font-medium text-[#16324F]" data-testid="admin-view-as-visitor"><FiEye />View as visitor</Link>
+                trigger={<button type="button" className="inline-flex items-center gap-1.5 rounded-xl border border-[#E6E1DB] bg-white px-4 py-2.5 text-sm font-medium text-[#32281F]"><FiShare2 />Share page</button>} />
+              <Link to={`/company/${page.slug}?preview=1`} className="inline-flex items-center gap-1.5 rounded-xl border border-[#E6E1DB] bg-white px-4 py-2.5 text-sm font-medium text-[#32281F]" data-testid="admin-view-as-visitor"><FiEye />View as visitor</Link>
             </div>
           </div>
 
           {/* Tabs */}
-          <nav className="flex gap-1 border-b border-[#DCE3EB] overflow-x-auto" role="tablist">
+          <nav className="flex gap-1 border-b border-[#E6E1DB] overflow-x-auto" role="tablist">
             {TABS.map((t) => (
               <button key={t.id} role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)} data-testid={`admin-tab-${t.id}`}
-                className={`relative px-4 py-3 text-[15px] whitespace-nowrap ${tab === t.id ? 'font-semibold text-[#16324F]' : 'pf-muted hover:text-[#16324F]'}`}>
+                className={`relative px-4 py-3 text-[15px] whitespace-nowrap ${tab === t.id ? 'font-semibold text-[#32281F]' : 'pf-muted hover:text-[#32281F]'}`}>
                 {t.label}{tab === t.id && <span className="absolute inset-x-0 bottom-0 h-[3px] rounded-full bg-[#F2B21B]" />}
               </button>
             ))}
@@ -173,34 +173,34 @@ const CompanyAdmin = () => {
                 {statCards.map((s) => (
                   <div key={s.label} className="pf-card p-5" data-testid={`stat-${s.label.toLowerCase().replace(/\s+/g, '-')}`}>
                     <s.icon className="w-5 h-5 text-[#E0A21A]" />
-                    <p className="mt-3 text-3xl font-bold text-[#16324F]">{stats ? Number(s.value || 0).toLocaleString('en-IN') : '–'}</p>
+                    <p className="mt-3 text-3xl font-bold text-[#32281F]">{stats ? Number(s.value || 0).toLocaleString('en-IN') : '–'}</p>
                     <p className="text-sm pf-muted">{s.label}</p>
                   </div>
                 ))}
               </div>
               <div className="grid gap-6 lg:grid-cols-2">
                 <div className="pf-card p-6">
-                  <div className="flex items-center justify-between"><h2 className="pf-serif text-xl font-semibold text-[#16324F]">Recent applicants</h2><Link to="/jobs?tab=posted" className="text-sm font-medium text-[#16324F] hover:underline">View all</Link></div>
+                  <div className="flex items-center justify-between"><h2 className="pf-serif text-xl font-semibold text-[#32281F]">Recent applicants</h2><Link to="/jobs?tab=posted" className="text-sm font-medium text-[#32281F] hover:underline">View all</Link></div>
                   {stats?.recentApplicants?.length ? (
-                    <ul className="mt-4 divide-y divide-[#DCE3EB]">
+                    <ul className="mt-4 divide-y divide-[#E6E1DB]">
                       {stats.recentApplicants.map((a, i) => (
                         <li key={i}><Link to={`/profile/${a.person.username}`} className="flex items-center gap-3 py-3">
-                          {a.person.profilePic ? <img src={a.person.profilePic} alt="" className="w-10 h-10 rounded-full object-cover" /> : <span className="w-10 h-10 rounded-full bg-[#EEF2F6] flex items-center justify-center font-semibold">{a.person.name?.[0]}</span>}
-                          <span className="flex-1 min-w-0"><span className="block font-medium text-[#16324F] truncate">{a.person.name}</span><span className="block text-sm pf-muted truncate">Applied for {a.job}</span></span>
+                          {a.person.profilePic ? <img src={a.person.profilePic} alt="" className="w-10 h-10 rounded-full object-cover" /> : <span className="w-10 h-10 rounded-full bg-[#F2EFEC] flex items-center justify-center font-semibold">{a.person.name?.[0]}</span>}
+                          <span className="flex-1 min-w-0"><span className="block font-medium text-[#32281F] truncate">{a.person.name}</span><span className="block text-sm pf-muted truncate">Applied for {a.job}</span></span>
                           <span className="text-xs pf-muted shrink-0">{ago(a.at)}</span>
                         </Link></li>
                       ))}
                     </ul>
-                  ) : <p className="mt-4 text-sm pf-muted">No applicants yet. <Link to={`/jobs?post=1&as=${page._id}`} className="font-semibold text-[#16324F] underline">Post a job</Link> as {page.name}.</p>}
+                  ) : <p className="mt-4 text-sm pf-muted">No applicants yet. <Link to={`/jobs?post=1&as=${page._id}`} className="font-semibold text-[#32281F] underline">Post a job</Link> as {page.name}.</p>}
                 </div>
                 <div className="pf-card p-6">
-                  <h2 className="pf-serif text-xl font-semibold text-[#16324F]">New followers</h2>
+                  <h2 className="pf-serif text-xl font-semibold text-[#32281F]">New followers</h2>
                   {stats?.recentFollowers?.length ? (
-                    <ul className="mt-4 divide-y divide-[#DCE3EB]">
+                    <ul className="mt-4 divide-y divide-[#E6E1DB]">
                       {stats.recentFollowers.map((p) => (
                         <li key={p._id}><Link to={`/profile/${p.username}`} className="flex items-center gap-3 py-3">
-                          {p.profilePic ? <img src={p.profilePic} alt="" className="w-10 h-10 rounded-full object-cover" /> : <span className="w-10 h-10 rounded-full bg-[#EEF2F6] flex items-center justify-center font-semibold">{p.name?.[0]}</span>}
-                          <span className="flex-1 min-w-0"><span className="block font-medium text-[#16324F] truncate">{p.name}</span><span className="block text-sm pf-muted truncate">{p.headline}</span></span>
+                          {p.profilePic ? <img src={p.profilePic} alt="" className="w-10 h-10 rounded-full object-cover" /> : <span className="w-10 h-10 rounded-full bg-[#F2EFEC] flex items-center justify-center font-semibold">{p.name?.[0]}</span>}
+                          <span className="flex-1 min-w-0"><span className="block font-medium text-[#32281F] truncate">{p.name}</span><span className="block text-sm pf-muted truncate">{p.headline}</span></span>
                         </Link></li>
                       ))}
                     </ul>
@@ -208,8 +208,8 @@ const CompanyAdmin = () => {
                 </div>
               </div>
               <div className="pf-card p-6">
-                <h2 className="pf-serif text-xl font-semibold text-[#16324F]">Quick links</h2>
-                <div className="mt-3 divide-y divide-[#DCE3EB]">
+                <h2 className="pf-serif text-xl font-semibold text-[#32281F]">Quick links</h2>
+                <div className="mt-3 divide-y divide-[#E6E1DB]">
                   {[
                     { label: 'Edit page details', onClick: () => setTab('edit'), icon: FiEdit2 },
                     { label: 'Manage admins', onClick: () => setTab('admins'), icon: FiUserPlus },
@@ -218,8 +218,8 @@ const CompanyAdmin = () => {
                   ].map((l) => {
                     const inner = <><l.icon className="w-4 h-4 pf-muted" /><span className="flex-1">{l.label}</span><FiChevronRight className="pf-muted" /></>;
                     return l.to
-                      ? <Link key={l.label} to={l.to} className="flex items-center gap-3 py-3 text-[#16324F] hover:underline">{inner}</Link>
-                      : <button key={l.label} type="button" onClick={l.onClick} className="w-full flex items-center gap-3 py-3 text-left text-[#16324F] hover:underline">{inner}</button>;
+                      ? <Link key={l.label} to={l.to} className="flex items-center gap-3 py-3 text-[#32281F] hover:underline">{inner}</Link>
+                      : <button key={l.label} type="button" onClick={l.onClick} className="w-full flex items-center gap-3 py-3 text-left text-[#32281F] hover:underline">{inner}</button>;
                   })}
                 </div>
               </div>
@@ -231,7 +231,7 @@ const CompanyAdmin = () => {
               <PageForm form={form} setForm={setForm} showErrors={showErrors} pageId={page._id} />
               <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
                 {data.isOwner ? <button type="button" onClick={deletePage} className="inline-flex items-center gap-1.5 text-sm font-medium text-red-600 hover:underline" data-testid="page-delete"><FiTrash2 />Delete page</button> : <span />}
-                <Button type="button" onClick={save} disabled={saving} className="bg-[#16324F] text-white hover:bg-[#0F2439]" data-testid="page-save">{saving ? 'Saving…' : 'Save changes'}</Button>
+                <Button type="button" onClick={save} disabled={saving} className="bg-[#32281F] text-white hover:bg-[#221A14]" data-testid="page-save">{saving ? 'Saving…' : 'Save changes'}</Button>
               </div>
             </div>
           )}
@@ -239,14 +239,14 @@ const CompanyAdmin = () => {
           {tab === 'admins' && (
             <div className="pf-card p-5 sm:p-8 space-y-5">
               <div>
-                <h2 className="pf-serif text-xl font-semibold text-[#16324F]">Page admins</h2>
+                <h2 className="pf-serif text-xl font-semibold text-[#32281F]">Page admins</h2>
                 <p className="text-sm pf-muted">Admins can edit the page, post jobs as {page.name} and see the dashboard.</p>
               </div>
-              <ul className="divide-y divide-[#DCE3EB]">
+              <ul className="divide-y divide-[#E6E1DB]">
                 {data.admins.map((a) => (
                   <li key={a._id} className="flex items-center gap-3 py-3">
-                    {a.profilePic ? <img src={a.profilePic} alt="" className="w-10 h-10 rounded-full object-cover" /> : <span className="w-10 h-10 rounded-full bg-[#EEF2F6] flex items-center justify-center font-semibold">{a.name?.[0]}</span>}
-                    <span className="flex-1 min-w-0"><span className="block font-medium text-[#16324F] truncate">{a.name}</span><span className="block text-sm pf-muted">{a.role === 'owner' ? 'Owner' : 'Admin'}</span></span>
+                    {a.profilePic ? <img src={a.profilePic} alt="" className="w-10 h-10 rounded-full object-cover" /> : <span className="w-10 h-10 rounded-full bg-[#F2EFEC] flex items-center justify-center font-semibold">{a.name?.[0]}</span>}
+                    <span className="flex-1 min-w-0"><span className="block font-medium text-[#32281F] truncate">{a.name}</span><span className="block text-sm pf-muted">{a.role === 'owner' ? 'Owner' : 'Admin'}</span></span>
                     {data.isOwner && a.role !== 'owner' && <button type="button" onClick={() => removeAdmin(a)} className="text-sm text-red-600 hover:underline">Remove</button>}
                   </li>
                 ))}
@@ -254,7 +254,7 @@ const CompanyAdmin = () => {
               {data.isOwner && (
                 <form onSubmit={addAdmin} className="flex gap-2">
                   <Input value={adminName} onChange={(e) => setAdminName(e.target.value)} placeholder="Their BeeBark username, e.g. riya" data-testid="admin-username" />
-                  <Button type="submit" className="bg-[#16324F] text-white hover:bg-[#0F2439] shrink-0" data-testid="admin-add"><FiUserPlus className="mr-1" />Add</Button>
+                  <Button type="submit" className="bg-[#32281F] text-white hover:bg-[#221A14] shrink-0" data-testid="admin-add"><FiUserPlus className="mr-1" />Add</Button>
                 </form>
               )}
             </div>

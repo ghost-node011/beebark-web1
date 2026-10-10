@@ -14,7 +14,7 @@
 
 body {
   font-family: 'Manrope', sans-serif;
-  background: #F5F7FA;
+  background: #F7F6F4;
 }
 
 .sidebar-item {
@@ -150,13 +150,13 @@ input[name="beebark-people-search"]::-webkit-search-cancel-button { display: non
 
 /* ---------- Sign-in / sign-up ---------- */
 .input-beebark {
-  width: 100%; height: 3rem; padding: 0 1rem; border: 1px solid #DCE3EB; border-radius: 0.5rem;
-  background: #fff; color: #16324F; font-size: 0.95rem; outline: none; transition: border-color .15s, box-shadow .15s;
+  width: 100%; height: 3rem; padding: 0 1rem; border: 1px solid #E6E1DB; border-radius: 0.5rem;
+  background: #fff; color: #32281F; font-size: 0.95rem; outline: none; transition: border-color .15s, box-shadow .15s;
 }
 .relative > svg ~ .input-beebark { padding-left: 2.75rem; }
 .relative > button ~ .input-beebark, .input-beebark.pr-11 { padding-right: 2.75rem; }
-.input-beebark::placeholder { color: #8A96A6; }
-.input-beebark:focus { border-color: #245EA8; box-shadow: 0 0 0 3px rgba(36, 94, 168, 0.15); }
+.input-beebark::placeholder { color: #9A9087; }
+.input-beebark:focus { border-color: #7A6450; box-shadow: 0 0 0 3px rgba(122, 100, 80, 0.18); }
 .auth-yellow-btn {
   width: 100%; height: 3.25rem; border-radius: 0.5rem; background: #FFD60A; color: #111827; font-weight: 700; font-size: 1.05rem;
   transition: background .15s, box-shadow .15s;

@@ -69,20 +69,20 @@ const CompanyNew = () => {
       <TopBar />
       <div className="lg:ml-64 mt-16 p-4 sm:p-6 lg:p-8">
         <div className="max-w-6xl mx-auto">
-          <Link to="/profile" className="inline-flex items-center gap-1.5 text-sm pf-muted hover:text-[#16324F]"><FiArrowLeft />Back</Link>
-          <h1 className="mt-3 pf-serif text-3xl sm:text-4xl font-bold text-[#16324F]">Create a company page</h1>
+          <Link to="/profile" className="inline-flex items-center gap-1.5 text-sm pf-muted hover:text-[#32281F]"><FiArrowLeft />Back</Link>
+          <h1 className="mt-3 pf-serif text-3xl sm:text-4xl font-bold text-[#32281F]">Create a company page</h1>
           <p className="mt-1 pf-muted max-w-2xl">Firms, studios, developers and suppliers get a page people can follow. Your team can add it to their Experience, and you can post jobs as the company.</p>
 
           <form onSubmit={create} className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
             <div className="pf-card p-5 sm:p-8">
               <PageForm form={form} setForm={setForm} showErrors={showErrors} />
-              <label className="mt-6 flex items-start gap-3 rounded-xl bg-[#EEF2F6] p-4 text-sm text-[#1F2933] cursor-pointer">
-                <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} className="mt-0.5 accent-[#16324F]" data-testid="page-confirm" />
+              <label className="mt-6 flex items-start gap-3 rounded-xl bg-[#F2EFEC] p-4 text-sm text-[#2A221C] cursor-pointer">
+                <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} className="mt-0.5 accent-[#32281F]" data-testid="page-confirm" />
                 <span>I confirm that I work at or represent this company and may create and manage its page on BeeBark.</span>
               </label>
               <div className="mt-6 flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => navigate(-1)}>Cancel</Button>
-                <Button type="submit" disabled={saving} className="bg-[#16324F] text-white hover:bg-[#0F2439]" data-testid="page-create">{saving ? 'Creating…' : 'Create page'}</Button>
+                <Button type="submit" disabled={saving} className="bg-[#32281F] text-white hover:bg-[#221A14]" data-testid="page-create">{saving ? 'Creating…' : 'Create page'}</Button>
               </div>
             </div>
 
@@ -90,17 +90,17 @@ const CompanyNew = () => {
             <aside className="lg:sticky lg:top-24">
               <p className="text-xs font-semibold uppercase tracking-wide pf-muted mb-2">Page preview</p>
               <div className="pf-card overflow-hidden">
-                <div className="h-24" style={form.cover ? { backgroundImage: `url(${form.cover})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: 'linear-gradient(120deg, #2C5A85 0%, #1E4266 40%, #16324F 75%, #0F2439 100%)' }} />
+                <div className="h-24" style={form.cover ? { backgroundImage: `url(${form.cover})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: 'linear-gradient(120deg, #6B5440 0%, #4A3A2C 40%, #32281F 75%, #221A14 100%)' }} />
                 <div className="px-5 pb-5">
                   <div className="-mt-8"><CompanyLogo page={{ name: form.name || 'Company', logo: form.logo }} className="w-16 h-16 border-[3px] border-white" text="text-xl" /></div>
-                  <p className="mt-2 pf-serif text-xl font-bold text-[#16324F] break-words">{form.name || 'Company name'}</p>
+                  <p className="mt-2 pf-serif text-xl font-bold text-[#32281F] break-words">{form.name || 'Company name'}</p>
                   <p className="text-sm pf-muted">{form.tagline || 'Tagline'}</p>
                   <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs pf-muted">
                     {form.type && <span>{PAGE_TYPE_LABELS[form.type]}</span>}
                     {form.locations[0] && <span className="inline-flex items-center gap-1"><FiMapPin />{form.locations[0]}</span>}
                     {form.teamSize && <span className="inline-flex items-center gap-1"><FiUsers />{form.teamSize}</span>}
                   </p>
-                  <span className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-[#16324F] px-4 py-2 text-sm font-semibold text-white"><FiPlus />Follow</span>
+                  <span className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-[#32281F] px-4 py-2 text-sm font-semibold text-white"><FiPlus />Follow</span>
                 </div>
               </div>
             </aside>

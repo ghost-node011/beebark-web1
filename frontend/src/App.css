@@ -29,7 +29,7 @@
   --card-foreground: 222.2 84% 4.9%;
   --popover: 0 0% 100%;
   --popover-foreground: 222.2 84% 4.9%;
-  --primary: 210 57% 20%;
+  --primary: 29 23% 16%;
   --primary-foreground: 0 0% 100%;
   --secondary: 210 40% 96.1%;
   --secondary-foreground: 222.2 47.4% 11.2%;
@@ -39,9 +39,9 @@
   --accent-foreground: 222.2 47.4% 11.2%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 210 40% 98%;
-  --border: 211 30% 89%;
-  --input: 211 30% 89%;
-  --ring: 213 65% 40%;
+  --border: 33 17% 88%;
+  --input: 33 17% 88%;
+  --ring: 29 21% 40%;
   --radius: 0.5rem;
 }
 
@@ -60,7 +60,7 @@
 }
 
 .sidebar-item.active {
-  background: #FFF7D6; color: #16324F; font-weight: 700;
+  background: #FFF7D6; color: #32281F; font-weight: 700;
   box-shadow: inset 4px 0 0 #F4C430;
 }
 .sidebar-item.active:hover { background: #FFF1C2; }
@@ -241,20 +241,20 @@
 }
 
 /* ================= BeeBark theme =================
-   Navy for actions and headings, white and soft grey for surfaces,
+   Logo brown for actions and headings, white and soft grey for surfaces,
    yellow only for brand accents and selected states.
    Fonts: Space Grotesk (headings), Manrope (everything else). */
 :root {
-  --bb-navy: #16324F; --bb-navy-dark: #0F2439; --bb-white: #FFFFFF; --bb-bg: #F5F7FA; --bb-yellow: #F4C430;
-  --bb-pale-yellow: #FFF7D6; --bb-slate: #526174; --bb-link: #245EA8; --bb-border: #DCE3EB; --bb-ink: #1F2933;
+  --bb-navy: #32281F; --bb-navy-dark: #221A14; --bb-white: #FFFFFF; --bb-bg: #F7F6F4; --bb-yellow: #F4C430;
+  --bb-pale-yellow: #FFF7D6; --bb-slate: #6B625A; --bb-link: #7A6450; --bb-border: #E6E1DB; --bb-ink: #2A221C;
 }
 body { font-family: 'Manrope', system-ui, sans-serif; background: var(--bb-bg); color: var(--bb-ink); }
 :is(h1, h2, h3, h4):not(.pf-template *), .font-display, .font-serif, .pf-serif { font-family: 'Space Grotesk', 'Manrope', system-ui, sans-serif; letter-spacing: -0.01em; }
 .pf-page { font-family: 'Manrope', system-ui, sans-serif; color: var(--bb-ink); }
 .pf-card { background: #fff; border: 1px solid var(--bb-border); border-radius: 1rem; }
-.pf-soft { background: #EEF2F6; }
+.pf-soft { background: #F2EFEC; }
 .pf-muted { color: var(--bb-slate); }
-.pf-hover:hover { border-color: #B9C6D5; box-shadow: 0 6px 20px -12px rgba(22, 50, 79, .35); }
+.pf-hover:hover { border-color: #CFC6BC; box-shadow: 0 6px 20px -12px rgba(50, 40, 31, .35); }
 .sidebar-item { color: var(--bb-slate); }
-.sidebar-item:hover { color: var(--bb-navy); background: #F0F3F7; }
+.sidebar-item:hover { color: var(--bb-navy); background: #F4F1EE; }
 a.text-link, .text-link { color: var(--bb-link); }

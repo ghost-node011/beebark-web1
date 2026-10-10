@@ -48,12 +48,12 @@ const Login = () => {
   return (
     <AuthShell>
       <div data-testid="login-page">
-        <h2 className="text-[32px] sm:text-[40px] font-bold leading-tight tracking-tight text-[#111827]">Welcome to BeeBark</h2>
-        <p className="mt-1.5 text-lg text-[#526174]">Sign in to your professional network.</p>
+        <h2 className="text-[32px] sm:text-[40px] font-bold leading-tight tracking-tight text-[#1C1712]">Welcome to BeeBark</h2>
+        <p className="mt-1.5 text-lg text-[#6B625A]">Sign in to your professional network.</p>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-5" data-testid="login-form">
           <div>
-            <label className="block text-[15px] font-semibold text-[#111827] mb-2">Email</label>
+            <label className="block text-[15px] font-semibold text-[#1C1712] mb-2">Email</label>
             <div className="relative">
               <FaEnvelope className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
               <input
@@ -69,7 +69,7 @@ const Login = () => {
           </div>
 
           <div>
-            <label className="block text-[15px] font-semibold text-[#111827] mb-2">Password</label>
+            <label className="block text-[15px] font-semibold text-[#1C1712] mb-2">Password</label>
             <div className="relative">
               <FaLock className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
               <input
@@ -94,7 +94,7 @@ const Login = () => {
           </div>
 
           <div className="flex items-center justify-between">
-            <label className="flex items-center gap-2.5 text-[15px] text-[#1f2933] cursor-pointer">
+            <label className="flex items-center gap-2.5 text-[15px] text-[#2A221C] cursor-pointer">
               <input
                 type="checkbox"
                 className="h-5 w-5 rounded accent-[#FFD60A]"
@@ -103,7 +103,7 @@ const Login = () => {
               />
               Remember me
             </label>
-            <Link to="/forgot-password" className="text-[15px] text-[#526174] hover:text-[#16324F]">
+            <Link to="/forgot-password" className="text-[15px] text-[#6B625A] hover:text-[#32281F]">
               Forgot password?
             </Link>
           </div>
@@ -119,9 +119,9 @@ const Login = () => {
         </form>
 
         <SocialAuth onGoogleCredential={handleGoogle} text="continue_with" />
-        <p className="mt-8 text-center text-[15px] text-[#526174]">
+        <p className="mt-8 text-center text-[15px] text-[#6B625A]">
           New to BeeBark?{' '}
-          <Link to="/register" className="font-semibold text-[#111827] hover:underline" data-testid="go-register">Create an account</Link>
+          <Link to="/register" className="font-semibold text-[#1C1712] hover:underline" data-testid="go-register">Create an account</Link>
         </p>
       </div>
     </AuthShell>

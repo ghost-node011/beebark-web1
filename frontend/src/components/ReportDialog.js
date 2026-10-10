@@ -70,7 +70,7 @@ const ReportDialog = ({ open, onOpenChange, person, context = 'profile', itemId,
         <div className="space-y-2" role="radiogroup">
           {REASONS.map((r) => (
             <label key={r.value} className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition ${reason === r.value ? 'border-yellow-400 bg-yellow-50' : 'border-slate-200 hover:border-slate-300'}`}>
-              <input type="radio" name="report-reason" value={r.value} checked={reason === r.value} onChange={() => setReason(r.value)} className="mt-1 accent-[#16324F]" />
+              <input type="radio" name="report-reason" value={r.value} checked={reason === r.value} onChange={() => setReason(r.value)} className="mt-1 accent-[#32281F]" />
               <span>
                 <span className="block text-sm font-medium text-black">{r.label}</span>
                 {r.hint && <span className="block text-xs text-slate-500">{r.hint}</span>}
@@ -80,7 +80,7 @@ const ReportDialog = ({ open, onOpenChange, person, context = 'profile', itemId,
         </div>
         <Textarea value={details} onChange={(e) => setDetails(e.target.value)} placeholder="Anything else we should know? (optional)" rows={3} maxLength={1000} />
         <label className="flex items-center gap-2 text-sm text-slate-700">
-          <input type="checkbox" checked={alsoBlock} onChange={(e) => setAlsoBlock(e.target.checked)} className="accent-[#16324F]" />
+          <input type="checkbox" checked={alsoBlock} onChange={(e) => setAlsoBlock(e.target.checked)} className="accent-[#32281F]" />
           Also block {person?.name?.split(' ')[0]} (removes the connection and stops messages)
         </label>
         {context === 'chat' && reason === 'spam' && (

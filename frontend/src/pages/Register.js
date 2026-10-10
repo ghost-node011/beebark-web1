@@ -75,12 +75,12 @@ const Register = () => {
       {/* Step 0 — Account details */}
       {step === 0 && (
         <div data-testid="details-step">
-          <h2 className="text-[32px] sm:text-[40px] font-bold leading-tight tracking-tight text-[#111827]">Join BeeBark</h2>
-          <p className="mt-1.5 text-lg text-[#526174]">Create your professional account.</p>
+          <h2 className="text-[32px] sm:text-[40px] font-bold leading-tight tracking-tight text-[#1C1712]">Join BeeBark</h2>
+          <p className="mt-1.5 text-lg text-[#6B625A]">Create your professional account.</p>
 
           <form onSubmit={submitDetails} className="mt-7 space-y-5" data-testid="register-form">
             <div>
-              <label className="block text-[15px] font-semibold text-[#111827] mb-2">Full name</label>
+              <label className="block text-[15px] font-semibold text-[#1C1712] mb-2">Full name</label>
               <div className="relative">
                 <FaUser className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
                 <input type="text" placeholder="Enter your name" value={form.name} onChange={update('name')} required className="input-beebark" data-testid="name-input" />
@@ -88,7 +88,7 @@ const Register = () => {
             </div>
 
             <div>
-              <label className="block text-[15px] font-semibold text-[#111827] mb-2">Email</label>
+              <label className="block text-[15px] font-semibold text-[#1C1712] mb-2">Email</label>
               <div className="relative">
                 <FaEnvelope className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
                 <input type="email" placeholder="you@example.com" value={form.email} onChange={update('email')} required className="input-beebark" data-testid="email-input" />
@@ -96,7 +96,7 @@ const Register = () => {
             </div>
 
             <div>
-              <label className="block text-[15px] font-semibold text-[#111827] mb-2">Password</label>
+              <label className="block text-[15px] font-semibold text-[#1C1712] mb-2">Password</label>
               <div className="relative">
                 <FaLock className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
                 <input type={showPassword ? 'text' : 'password'} placeholder="Create a password" value={form.password} onChange={update('password')} required className="input-beebark pr-11" data-testid="password-input" />
@@ -125,7 +125,7 @@ const Register = () => {
             </div>
 
             <div>
-              <label className="block text-[15px] font-semibold text-[#111827] mb-2">Confirm password</label>
+              <label className="block text-[15px] font-semibold text-[#1C1712] mb-2">Confirm password</label>
               <div className="relative">
                 <FaLock className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
                 <input type={showPassword ? 'text' : 'password'} placeholder="Re-enter your password" value={form.confirmPassword} onChange={update('confirmPassword')} required className="input-beebark" data-testid="confirm-password-input" />
@@ -141,9 +141,9 @@ const Register = () => {
           </form>
 
           <SocialAuth onGoogleCredential={handleGoogle} text="signup_with" />
-          <p className="mt-8 text-center text-[15px] text-[#526174]">
+          <p className="mt-8 text-center text-[15px] text-[#6B625A]">
             Already a member?{' '}
-            <Link to="/login" className="font-semibold text-[#111827] hover:underline">Sign in</Link>
+            <Link to="/login" className="font-semibold text-[#1C1712] hover:underline">Sign in</Link>
           </p>
         </div>
       )}

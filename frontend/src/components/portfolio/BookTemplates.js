@@ -21,7 +21,7 @@ export const BOOK_THEME_META = [
   { key: 'manual', label: 'Studio Manual', description: 'Huge uppercase headings on beige pages over orange', group: 'Creative', modes: ['portfolio'], swatches: ['#EFE6D6', '#1A1A1A', '#F28C28'] },
   { key: 'cleanbook', label: 'Clean Book', description: 'Crisp white architecture book with thin rules', group: 'Architecture', modes: ['portfolio'], swatches: ['#FFFFFF', '#141414', '#2F6FDE'] },
   { key: 'creative', label: 'Creative Bold', description: 'Black and white spreads with huge royal-blue type', group: 'Creative', modes: ['portfolio'], swatches: ['#FFFFFF', '#0B0B0B', '#1F3FA8'] },
-  { key: 'catalogue', label: 'Product Catalogue', description: 'Clean B2B catalogue for construction materials and suppliers', group: 'Construction & suppliers', modes: ['catalogue'], swatches: ['#F6F7F9', '#111827', '#C2410C'] }
+  { key: 'catalogue', label: 'Product Catalogue', description: 'Clean B2B catalogue for construction materials and suppliers', group: 'Construction & suppliers', modes: ['catalogue'], swatches: ['#F6F7F9', '#1C1712', '#C2410C'] }
 ];
 
 // `accent` is each template's signature accent, used while the saved accent is
@@ -33,7 +33,7 @@ export const BOOK_PALETTE_DEFAULTS = {
   manual: { background: '#EFE6D6', textColor: '#1A1A1A', accent: '#F28C28' },
   cleanbook: { background: '#FFFFFF', textColor: '#141414', accent: '#2F6FDE' },
   creative: { background: '#FFFFFF', textColor: '#0B0B0B', accent: '#1F3FA8' },
-  catalogue: { background: '#F6F7F9', textColor: '#111827', accent: '#C2410C' }
+  catalogue: { background: '#F6F7F9', textColor: '#1C1712', accent: '#C2410C' }
 };
 
 export const BOOK_COLOUR_PRESETS = {
@@ -60,7 +60,7 @@ export const BOOK_COLOUR_PRESETS = {
   ],
   cleanbook: [
     { label: 'White', background: '#FFFFFF', textColor: '#141414' },
-    { label: 'Mist', background: '#F5F7FA', textColor: '#111827' },
+    { label: 'Mist', background: '#F5F7FA', textColor: '#1C1712' },
     { label: 'Paper', background: '#FAFAF7', textColor: '#1A1A1A' }
   ],
   creative: [
@@ -68,7 +68,7 @@ export const BOOK_COLOUR_PRESETS = {
     { label: 'Off-white', background: '#F4F2EE', textColor: '#111111' }
   ],
   catalogue: [
-    { label: 'Light', background: '#F6F7F9', textColor: '#111827' },
+    { label: 'Light', background: '#F6F7F9', textColor: '#1C1712' },
     { label: 'White', background: '#FFFFFF', textColor: '#0F172A' },
     { label: 'Concrete', background: '#EEEEEC', textColor: '#1C1917' }
   ]
@@ -1444,7 +1444,7 @@ const CatalogueCard = ({ item, accent, onAccent, editable, onEdit, onDelete, onO
   return (
     <article
       className={`flex min-w-0 flex-col overflow-hidden rounded-xl border bg-white text-gray-900 shadow-sm ${onOpen ? 'cursor-pointer transition hover:shadow-md' : ''}`}
-      style={{ borderColor: rgba('#111827', 0.08) }}
+      style={{ borderColor: rgba('#1C1712', 0.08) }}
       onClick={openOnClick(onOpen, item)}
       data-testid={`project-tile-${item._id}`}
     >
@@ -1466,7 +1466,7 @@ const CatalogueCard = ({ item, accent, onAccent, editable, onEdit, onDelete, onO
           {price ? <p className="text-lg font-bold" style={{ color: accent }}>{price}</p> : <p className="text-sm font-medium text-gray-500">Price on request</p>}
           {(item.moq || item.leadTime) && <p className="mt-0.5 text-xs text-gray-500">{[item.moq && `MOQ ${item.moq}`, item.leadTime && `Lead time ${item.leadTime}`].filter(Boolean).join(' · ')}</p>}
           <ProductActions item={item} onEnquire={onEnquire} contact={contact} className="mt-3 [&>*]:flex-1 [&>*]:rounded-lg [&>*]:px-3 [&>*]:text-xs"
-            primary={{ backgroundColor: accent, color: onAccent }} secondary={{ borderColor: '#D1D5DB', color: '#111827' }} />
+            primary={{ backgroundColor: accent, color: onAccent }} secondary={{ borderColor: '#D1D5DB', color: '#1C1712' }} />
           {onOpen && (
             <button type="button" onClick={() => onOpen(item)} className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-gray-700 hover:underline" data-pdf-ignore>
               View details <FiArrowRight />
@@ -1482,7 +1482,7 @@ const CatalogueCard = ({ item, accent, onAccent, editable, onEdit, onDelete, onO
 export const CatalogueTemplate = ({ items = [], user, headline, editable, onEdit, onDelete, onAdd, onOpen, onEnquire, accentColor, look }) => {
   const L = resolveLook('catalogue', look);
   const accent = visibleAccent(pickAccent(accentColor, 'catalogue'), L.bg, L.fg);
-  const onAccent = isLight(accent) ? '#111827' : '#FFFFFF';
+  const onAccent = isLight(accent) ? '#1C1712' : '#FFFFFF';
   const heading = { fontFamily: MANROPE, fontWeight: 800, letterSpacing: '-0.02em' };
   const sections = groupSections(items, 'Products');
   const hero = items.find((i) => photosOf(i).length);

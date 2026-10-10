@@ -576,7 +576,7 @@ const Portfolio = () => {
               role="radio"
               aria-checked={previewDevice === key}
               onClick={() => setPreviewDevice(key)}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${previewDevice === key ? 'bg-[#16324F] text-white' : 'text-gray-600 hover:text-black'}`}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${previewDevice === key ? 'bg-[#32281F] text-white' : 'text-gray-600 hover:text-black'}`}
               data-testid={`pf-preview-${key}`}
             >
               <Icon className="h-3.5 w-3.5" />{label}
@@ -589,7 +589,7 @@ const Portfolio = () => {
         <div className="rounded-2xl border border-dashed border-gray-300 bg-white py-16 text-center">
           <FiImage className="mx-auto mb-4 h-14 w-14 text-gray-300" />
           <p className="mb-4 text-gray-500">Add your first {copy.workNoun} to see your portfolio here.</p>
-          <Button onClick={openAddDialog} className="bg-[#16324F] font-semibold text-white hover:bg-[#0F2439]">{copy.portfolioAddLabel}</Button>
+          <Button onClick={openAddDialog} className="bg-[#32281F] font-semibold text-white hover:bg-[#221A14]">{copy.portfolioAddLabel}</Button>
         </div>
       )}
       {!loading && items.length > 0 && (previewDevice === 'phone' ? (
@@ -626,7 +626,7 @@ const Portfolio = () => {
             </Button>
             {/* AI tool, switched off:
             <Button onClick={() => setShowAutoGenDialog(true)} variant="outline"><FiZap />Auto-generate from photos</Button> */}
-            <Button onClick={openAddDialog} className="flex items-center gap-2 bg-[#16324F] font-semibold text-white hover:bg-[#0F2439]">
+            <Button onClick={openAddDialog} className="flex items-center gap-2 bg-[#32281F] font-semibold text-white hover:bg-[#221A14]">
               <FiPlus />{copy.portfolioAddLabel}
             </Button>
           </div>
@@ -684,7 +684,7 @@ const Portfolio = () => {
                       )}
                     />
                   )}
-                  <button type="button" onClick={() => openEditDialog(viewingItem)} className="inline-flex h-9 items-center gap-2 rounded-full bg-[#16324F] px-4 text-sm font-semibold text-white hover:bg-[#0F2439]" data-testid="project-viewer-edit">
+                  <button type="button" onClick={() => openEditDialog(viewingItem)} className="inline-flex h-9 items-center gap-2 rounded-full bg-[#32281F] px-4 text-sm font-semibold text-white hover:bg-[#221A14]" data-testid="project-viewer-edit">
                     <FiEdit2 className="h-4 w-4" />Edit
                   </button>
                 </>
@@ -768,7 +768,7 @@ const Portfolio = () => {
                       <div className="relative">
                         <img src={url} alt="" className={`h-24 w-full rounded-md object-cover ${i === 0 ? 'ring-2 ring-yellow-400 ring-offset-1' : ''}`} />
                         {i === 0 ? (
-                          <span className="absolute bottom-0 left-0 right-0 rounded-b-md bg-[#16324F] text-center text-[10px] font-semibold text-white" data-testid="pf-cover-badge">Cover</span>
+                          <span className="absolute bottom-0 left-0 right-0 rounded-b-md bg-[#32281F] text-center text-[10px] font-semibold text-white" data-testid="pf-cover-badge">Cover</span>
                         ) : (
                           <button
                             type="button"
@@ -783,7 +783,7 @@ const Portfolio = () => {
                         <button
                           type="button"
                           onClick={() => removePhoto(url)}
-                          className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-[#16324F] text-white"
+                          className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-[#32281F] text-white"
                           aria-label="Remove photo"
                         >
                           <FiX className="h-3.5 w-3.5" />
@@ -822,7 +822,7 @@ const Portfolio = () => {
               {(editingItem || viewingId) && (
                 <Button type="button" variant="outline" onClick={cancelEdit} className="sm:flex-1" data-testid="pf-edit-cancel">Cancel</Button>
               )}
-              <Button type="submit" disabled={saving || !!uploadProgress} className="bg-[#16324F] text-white sm:flex-1">
+              <Button type="submit" disabled={saving || !!uploadProgress} className="bg-[#32281F] text-white sm:flex-1">
                 {saving ? 'Saving...' : editingItem ? 'Save changes' : `Add ${copy.workNoun}`}
               </Button>
             </div>

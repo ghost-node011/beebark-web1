@@ -49,7 +49,7 @@ const ROLE_LABELS = {
 const EMPTY_BUSINESS = { name: '', type: '', website: '', founded: '', teamSize: '', services: [], address: '', about: '' };
 const EMPTY_EXPERIENCE = { title: '', company: '', employmentType: '', location: '', startDate: '', endDate: '', current: false, description: '' };
 const EMPTY_EDUCATION = { school: '', degree: '', field: '', duration: '', description: '' };
-const selectClass = 'w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#245EA8]';
+const selectClass = 'w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#7A6450]';
 
 const weekTrend = (pct) => (pct === undefined ? '' : pct > 0 ? `+${pct}% this week` : pct < 0 ? `${pct}% this week` : 'Same as last week');
 
@@ -129,7 +129,7 @@ const SectionCard = ({ title, icon: Icon, sectionKey, editingSection, onEditClic
             isEditing ? (
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" onClick={onCancel}>Cancel</Button>
-                <Button size="sm" onClick={onSave} disabled={saving} className="bg-[#16324F] text-white hover:bg-[#0F2439]">
+                <Button size="sm" onClick={onSave} disabled={saving} className="bg-[#32281F] text-white hover:bg-[#221A14]">
                   {saving ? 'Saving...' : 'Save'}
                 </Button>
               </div>
@@ -540,7 +540,7 @@ const Profile = () => {
 
           <div className="pf-card flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between" data-testid="public-link-card">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-[#16324F]">Public profile &amp; URL</p>
+              <p className="text-sm font-semibold text-[#32281F]">Public profile &amp; URL</p>
               <p className="mt-0.5 truncate text-[15px] pf-muted">
                 {user?.publicProfile !== false ? <a href={`/in/${user?.username}`} target="_blank" rel="noopener noreferrer" className="hover:underline">{window.location.host}/in/{user?.username}</a> : 'Your profile is only visible to signed-in BeeBark members'}
               </p>
@@ -548,7 +548,7 @@ const Profile = () => {
             <div className="flex flex-wrap items-center gap-4">
               {user?.publicProfile !== false && (
                 <>
-                  <button type="button" onClick={() => navigator.clipboard?.writeText(`${window.location.origin}/in/${user?.username}`).then(() => toast.success('Link copied'), () => {})} className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#16324F] hover:underline" data-testid="copy-public-link">
+                  <button type="button" onClick={() => navigator.clipboard?.writeText(`${window.location.origin}/in/${user?.username}`).then(() => toast.success('Link copied'), () => {})} className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#32281F] hover:underline" data-testid="copy-public-link">
                     <FiLink className="w-4 h-4" />Copy link
                   </button>
                   <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`${window.location.origin}/in/${user?.username}`)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#0A66C2] hover:underline">
@@ -565,7 +565,7 @@ const Profile = () => {
           {/* Opens over the page (like LinkedIn), so it's obvious the click did something */}
           <Dialog open={editingSection === 'header'} onOpenChange={(o) => { if (!o) cancelSection(); }}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 gap-0" id="intro-editor" data-testid="intro-editor">
-              <DialogHeader className="sticky top-0 z-10 border-b border-[#DCE3EB] bg-white px-6 py-4">
+              <DialogHeader className="sticky top-0 z-10 border-b border-[#E6E1DB] bg-white px-6 py-4">
                 <DialogTitle className="pf-serif text-2xl">Edit intro</DialogTitle>
               </DialogHeader>
               <div className="space-y-5 px-6 py-5">
@@ -656,9 +656,9 @@ const Profile = () => {
               </div>
               <p className="text-xs text-gray-400">Use the camera icon on your profile photo to change it.</p>
               </div>
-              <div className="sticky bottom-0 flex justify-end gap-2 border-t border-[#DCE3EB] bg-white px-6 py-4">
+              <div className="sticky bottom-0 flex justify-end gap-2 border-t border-[#E6E1DB] bg-white px-6 py-4">
                 <Button onClick={cancelSection} variant="outline">Cancel</Button>
-                <Button onClick={saveSection} disabled={saving} className="bg-[#16324F] text-white hover:bg-[#0F2439]" data-testid="intro-save">{saving ? 'Saving...' : 'Save'}</Button>
+                <Button onClick={saveSection} disabled={saving} className="bg-[#32281F] text-white hover:bg-[#221A14]" data-testid="intro-save">{saving ? 'Saving...' : 'Save'}</Button>
               </div>
             </DialogContent>
           </Dialog>
@@ -736,7 +736,7 @@ const Profile = () => {
                                 placeholder={placeholder} maxLength={80} className="flex-1" data-testid="identity-activeProjects" />
                             )
                               : <AutocompleteInput field={field} {...inputProps} />}
-                          <Button onClick={() => addTag(field)} type="button" className="bg-[#16324F] hover:bg-[#0F2439] shrink-0 text-white">Add</Button>
+                          <Button onClick={() => addTag(field)} type="button" className="bg-[#32281F] hover:bg-[#221A14] shrink-0 text-white">Add</Button>
                         </div>
                         {ongoing.length > 0 && (
                           <div className="flex flex-wrap gap-1.5">
@@ -784,7 +784,7 @@ const Profile = () => {
                   <Link to="/portfolio" className="text-sm font-medium text-black hover:underline hidden sm:inline">Full Portfolio →</Link>
                   <label className="cursor-pointer">
                     <input type="file" accept="image/*" multiple onChange={(e) => handleGalleryFiles(e.target.files)} className="hidden" disabled={uploadingGallery} />
-                    <span className="flex items-center gap-1.5 text-sm font-medium bg-[#16324F] hover:bg-[#0F2439] text-white rounded-lg px-3 py-1.5 transition">
+                    <span className="flex items-center gap-1.5 text-sm font-medium bg-[#32281F] hover:bg-[#221A14] text-white rounded-lg px-3 py-1.5 transition">
                       <FiUpload className="w-3.5 h-3.5" />{uploadingGallery ? 'Adding...' : 'Add Photos'}
                     </span>
                   </label>
@@ -809,7 +809,7 @@ const Profile = () => {
                 <div className="flex items-center justify-between mb-4 gap-3">
                   <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 font-serif flex items-center gap-2"><FiBriefcase className="w-4 h-4" />Experience</h3>
                   {!expDraft && (
-                    <Button size="sm" onClick={() => setExpDraft({ index: -1, ...EMPTY_EXPERIENCE })} className="bg-[#16324F] hover:bg-[#0F2439] text-white" data-testid="add-experience">
+                    <Button size="sm" onClick={() => setExpDraft({ index: -1, ...EMPTY_EXPERIENCE })} className="bg-[#32281F] hover:bg-[#221A14] text-white" data-testid="add-experience">
                       <FiPlus className="mr-1" />Add
                     </Button>
                   )}
@@ -847,7 +847,7 @@ const Profile = () => {
                       </div>
                     </div>
                     <label className="flex items-center gap-2 text-sm text-gray-700">
-                      <input type="checkbox" checked={expDraft.current} onChange={(e) => setExpDraft((d) => ({ ...d, current: e.target.checked, endDate: e.target.checked ? '' : d.endDate }))} className="accent-[#16324F]" data-testid="exp-current" />
+                      <input type="checkbox" checked={expDraft.current} onChange={(e) => setExpDraft((d) => ({ ...d, current: e.target.checked, endDate: e.target.checked ? '' : d.endDate }))} className="accent-[#32281F]" data-testid="exp-current" />
                       I currently work here
                     </label>
                     <div className="space-y-1">
@@ -855,7 +855,7 @@ const Profile = () => {
                       <Textarea value={expDraft.description} onChange={(e) => setExpDraft((d) => ({ ...d, description: e.target.value }))} rows={3} spellCheck placeholder="What did you work on? Projects, responsibilities, results" />
                     </div>
                     <div className="flex gap-2">
-                      <Button onClick={saveExperience} disabled={saving} className="bg-[#16324F] text-white hover:bg-[#0F2439]" data-testid="exp-save">{saving ? 'Saving...' : 'Save'}</Button>
+                      <Button onClick={saveExperience} disabled={saving} className="bg-[#32281F] text-white hover:bg-[#221A14]" data-testid="exp-save">{saving ? 'Saving...' : 'Save'}</Button>
                       <Button onClick={() => setExpDraft(null)} variant="outline">Cancel</Button>
                     </div>
                   </div>
@@ -878,7 +878,7 @@ const Profile = () => {
                 <div className="flex items-center justify-between mb-4 gap-3">
                   <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 font-serif flex items-center gap-2"><FiBookOpen className="w-4 h-4" />Education</h3>
                   {!eduDraft && (
-                    <Button size="sm" onClick={() => setEduDraft({ index: -1, ...EMPTY_EDUCATION })} className="bg-[#16324F] hover:bg-[#0F2439] text-white" data-testid="add-education">
+                    <Button size="sm" onClick={() => setEduDraft({ index: -1, ...EMPTY_EDUCATION })} className="bg-[#32281F] hover:bg-[#221A14] text-white" data-testid="add-education">
                       <FiPlus className="mr-1" />Add
                     </Button>
                   )}
@@ -920,7 +920,7 @@ const Profile = () => {
                       <Textarea value={eduDraft.description} onChange={(e) => setEduDraft((d) => ({ ...d, description: e.target.value }))} rows={2} spellCheck placeholder="Thesis, awards, activities (optional)" />
                     </div>
                     <div className="flex gap-2">
-                      <Button onClick={saveEducation} disabled={saving} className="bg-[#16324F] text-white hover:bg-[#0F2439]" data-testid="edu-save">{saving ? 'Saving...' : 'Save'}</Button>
+                      <Button onClick={saveEducation} disabled={saving} className="bg-[#32281F] text-white hover:bg-[#221A14]" data-testid="edu-save">{saving ? 'Saving...' : 'Save'}</Button>
                       <Button onClick={() => setEduDraft(null)} variant="outline">Cancel</Button>
                     </div>
                   </div>
@@ -962,7 +962,7 @@ const Profile = () => {
                     />
                     <div className="flex flex-wrap gap-2">
                       {formData.skills.map((skill, idx) => (
-                        <Badge key={idx} className="bg-[#EEF2F6] text-[#16324F] hover:bg-[#E2E8F0] cursor-pointer" onClick={() => handleRemoveSkill(skill)}>{skill} ×</Badge>
+                        <Badge key={idx} className="bg-[#F2EFEC] text-[#32281F] hover:bg-[#E9E3DC] cursor-pointer" onClick={() => handleRemoveSkill(skill)}>{skill} ×</Badge>
                       ))}
                     </div>
                   </div>
@@ -970,7 +970,7 @@ const Profile = () => {
               >
                 <div className="flex flex-wrap gap-2">
                   {formData.skills.length > 0 ? (
-                    formData.skills.map((skill, idx) => <Badge key={idx} className="bg-[#EEF2F6] text-[#16324F]">{skill}</Badge>)
+                    formData.skills.map((skill, idx) => <Badge key={idx} className="bg-[#F2EFEC] text-[#32281F]">{skill}</Badge>)
                   ) : <p className="text-slate-500">No skills added yet</p>}
                 </div>
               </SectionCard>
@@ -979,7 +979,7 @@ const Profile = () => {
               <Card className="p-5 sm:p-8 rounded-2xl border-black/5 shadow-sm" data-testid="company-pages-section">
                 <div className="flex items-center justify-between mb-4 gap-3">
                   <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 font-serif flex items-center gap-2"><FiHome className="w-4 h-4" />Company pages</h3>
-                  {user?.role !== 'student' && <Link to={user?.business?.name && !myPages.length ? '/company/new?from=business' : '/company/new'} className="inline-flex items-center gap-1.5 rounded-lg bg-[#16324F] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#0F2439]" data-testid="profile-create-page">
+                  {user?.role !== 'student' && <Link to={user?.business?.name && !myPages.length ? '/company/new?from=business' : '/company/new'} className="inline-flex items-center gap-1.5 rounded-lg bg-[#32281F] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#221A14]" data-testid="profile-create-page">
                     <FiPlus className="w-4 h-4" />Create
                   </Link>}
                 </div>
@@ -1084,7 +1084,7 @@ const Profile = () => {
                 action={
                   <>
                     <VisibilityPill isPublic={formData.activityPublic} editable onToggle={(v) => handleVisibilityToggle('activityPublic', v)} />
-                    <button type="button" onClick={() => setPostDraft({ kind: 'update', title: '', content: '', mediaUrl: '' })} className="inline-flex items-center gap-1.5 rounded-lg bg-[#16324F] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#0F2439]" data-testid="post-update">
+                    <button type="button" onClick={() => setPostDraft({ kind: 'update', title: '', content: '', mediaUrl: '' })} className="inline-flex items-center gap-1.5 rounded-lg bg-[#32281F] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#221A14]" data-testid="post-update">
                       <FiPlus className="w-4 h-4" />Post an update
                     </button>
                   </>
@@ -1094,19 +1094,19 @@ const Profile = () => {
                   <div className="mb-5 space-y-3 rounded-2xl border border-[#F4C430] bg-[#FFFBEA] p-4" data-testid="post-form">
                     <div className="flex flex-wrap gap-2">
                       {[['update', 'Update'], ['article', 'Article'], ['site_update', 'Site Update'], ['opinion', 'Opinion'], ['project', 'Project']].map(([v, l]) => (
-                        <button key={v} type="button" onClick={() => setPostDraft((d) => ({ ...d, kind: v }))} className={`rounded-full px-3 py-1 text-sm ${postDraft.kind === v ? 'bg-[#16324F] text-white' : 'bg-white border border-[#DCE3EB] text-[#6f655c]'}`}>{l}</button>
+                        <button key={v} type="button" onClick={() => setPostDraft((d) => ({ ...d, kind: v }))} className={`rounded-full px-3 py-1 text-sm ${postDraft.kind === v ? 'bg-[#32281F] text-white' : 'bg-white border border-[#E6E1DB] text-[#6f655c]'}`}>{l}</button>
                       ))}
                     </div>
                     <Input value={postDraft.title} onChange={(e) => setPostDraft((d) => ({ ...d, title: e.target.value }))} placeholder="Title (optional)" maxLength={160} spellCheck data-testid="post-title" />
                     <Textarea value={postDraft.content} onChange={(e) => setPostDraft((d) => ({ ...d, content: e.target.value }))} placeholder="Share a project milestone, an idea or news" rows={4} maxLength={5000} spellCheck data-testid="post-content" />
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <label className="inline-flex cursor-pointer items-center gap-1.5 text-sm pf-muted hover:text-[#16324F]">
+                      <label className="inline-flex cursor-pointer items-center gap-1.5 text-sm pf-muted hover:text-[#32281F]">
                         <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && uploadPostImage(e.target.files[0])} />
                         <FiImage className="w-4 h-4" />{postDraft.mediaUrl ? 'Change photo' : 'Add a photo'}
                       </label>
                       <div className="flex gap-2">
                         <Button variant="outline" onClick={() => setPostDraft(null)}>Cancel</Button>
-                        <Button onClick={publishPost} disabled={posting || !postDraft.content.trim()} className="bg-[#16324F] text-white hover:bg-[#0F2439]" data-testid="post-submit">{posting ? 'Posting…' : 'Post'}</Button>
+                        <Button onClick={publishPost} disabled={posting || !postDraft.content.trim()} className="bg-[#32281F] text-white hover:bg-[#221A14]" data-testid="post-submit">{posting ? 'Posting…' : 'Post'}</Button>
                       </div>
                     </div>
                     {postDraft.mediaUrl && <img src={postDraft.mediaUrl} alt="" className="max-h-48 rounded-xl object-cover" />}
@@ -1118,7 +1118,7 @@ const Profile = () => {
                     onDelete={deletePost}
                     renderShare={(post) => (
                       <ShareMenu path={`/in/${user?.username}`} title={post.title || `${user?.name} on BeeBark`} text={post.content?.slice(0, 140)} align="start"
-                        trigger={<button type="button" className="inline-flex items-center gap-1.5 hover:text-[#16324F]"><FiShare2 className="w-4 h-4" />Share</button>} />
+                        trigger={<button type="button" className="inline-flex items-center gap-1.5 hover:text-[#32281F]"><FiShare2 className="w-4 h-4" />Share</button>} />
                     )}
                   />
                 ) : !postDraft && <p className="text-slate-500">No activity yet. Post an update about your work.</p>}
@@ -1165,7 +1165,7 @@ const Profile = () => {
             Update your name everywhere on BeeBark to match your résumé?
           </p>
           <div className="flex gap-2 mt-2">
-            <Button onClick={() => confirmNameChange(true)} className="flex-1 bg-[#16324F] text-white">
+            <Button onClick={() => confirmNameChange(true)} className="flex-1 bg-[#32281F] text-white">
               Yes, update to {nameMismatch?.detectedName}
             </Button>
             <Button onClick={() => confirmNameChange(false)} variant="outline" className="flex-1">Keep current name</Button>

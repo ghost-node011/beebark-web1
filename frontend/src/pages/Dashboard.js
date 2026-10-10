@@ -57,7 +57,7 @@ const Initials = ({ name, src, size = 'h-14 w-14' }) =>
   src ? (
     <img src={src} alt="" className={`${size} shrink-0 rounded-full object-cover`} />
   ) : (
-    <span className={`${size} flex shrink-0 items-center justify-center rounded-full bg-[#16324F] font-bold text-white`}>
+    <span className={`${size} flex shrink-0 items-center justify-center rounded-full bg-[#32281F] font-bold text-white`}>
       {name?.charAt(0)}
     </span>
   );
@@ -107,7 +107,7 @@ const FeaturedProject = ({ project }) => (
 const EmptyState = ({ text, cta, to }) => (
   <div className="flex flex-col items-start gap-3 rounded-xl bg-slate-50 p-5">
     <p className="text-sm text-slate-600">{text}</p>
-    <Link to={to} className="inline-flex items-center gap-2 rounded-lg bg-[#16324F] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0F2439]">
+    <Link to={to} className="inline-flex items-center gap-2 rounded-lg bg-[#32281F] px-4 py-2 text-sm font-semibold text-white hover:bg-[#221A14]">
       {cta} <ArrowRight className="h-4 w-4" />
     </Link>
   </div>
@@ -164,7 +164,7 @@ const Dashboard = () => {
             <h1 className="font-display mt-1 text-3xl font-black tracking-tight text-black sm:text-4xl" data-testid="dashboard-title">{greeting()}, {user?.name?.split(' ')[0] || 'there'}!</h1>
             <p className="mt-2 text-slate-600">{v.subtitle}</p>
             <div className="mt-5 flex flex-wrap gap-2">
-              <Link to="/portfolio" className="inline-flex items-center gap-2 rounded-xl bg-[#16324F] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0F2439]" data-testid="hero-add-project"><Plus className="h-4 w-4" />Add project</Link>
+              <Link to="/portfolio" className="inline-flex items-center gap-2 rounded-xl bg-[#32281F] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#221A14]" data-testid="hero-add-project"><Plus className="h-4 w-4" />Add project</Link>
               <a href="#dashboard-resume" onClick={(e) => { e.preventDefault(); document.querySelector('[data-testid="dashboard-resume"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }}
                 className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-black hover:bg-slate-50"><Upload className="h-4 w-4" />{user?.resume?.url ? 'Update résumé' : 'Upload résumé'}</a>
               <Link to="/jobs" className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-black hover:bg-slate-50"><Search className="h-4 w-4" />Find jobs</Link>
@@ -183,7 +183,7 @@ const Dashboard = () => {
               : { icon: Users, value: data?.stats?.connectionCount ?? '–', label: 'Connections', note: 'Grow your network', to: '/connections' }
           ].map((c) => (
             <Link key={c.label} to={c.to} className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 hover:border-yellow-400 transition">
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-yellow-50"><c.icon className="h-5 w-5 text-[#16324F]" /></span>
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-yellow-50"><c.icon className="h-5 w-5 text-[#32281F]" /></span>
               <p className="mt-3 text-2xl font-black text-black">{c.value}</p>
               <p className="text-sm font-medium text-slate-700">{c.label}</p>
               <p className="text-xs text-slate-500">{c.note}</p>
@@ -229,14 +229,14 @@ const Dashboard = () => {
                 </li>
               ))}
             </ul>
-            <Link to="/profile" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#16324F] px-5 py-3 font-semibold text-white hover:bg-[#0F2439]">
+            <Link to="/profile" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#32281F] px-5 py-3 font-semibold text-white hover:bg-[#221A14]">
               Edit profile <ArrowRight className="h-4 w-4" />
             </Link>
           </section>
         )}
 
         {/* Next step */}
-        <section className="mt-6 flex flex-col gap-4 rounded-2xl bg-[#16324F] p-5 text-white lg:flex-row lg:items-center lg:justify-between">
+        <section className="mt-6 flex flex-col gap-4 rounded-2xl bg-[#32281F] p-5 text-white lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-3">
             <Zap className="mt-1 h-5 w-5 shrink-0 text-yellow-400" />
             <div>
@@ -245,7 +245,7 @@ const Dashboard = () => {
             </div>
           </div>
           <div className="flex shrink-0 flex-wrap gap-3 lg:flex-nowrap">
-            <Link to={v.primary.to} className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl bg-[#16324F] px-5 py-3 font-semibold text-white hover:bg-[#0F2439]">
+            <Link to={v.primary.to} className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl bg-[#32281F] px-5 py-3 font-semibold text-white hover:bg-[#221A14]">
               {v.primary.label} <ArrowRight className="h-4 w-4" />
             </Link>
             <Link to={v.secondary.to} className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl border border-white/70 px-5 py-3 font-semibold text-white hover:bg-white/10">
@@ -257,7 +257,7 @@ const Dashboard = () => {
         {/* Résumé: see it, open it, replace it */}
         <section className="mt-6 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center" data-testid="dashboard-resume">
           <div className="flex min-w-0 flex-1 items-center gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-yellow-50"><FileText className="h-6 w-6 text-[#16324F]" /></div>
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-yellow-50"><FileText className="h-6 w-6 text-[#32281F]" /></div>
             {user?.resume?.url ? (
               <div className="min-w-0">
                 <p className="text-xs uppercase tracking-widest text-slate-500">Your résumé</p>
@@ -324,7 +324,7 @@ const Dashboard = () => {
                         type="button"
                         onClick={() => connect(p.id)}
                         disabled={!!requested[p.id]}
-                        className="rounded-lg bg-[#16324F] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0F2439] disabled:bg-slate-100 disabled:text-slate-500"
+                        className="rounded-lg bg-[#32281F] px-4 py-2 text-sm font-semibold text-white hover:bg-[#221A14] disabled:bg-slate-100 disabled:text-slate-500"
                       >
                         {requested[p.id] === 'sent' ? 'Requested' : requested[p.id] === 'sending' ? 'Sending…' : 'Connect'}
                       </button>
@@ -357,7 +357,7 @@ const Dashboard = () => {
                       {j.imageUrl ? (
                         <img src={j.imageUrl} alt="" className="h-14 w-16 shrink-0 rounded-lg object-cover" />
                       ) : (
-                        <span className="flex h-14 w-16 shrink-0 items-center justify-center rounded-lg bg-yellow-50"><Briefcase className="h-6 w-6 text-[#16324F]" /></span>
+                        <span className="flex h-14 w-16 shrink-0 items-center justify-center rounded-lg bg-yellow-50"><Briefcase className="h-6 w-6 text-[#32281F]" /></span>
                       )}
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-semibold text-black">{j.title}</p>

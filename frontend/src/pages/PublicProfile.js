@@ -140,9 +140,9 @@ const PublicProfile = ({ open = false }) => {
       frame(
         <div className="flex min-h-[60vh] items-center justify-center text-center">
           <div>
-            <p className="pf-serif text-2xl text-[#16324F]">This profile isn't available</p>
+            <p className="pf-serif text-2xl text-[#32281F]">This profile isn't available</p>
             <p className="mt-2 pf-muted">It may be private, or the link may be wrong.</p>
-            <Link to={open ? '/' : '/dashboard'} className="mt-5 inline-block font-semibold text-[#16324F] hover:underline">Back to BeeBark</Link>
+            <Link to={open ? '/' : '/dashboard'} className="mt-5 inline-block font-semibold text-[#32281F] hover:underline">Back to BeeBark</Link>
           </div>
         </div>
       )
@@ -240,7 +240,7 @@ const PublicProfile = ({ open = false }) => {
                 <div className="flex items-center gap-2 mt-3">
                   {['agree', 'disagree'].map((v) => (
                     <button key={v} disabled={!!ratingFeedback} onClick={() => { setRatingFeedback(v); toast.success('Thanks for the feedback!'); }}
-                      className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full transition ${ratingFeedback === v ? 'bg-[#16324F] text-white font-semibold' : ratingFeedback ? 'text-gray-300 cursor-default' : 'text-gray-600 hover:bg-yellow-100 hover:text-black'}`}>
+                      className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full transition ${ratingFeedback === v ? 'bg-[#32281F] text-white font-semibold' : ratingFeedback ? 'text-gray-300 cursor-default' : 'text-gray-600 hover:bg-yellow-100 hover:text-black'}`}>
                       {v === 'agree' ? <FiThumbsUp className="w-3.5 h-3.5" /> : <FiThumbsDown className="w-3.5 h-3.5" />}{v === 'agree' ? 'Agree' : 'Disagree'}
                     </button>
                   ))}
@@ -285,7 +285,7 @@ const PublicProfile = ({ open = false }) => {
               {galleryCategories.length > 0 && <div className="md:hidden mb-4"><PillFilter options={['All', ...galleryCategories]} active={galleryCategory} onChange={setGalleryCategory} /></div>}
               {visibleGalleryItems.length > 0 ? <ProjectGrid items={visibleGalleryItems} linkFor={projectLink} /> : <p className="pf-muted">Nothing here yet</p>}
               {data.portfolioCount > visibleGalleryItems.length && (
-                <Link to={`/portfolio/${user.username}`} target="_blank" className="inline-block mt-5 text-[15px] font-semibold text-[#16324F] hover:underline">View all {data.portfolioCount} projects →</Link>
+                <Link to={`/portfolio/${user.username}`} target="_blank" className="inline-block mt-5 text-[15px] font-semibold text-[#32281F] hover:underline">View all {data.portfolioCount} projects →</Link>
               )}
             </>
           ) : <p className="pf-muted">{firstName}'s portfolio is private.</p>}
@@ -302,10 +302,10 @@ const PublicProfile = ({ open = false }) => {
             <Section title="Education">
               <div className="space-y-4">
                 {user.education.map((edu, idx) => (
-                  <div key={idx} className="flex items-start gap-4 rounded-2xl border border-[#DCE3EB] p-5 sm:p-6">
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl pf-soft flex items-center justify-center shrink-0"><FiBookOpen className="w-6 h-6 text-[#1F2933]" /></div>
+                  <div key={idx} className="flex items-start gap-4 rounded-2xl border border-[#E6E1DB] p-5 sm:p-6">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl pf-soft flex items-center justify-center shrink-0"><FiBookOpen className="w-6 h-6 text-[#2A221C]" /></div>
                     <div className="min-w-0">
-                      <p className="pf-serif text-lg sm:text-xl font-semibold text-[#16324F]">{edu.school}</p>
+                      <p className="pf-serif text-lg sm:text-xl font-semibold text-[#32281F]">{edu.school}</p>
                       <p className="text-[16px] pf-muted">{[edu.degree, edu.field].filter(Boolean).join(', ')}</p>
                       {edu.duration && <p className="mt-1 text-[15px] pf-muted">{edu.duration}</p>}
                     </div>
@@ -318,7 +318,7 @@ const PublicProfile = ({ open = false }) => {
           {user.skills?.length > 0 && (
             <Section title="Skills">
               <div className="flex flex-wrap gap-2">
-                {user.skills.map((s2, i) => <Badge key={i} className="rounded-full bg-[#EEF2F6] px-3.5 py-1.5 text-sm font-medium text-[#16324F] hover:bg-[#EEF2F6]">{s2}</Badge>)}
+                {user.skills.map((s2, i) => <Badge key={i} className="rounded-full bg-[#F2EFEC] px-3.5 py-1.5 text-sm font-medium text-[#32281F] hover:bg-[#F2EFEC]">{s2}</Badge>)}
               </div>
             </Section>
           )}
@@ -336,7 +336,7 @@ const PublicProfile = ({ open = false }) => {
                 posts={data.recentActivity}
                 renderShare={(post) => (
                   <ShareMenu path={`/in/${user.username}`} title={post.title || `${user.name} on BeeBark`} text={post.content?.slice(0, 140)} align="start"
-                    trigger={<button type="button" className="inline-flex items-center gap-1.5 hover:text-[#16324F]"><FiShare2 className="w-4 h-4" />Share</button>} />
+                    trigger={<button type="button" className="inline-flex items-center gap-1.5 hover:text-[#32281F]"><FiShare2 className="w-4 h-4" />Share</button>} />
                 )}
               />
             ) : <p className="pf-muted">No activity yet.</p>
@@ -350,7 +350,7 @@ const PublicProfile = ({ open = false }) => {
 
         {open && (
           <div className="pf-card p-8 text-center">
-            <p className="pf-serif text-2xl text-[#16324F]">See more of {firstName}'s work on BeeBark</p>
+            <p className="pf-serif text-2xl text-[#32281F]">See more of {firstName}'s work on BeeBark</p>
             <p className="mt-2 pf-muted">Join to connect, message and follow architects, designers and builders.</p>
             <div className="mt-5 flex flex-wrap justify-center gap-3">
               <Link to={`/register?next=${encodeURIComponent(`/profile/${username}`)}`} className={heroBtn.dark}>Join BeeBark</Link>
@@ -379,15 +379,15 @@ const PublicProfile = ({ open = false }) => {
 
 // Slim top bar for the public profile (visitors who aren't signed in)
 const OpenHeader = ({ username }) => (
-  <header className="fixed inset-x-0 top-0 z-30 h-16 border-b border-[#DCE3EB] bg-white/95 backdrop-blur">
+  <header className="fixed inset-x-0 top-0 z-30 h-16 border-b border-[#E6E1DB] bg-white/95 backdrop-blur">
     <div className="mx-auto flex h-full max-w-6xl items-center justify-between px-4 sm:px-8">
       <Link to="/" className="flex items-center gap-2">
         <img src="/image.png" alt="" className="h-8 w-8 object-contain" />
-        <span className="pf-serif text-xl font-bold text-[#16324F]">Bee<span className="text-[#E0A21A]">Bark</span></span>
+        <span className="pf-serif text-xl font-bold text-[#32281F]">Bee<span className="text-[#E0A21A]">Bark</span></span>
       </Link>
       <div className="flex items-center gap-2">
-        <Link to={`/login?next=${encodeURIComponent(`/profile/${username}`)}`} className="rounded-lg px-4 py-2 text-sm font-medium text-[#16324F] hover:bg-[#EEF2F6]">Sign in</Link>
-        <Link to={`/register?next=${encodeURIComponent(`/profile/${username}`)}`} className="rounded-lg bg-[#16324F] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0F2439]">Join now</Link>
+        <Link to={`/login?next=${encodeURIComponent(`/profile/${username}`)}`} className="rounded-lg px-4 py-2 text-sm font-medium text-[#32281F] hover:bg-[#F2EFEC]">Sign in</Link>
+        <Link to={`/register?next=${encodeURIComponent(`/profile/${username}`)}`} className="rounded-lg bg-[#32281F] px-4 py-2 text-sm font-semibold text-white hover:bg-[#221A14]">Join now</Link>
       </div>
     </div>
   </header>
@@ -397,7 +397,7 @@ const OpenHeader = ({ username }) => (
 export const publicProfileUrl = (username) => `${window.location.origin}/in/${username}`;
 export const CopyPublicLink = ({ username }) => (
   <button type="button" onClick={() => navigator.clipboard?.writeText(publicProfileUrl(username)).then(() => toast.success('Link copied'), () => toast(publicProfileUrl(username)))}
-    className="inline-flex items-center gap-1.5 text-sm font-medium text-[#16324F] hover:underline"><FiLink className="w-4 h-4" />Copy link</button>
+    className="inline-flex items-center gap-1.5 text-sm font-medium text-[#32281F] hover:underline"><FiLink className="w-4 h-4" />Copy link</button>
 );
 
 export default PublicProfile;

@@ -70,20 +70,20 @@ const SavedAnswersDialog = ({ open, onOpenChange, onCountChange }) => {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[calc(100%-1.5rem)] max-w-xl max-h-[85vh] overflow-y-auto rounded-2xl pf-page" data-testid="saved-answers-dialog">
         <DialogHeader className="text-left">
-          <DialogTitle className="pf-serif text-xl text-[#16324F]">Saved answers</DialogTitle>
-          <DialogDescription className="text-[#526174]">
+          <DialogTitle className="pf-serif text-xl text-[#32281F]">Saved answers</DialogTitle>
+          <DialogDescription className="text-[#6B625A]">
             We reuse these when you apply and when auto-apply applies for you. Edit or delete any of them.
           </DialogDescription>
         </DialogHeader>
         {loading ? (
           <div className="space-y-2">{[0, 1, 2].map((i) => <div key={i} className="h-14 rounded-xl bg-[#F2EEE8] animate-pulse" />)}</div>
         ) : answers.length === 0 ? (
-          <p className="text-sm text-[#526174] py-6 text-center">No saved answers yet. They're added as you answer screening questions.</p>
+          <p className="text-sm text-[#6B625A] py-6 text-center">No saved answers yet. They're added as you answer screening questions.</p>
         ) : (
           <ul className="space-y-2">
             {answers.map((a) => (
-              <li key={a._id} className="rounded-xl border border-[#DCE3EB] p-3" data-testid={`saved-answer-${a._id}`}>
-                <p className="text-sm font-medium text-[#16324F] break-words">{a.question}</p>
+              <li key={a._id} className="rounded-xl border border-[#E6E1DB] p-3" data-testid={`saved-answer-${a._id}`}>
+                <p className="text-sm font-medium text-[#32281F] break-words">{a.question}</p>
                 {editing?.id === a._id ? (
                   <div className="mt-2 space-y-2">
                     <QuestionInput
@@ -93,19 +93,19 @@ const SavedAnswersDialog = ({ open, onOpenChange, onCountChange }) => {
                       testId={`saved-answer-input-${a._id}`}
                     />
                     <div className="flex gap-2">
-                      <Button size="sm" onClick={() => save(a)} disabled={busyId === a._id} className="bg-[#16324F] text-white hover:bg-[#0F2439]"><FiCheck className="mr-1" />Save</Button>
+                      <Button size="sm" onClick={() => save(a)} disabled={busyId === a._id} className="bg-[#32281F] text-white hover:bg-[#221A14]"><FiCheck className="mr-1" />Save</Button>
                       <Button size="sm" variant="outline" onClick={() => setEditing(null)}><FiX className="mr-1" />Cancel</Button>
                     </div>
                   </div>
                 ) : (
                   <div className="flex items-start justify-between gap-2 mt-1">
                     <div className="min-w-0">
-                      <p className="text-sm text-[#16324F] whitespace-pre-line break-words">{a.answer}</p>
-                      {a.updatedAt && <p className="text-xs text-[#526174] mt-0.5">Updated {shortDate(a.updatedAt)}</p>}
+                      <p className="text-sm text-[#32281F] whitespace-pre-line break-words">{a.answer}</p>
+                      {a.updatedAt && <p className="text-xs text-[#6B625A] mt-0.5">Updated {shortDate(a.updatedAt)}</p>}
                     </div>
                     <div className="flex shrink-0">
-                      <button type="button" onClick={() => setEditing({ id: a._id, value: a.answer ?? '' })} className="p-2 text-[#526174] hover:text-[#16324F]" aria-label="Edit answer" data-testid={`saved-answer-edit-${a._id}`}><FiEdit2 className="w-4 h-4" /></button>
-                      <button type="button" onClick={() => remove(a)} disabled={busyId === a._id} className="p-2 text-[#526174] hover:text-red-600" aria-label="Delete answer" data-testid={`saved-answer-delete-${a._id}`}><FiTrash2 className="w-4 h-4" /></button>
+                      <button type="button" onClick={() => setEditing({ id: a._id, value: a.answer ?? '' })} className="p-2 text-[#6B625A] hover:text-[#32281F]" aria-label="Edit answer" data-testid={`saved-answer-edit-${a._id}`}><FiEdit2 className="w-4 h-4" /></button>
+                      <button type="button" onClick={() => remove(a)} disabled={busyId === a._id} className="p-2 text-[#6B625A] hover:text-red-600" aria-label="Delete answer" data-testid={`saved-answer-delete-${a._id}`}><FiTrash2 className="w-4 h-4" /></button>
                     </div>
                   </div>
                 )}

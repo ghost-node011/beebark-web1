@@ -24,7 +24,7 @@ const QuestionInput = ({ question, value, onChange, invalid, testId }) => {
               aria-checked={on}
               onClick={() => onChange(opt)}
               data-testid={testId ? `${testId}-${opt}` : undefined}
-              className={`text-left rounded-full border px-4 py-1.5 text-sm transition ${on ? 'bg-[#16324F] border-[#2b2622] text-white' : `bg-white text-[#16324F] hover:border-[#2b2622] ${invalid ? 'border-red-400' : 'border-[#e2dbd2]'}`}`}
+              className={`text-left rounded-full border px-4 py-1.5 text-sm transition ${on ? 'bg-[#32281F] border-[#2b2622] text-white' : `bg-white text-[#32281F] hover:border-[#2b2622] ${invalid ? 'border-red-400' : 'border-[#e2dbd2]'}`}`}
             >
               {opt}
             </button>
