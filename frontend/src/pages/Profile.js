@@ -16,28 +16,27 @@ import {
   FiEdit2, FiPlus, FiTrash2, FiBriefcase, FiImage, FiZap,
   FiEye, FiUsers, FiTarget, FiLayers, FiGlobe, FiCamera,
   FiMessageSquare, FiBookOpen, FiUpload, FiFileText, FiExternalLink,
-  FiGlobe as FiLanguage, FiHome, FiCheckCircle, FiX, FiShare2, FiBookmark, FiCalendar, FiLink
+  FiHome, FiCheckCircle, FiFolder, FiShare2, FiBookmark, FiCalendar, FiLink
 } from 'react-icons/fi';
 import { FaLinkedin } from 'react-icons/fa6';
 import { Link, useNavigate } from 'react-router-dom';
 import { API_URL } from '../config/api';
-import { INTENTS, INDUSTRIES, intentsFor } from '../config/onboarding';
 import ResumeImport from '../components/ResumeImport';
 import { SuggestChip, useSuggestChip } from '../components/ai/SuggestChip';
 import { InfoBlock } from '../components/profile/ProfileWidgets';
 import { ProfileHero, ProfileTabs, VisibilityPill, PillFilter, PAGE_BG, SOCIAL } from '../components/profile/ProfileShell';
 import ShareMenu from '../components/ShareMenu';
-import { sortExperience, AvailabilityChips, LanguagesList, PeopleGrid, AnalyticsCards, ProjectGrid, ExperienceCard, ListingCards, JobRows, ContactInfoDialog, ActivityCards, ReadMore } from '../components/profile/ProfileSections';
+import { sortExperience, PeopleGrid, AnalyticsCards, ProjectGrid, ExperienceCard, ListingCards, ContactInfoDialog, ActivityCards, ReadMore } from '../components/profile/ProfileSections';
 import { heroBtn } from '../components/profile/ProfileShell';
 import { Switch } from '../components/ui/switch';
 import { AutocompleteInput, LocationInput } from '../components/AutocompleteInput';
-import { AVAILABILITY_LABELS, PROFICIENCY, EMPLOYMENT_TYPES } from '../config/profileOptions';
+import { EMPLOYMENT_TYPES } from '../config/profileOptions';
 import { personHeadline } from '../utils/personHeadline';
 import SkillPicker from '../components/SkillPicker';
 import CompanyInput from '../components/company/CompanyInput';
 import CompanyLogo from '../components/company/CompanyLogo';
 import { usePages } from '../context/PagesContext';
-import { checkPhone, checkYear, digitsOnly } from '../utils/validation';
+import { checkPhone, checkYear, digitsOnly, checkSocialLink } from '../utils/validation';
 
 const ROLE_LABELS = {
   student: 'Student',
@@ -47,13 +46,10 @@ const ROLE_LABELS = {
   company: 'Firm'
 };
 
-const labelsFrom = (values, options) =>
-  (values || []).map((v) => options.find((o) => o.value === v)?.label || v);
-
 const EMPTY_BUSINESS = { name: '', type: '', website: '', founded: '', teamSize: '', services: [], address: '', about: '' };
 const EMPTY_EXPERIENCE = { title: '', company: '', employmentType: '', location: '', startDate: '', endDate: '', current: false, description: '' };
 const EMPTY_EDUCATION = { school: '', degree: '', field: '', duration: '', description: '' };
-const selectClass = 'w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400';
+const selectClass = 'w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#245EA8]';
 
 const weekTrend = (pct) => (pct === undefined ? '' : pct > 0 ? `+${pct}% this week` : pct < 0 ? `${pct}% this week` : 'Same as last week');
 
@@ -81,6 +77,10 @@ const fieldErrors = (form) => {
     const { error } = checkPhone(form.contact?.[key]);
     if (error) out[`contact.${key}`] = `${label}: ${error}`;
   }
+  (form.socialLinks || []).forEach((l, i) => {
+    const error = checkSocialLink(l.platform, l.url);
+    if (error) out[`social.${i}`] = `Social link ${i + 1}: ${error}`;
+  });
   return out;
 };
 
@@ -95,6 +95,7 @@ const emptyFormFromUser = (user) => ({
   specialization: user?.specialization || [],
   projectTypeFocus: user?.projectTypeFocus || [],
   markets: user?.markets || [],
+  activeProjects: user?.activeProjects || [],
   experience: user?.experience || [],
   education: user?.education || [],
   intent: user?.intent || [],
@@ -128,7 +129,7 @@ const SectionCard = ({ title, icon: Icon, sectionKey, editingSection, onEditClic
             isEditing ? (
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" onClick={onCancel}>Cancel</Button>
-                <Button size="sm" onClick={onSave} disabled={saving} className="bg-black text-white hover:bg-gray-800">
+                <Button size="sm" onClick={onSave} disabled={saving} className="bg-[#16324F] text-white hover:bg-[#0F2439]">
                   {saving ? 'Saving...' : 'Save'}
                 </Button>
               </div>
@@ -154,11 +155,10 @@ const Profile = () => {
   const [saving, setSaving] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
 
-  const [tagInputs, setTagInputs] = useState({ specialization: '', projectTypeFocus: '', markets: '' });
+  const [tagInputs, setTagInputs] = useState({ specialization: '', projectTypeFocus: '', markets: '', activeProjects: '' });
   // Experience / education being added (index -1) or edited (index >= 0)
   const [expDraft, setExpDraft] = useState(null); // { index, ...fields }
   const [eduDraft, setEduDraft] = useState(null);
-  const [langDraft, setLangDraft] = useState({ name: '', proficiency: '' });
   const [myConnections, setMyConnections] = useState(null);
   const [removingResume, setRemovingResume] = useState(false);
   const [nameMismatch, setNameMismatch] = useState(null); // { detectedName, currentName }
@@ -167,7 +167,7 @@ const Profile = () => {
   const specializationSuggest = useSuggestChip('specialization for a professional profile');
   const projectTypeSuggest = useSuggestChip('project type focus for a professional profile');
   const marketsSuggest = useSuggestChip('market / region a professional works in');
-  const tagSuggesters = { specialization: specializationSuggest, projectTypeFocus: projectTypeSuggest, markets: marketsSuggest };
+  const tagSuggesters = { specialization: specializationSuggest, projectTypeFocus: projectTypeSuggest, markets: marketsSuggest, activeProjects: null };
   const [galleryPreview, setGalleryPreview] = useState({ items: [], count: 0, associatedProfessionals: [], listings: [], listingCount: 0, openJobs: [] });
   const [contactOpen, setContactOpen] = useState(false);
   const [galleryCategory, setGalleryCategory] = useState('All');
@@ -319,9 +319,9 @@ const Profile = () => {
     setFormData({ ...formData, skills: formData.skills.filter((s) => s !== skill) });
   };
 
-  const addTag = (field) => {
-    const value = tagInputs[field].trim();
-    if (value && !formData[field].includes(value)) {
+  const addTag = (field, picked) => {
+    const value = String(picked ?? tagInputs[field]).trim().replace(/\s+/g, ' ').slice(0, 80);
+    if (value && !formData[field].some((v) => v.toLowerCase() === value.toLowerCase()) && formData[field].length < 20) {
       setFormData((f) => ({ ...f, [field]: [...f[field], value] }));
     }
     setTagInputs((t) => ({ ...t, [field]: '' }));
@@ -365,17 +365,6 @@ const Profile = () => {
   const removeEducation = async (index) => {
     if (!window.confirm('Remove this education entry?')) return;
     await saveFields({ education: formData.education.filter((_, i) => i !== index) });
-  };
-
-  const addLanguage = () => {
-    const name = langDraft.name.trim();
-    if (!name) return;
-    if (formData.languages.some((l) => l.name.toLowerCase() === name.toLowerCase())) {
-      toast.error(`${name} is already added`);
-      return;
-    }
-    setFormData((f) => ({ ...f, languages: [...f.languages, { name, proficiency: langDraft.proficiency }] }));
-    setLangDraft({ name: '', proficiency: '' });
   };
 
   const toggleIn = (field, value) => setFormData((f) => ({
@@ -492,10 +481,6 @@ const Profile = () => {
   };
 
   const roleLabel = ROLE_LABELS[user?.role] || 'Professional';
-  const industryLabels = labelsFrom(user?.industries, INDUSTRIES);
-  const intentLabels = labelsFrom(user?.intent, INTENTS);
-  const intentOptions = intentsFor(user);
-  const availabilityOptions = user?.availabilityOptions || [];
   const sortedExperience = sortExperience(formData.experience);
   const galleryCategories = [...new Set(galleryPreview.items.map((i) => i.category).filter(Boolean))];
   const visibleGalleryItems = galleryCategory === 'All' ? galleryPreview.items : galleryPreview.items.filter((i) => i.category === galleryCategory);
@@ -551,12 +536,11 @@ const Profile = () => {
             { id: 'section-experience', label: 'Experience' },
             { id: 'section-activity', label: 'Activity' },
             ...(galleryPreview.listingCount ? [{ id: 'section-listings', label: 'Listings' }] : []),
-            ...(galleryPreview.openJobs.length ? [{ id: 'section-hiring', label: 'Hiring' }] : [])
           ]} />
 
           <div className="pf-card flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between" data-testid="public-link-card">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-[#2b2622]">Public profile &amp; URL</p>
+              <p className="text-sm font-semibold text-[#16324F]">Public profile &amp; URL</p>
               <p className="mt-0.5 truncate text-[15px] pf-muted">
                 {user?.publicProfile !== false ? <a href={`/in/${user?.username}`} target="_blank" rel="noopener noreferrer" className="hover:underline">{window.location.host}/in/{user?.username}</a> : 'Your profile is only visible to signed-in BeeBark members'}
               </p>
@@ -564,7 +548,7 @@ const Profile = () => {
             <div className="flex flex-wrap items-center gap-4">
               {user?.publicProfile !== false && (
                 <>
-                  <button type="button" onClick={() => navigator.clipboard?.writeText(`${window.location.origin}/in/${user?.username}`).then(() => toast.success('Link copied'), () => {})} className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#2b2622] hover:underline" data-testid="copy-public-link">
+                  <button type="button" onClick={() => navigator.clipboard?.writeText(`${window.location.origin}/in/${user?.username}`).then(() => toast.success('Link copied'), () => {})} className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#16324F] hover:underline" data-testid="copy-public-link">
                     <FiLink className="w-4 h-4" />Copy link
                   </button>
                   <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`${window.location.origin}/in/${user?.username}`)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#0A66C2] hover:underline">
@@ -581,7 +565,7 @@ const Profile = () => {
           {/* Opens over the page (like LinkedIn), so it's obvious the click did something */}
           <Dialog open={editingSection === 'header'} onOpenChange={(o) => { if (!o) cancelSection(); }}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 gap-0" id="intro-editor" data-testid="intro-editor">
-              <DialogHeader className="sticky top-0 z-10 border-b border-[#ebe6df] bg-white px-6 py-4">
+              <DialogHeader className="sticky top-0 z-10 border-b border-[#DCE3EB] bg-white px-6 py-4">
                 <DialogTitle className="pf-serif text-2xl">Edit intro</DialogTitle>
               </DialogHeader>
               <div className="space-y-5 px-6 py-5">
@@ -651,11 +635,16 @@ const Profile = () => {
               <div className="space-y-3 border-t border-gray-100 pt-5">
                 <Label className="text-base">Social links</Label>
                 {formData.socialLinks.map((l, i) => (
-                  <div key={i} className="flex gap-2">
+                  <div key={i} className="flex items-start gap-2">
                     <select value={l.platform} onChange={(e) => setFormData((f) => ({ ...f, socialLinks: f.socialLinks.map((x, j) => (j === i ? { ...x, platform: e.target.value } : x)) }))} className="h-10 w-36 shrink-0 rounded-md border border-input bg-background px-2 text-sm" aria-label="Platform">
                       {Object.entries(SOCIAL).map(([v, o]) => <option key={v} value={v}>{o.label}</option>)}
                     </select>
-                    <Input value={l.url} onChange={(e) => setFormData((f) => ({ ...f, socialLinks: f.socialLinks.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)) }))} placeholder="https://" data-testid={`social-url-${i}`} />
+                    <div className="flex-1 min-w-0">
+                      <Input value={l.url} onChange={(e) => setFormData((f) => ({ ...f, socialLinks: f.socialLinks.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)) }))} placeholder="https://"
+                        inputMode="url" autoCapitalize="off" autoCorrect="off" spellCheck={false} data-testid={`social-url-${i}`}
+                        aria-invalid={!!(showErrors && liveErrors[`social.${i}`])} className={showErrors && liveErrors[`social.${i}`] ? 'border-red-400' : ''} />
+                      {showErrors && liveErrors[`social.${i}`] && <p className="mt-1 text-xs text-red-600" data-testid={`social-url-${i}-error`}>{liveErrors[`social.${i}`].replace(/^Social link \d+: /, '')}</p>}
+                    </div>
                     <button type="button" onClick={() => setFormData((f) => ({ ...f, socialLinks: f.socialLinks.filter((_, j) => j !== i) }))} className="p-2 text-gray-400 hover:text-red-600" aria-label="Remove link"><FiTrash2 /></button>
                   </div>
                 ))}
@@ -667,9 +656,9 @@ const Profile = () => {
               </div>
               <p className="text-xs text-gray-400">Use the camera icon on your profile photo to change it.</p>
               </div>
-              <div className="sticky bottom-0 flex justify-end gap-2 border-t border-[#ebe6df] bg-white px-6 py-4">
+              <div className="sticky bottom-0 flex justify-end gap-2 border-t border-[#DCE3EB] bg-white px-6 py-4">
                 <Button onClick={cancelSection} variant="outline">Cancel</Button>
-                <Button onClick={saveSection} disabled={saving} className="bg-black text-white hover:bg-gray-800" data-testid="intro-save">{saving ? 'Saving...' : 'Save'}</Button>
+                <Button onClick={saveSection} disabled={saving} className="bg-[#16324F] text-white hover:bg-[#0F2439]" data-testid="intro-save">{saving ? 'Saving...' : 'Save'}</Button>
               </div>
             </DialogContent>
           </Dialog>
@@ -713,160 +702,77 @@ const Profile = () => {
                 {formData.bio ? <ReadMore text={formData.bio} /> : <p className="text-slate-500">No bio yet</p>}
               </SectionCard>
 
-              {availabilityOptions.length > 0 && (
-                <SectionCard
-                  title="Open to" sectionKey="availability" editingSection={editingSection} icon={FiCheckCircle}
-                  onEditClick={() => edit('availability')} onCancel={cancelSection} onSave={saveSection} saving={saving}
-                  editContent={
-                    <div className="space-y-2">
-                      <p className="text-sm text-gray-500">Let people know what you're open to. This shows under your name.</p>
-                      <div className="flex flex-wrap gap-2">
-                        {availabilityOptions.map((v) => {
-                          const on = formData.availability.includes(v);
-                          return (
-                            <button key={v} type="button" onClick={() => toggleIn('availability', v)} aria-pressed={on}
-                              className={`rounded-full px-3.5 py-1.5 text-sm font-medium border transition ${on ? 'bg-green-600 border-green-600 text-white' : 'bg-white border-gray-300 text-gray-700 hover:border-gray-400'}`}>
-                              {AVAILABILITY_LABELS[v] || v}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  }
-                >
-                  {formData.availability.length > 0 ? <AvailabilityChips values={formData.availability} /> : <p className="text-slate-500">Not set. Tell people if you're hiring, open to work or taking projects.</p>}
-                </SectionCard>
-              )}
-
               <SectionCard
-                title="Professional Identity" sectionKey="identity" editingSection={editingSection}
+                title="Portfolio Identity" sectionKey="identity" editingSection={editingSection}
                 onEditClick={() => edit('identity')} onCancel={cancelSection} onSave={saveSection} saving={saving}
                 editContent={
                   <div className="space-y-4">
                     {[
                       { field: 'specialization', label: 'Specialization', placeholder: 'e.g. Sustainable Urban Design' },
                       { field: 'projectTypeFocus', label: 'Project Type Focus', placeholder: 'e.g. Mixed-Use, High-Rise Residential' },
-                      { field: 'markets', label: 'Markets', placeholder: 'e.g. Mumbai, Pune' }
-                    ].map(({ field, label, placeholder }) => (
+                      { field: 'markets', label: 'Markets', placeholder: 'Search a city, e.g. Mumbai' },
+                      { field: 'activeProjects', label: 'Active Projects', placeholder: 'e.g. Courtyard House, Alibaug' }
+                    ].map(({ field, label, placeholder }) => {
+                      const inputProps = {
+                        value: tagInputs[field],
+                        onChange: (v) => setTagInputs((t) => ({ ...t, [field]: v })),
+                        onPick: (v) => addTag(field, v),
+                        onBlur: (e) => tagSuggesters[field]?.check(e.target.value),
+                        onKeyDown: (e) => e.key === 'Enter' && (e.preventDefault(), addTag(field)),
+                        placeholder,
+                        wrapperClassName: 'flex-1',
+                        'data-testid': `identity-${field}`
+                      };
+                      const ongoing = field === 'activeProjects'
+                        ? galleryPreview.items.map((i) => i.title).filter((t) => t && !formData.activeProjects.includes(t)).slice(0, 6)
+                        : [];
+                      return (
                       <div key={field} className="space-y-2">
                         <Label>{label}</Label>
                         <div className="flex gap-2">
-                          <Input
-                            value={tagInputs[field]}
-                            onChange={(e) => setTagInputs((t) => ({ ...t, [field]: e.target.value }))}
-                            onBlur={(e) => tagSuggesters[field].check(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag(field))}
-                            placeholder={placeholder}
-                          />
-                          <Button onClick={() => addTag(field)} type="button" className="bg-yellow-500 hover:bg-yellow-600 shrink-0">Add</Button>
+                          {field === 'markets' ? <LocationInput {...inputProps} />
+                            : field === 'activeProjects' ? (
+                              <Input value={inputProps.value} onChange={(e) => inputProps.onChange(e.target.value)} onKeyDown={inputProps.onKeyDown}
+                                placeholder={placeholder} maxLength={80} className="flex-1" data-testid="identity-activeProjects" />
+                            )
+                              : <AutocompleteInput field={field} {...inputProps} />}
+                          <Button onClick={() => addTag(field)} type="button" className="bg-[#16324F] hover:bg-[#0F2439] shrink-0 text-white">Add</Button>
                         </div>
-                        <SuggestChip
-                          suggestion={tagSuggesters[field].suggestion}
-                          onAccept={(corrected) => { setTagInputs((t) => ({ ...t, [field]: corrected })); tagSuggesters[field].dismiss(); }}
-                          onAcceptAlternative={(alt) => { if (!formData[field].includes(alt)) setFormData((f) => ({ ...f, [field]: [...f[field], alt] })); }}
-                          onDismiss={tagSuggesters[field].dismiss}
-                        />
+                        {ongoing.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            <span className="text-xs text-gray-500 self-center">From your portfolio:</span>
+                            {ongoing.map((t) => <button key={t} type="button" onClick={() => addTag(field, t)} className="rounded-full border border-dashed border-gray-300 px-2.5 py-0.5 text-xs text-gray-600 hover:border-black hover:text-black">+ {t}</button>)}
+                          </div>
+                        )}
+                        {tagSuggesters[field] && (
+                          <SuggestChip
+                            suggestion={tagSuggesters[field].suggestion}
+                            onAccept={(corrected) => { setTagInputs((t) => ({ ...t, [field]: corrected })); tagSuggesters[field].dismiss(); }}
+                            onAcceptAlternative={(alt) => { if (!formData[field].includes(alt)) setFormData((f) => ({ ...f, [field]: [...f[field], alt] })); }}
+                            onDismiss={tagSuggesters[field].dismiss}
+                          />
+                        )}
                         <div className="flex flex-wrap gap-2">
                           {formData[field].map((v, idx) => (
                             <Badge key={idx} className="bg-gray-100 text-gray-800 hover:bg-gray-200 cursor-pointer" onClick={() => removeTag(field, v)}>{v} ×</Badge>
                           ))}
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 }
               >
-                {(formData.specialization.length > 0 || formData.projectTypeFocus.length > 0 || formData.markets.length > 0) ? (
+                {(formData.specialization.length > 0 || formData.projectTypeFocus.length > 0 || formData.markets.length > 0 || formData.activeProjects.length > 0) ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <InfoBlock icon={FiTarget} label="Specialization" values={formData.specialization} />
                     <InfoBlock icon={FiLayers} label="Project Type Focus" values={formData.projectTypeFocus} />
                     <InfoBlock icon={FiGlobe} label="Markets" values={formData.markets} />
+                    <InfoBlock icon={FiFolder} label="Active Projects" values={formData.activeProjects} />
                   </div>
                 ) : <p className="text-slate-500">Nothing added yet</p>}
               </SectionCard>
 
-              <SectionCard
-                title="Industry" sectionKey="industry" editingSection={editingSection}
-                onEditClick={() => edit('industry')} onCancel={cancelSection}
-                onSave={() => (formData.industries.length ? saveSection() : toast.error('Pick at least one industry'))} saving={saving}
-                editContent={
-                  <div className="flex flex-wrap gap-2">
-                    {INDUSTRIES.map((o) => {
-                      const on = formData.industries.includes(o.value);
-                      return (
-                        <button key={o.value} type="button" onClick={() => toggleIn('industries', o.value)} aria-pressed={on}
-                          className={`rounded-full px-3.5 py-1.5 text-sm font-medium border transition ${on ? 'bg-slate-900 border-slate-900 text-yellow-400' : 'bg-white border-gray-300 text-gray-700 hover:border-gray-400'}`}>
-                          {o.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                }
-              >
-                {industryLabels.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {industryLabels.map((l) => <Badge key={l} className="bg-slate-900 text-yellow-400">{l}</Badge>)}
-                  </div>
-                ) : <p className="text-slate-500">No industry chosen yet</p>}
-              </SectionCard>
-
-              <SectionCard
-                title="Goals" sectionKey="goals" editingSection={editingSection} icon={FiTarget}
-                onEditClick={() => edit('goals')} onCancel={cancelSection}
-                onSave={() => (formData.intent.length ? saveSection() : toast.error('Pick at least one goal'))} saving={saving}
-                editContent={
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {intentOptions.map((o) => {
-                      const on = formData.intent.includes(o.value);
-                      return (
-                        <button key={o.value} type="button" onClick={() => toggleIn('intent', o.value)} aria-pressed={on}
-                          className={`text-left rounded-lg border-2 p-3 transition ${on ? 'border-yellow-400 bg-yellow-50' : 'border-gray-200 hover:border-gray-300'}`}>
-                          <span className="block text-sm font-semibold text-black">{o.label}</span>
-                          <span className="block text-xs text-gray-500">{o.tagline}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                }
-              >
-                {intentLabels.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {intentLabels.map((l) => <Badge key={l} variant="outline" className="border-slate-300 text-slate-700">{l}</Badge>)}
-                  </div>
-                ) : <p className="text-slate-500">No goals chosen yet</p>}
-              </SectionCard>
-
-              <SectionCard
-                title="Skills" sectionKey="skills" editingSection={editingSection}
-                onEditClick={() => edit('skills')} onCancel={cancelSection} onSave={saveSection} saving={saving}
-                editContent={
-                  <div className="space-y-3">
-                    <ResumeImport onImported={handleResumeImported} />
-                    <SkillPicker
-                      skills={formData.skills}
-                      onAdd={(skill) => setFormData((f) => ({ ...f, skills: [...f.skills, skill] }))}
-                      onBlur={(e) => skillSuggest.check(e.target.value)}
-                    />
-                    <SuggestChip
-                      suggestion={skillSuggest.suggestion}
-                      onAccept={(corrected) => { if (!formData.skills.includes(corrected)) setFormData((f) => ({ ...f, skills: [...f.skills, corrected] })); skillSuggest.dismiss(); }}
-                      onAcceptAlternative={(alt) => { if (!formData.skills.includes(alt)) setFormData((f) => ({ ...f, skills: [...f.skills, alt] })); }}
-                      onDismiss={skillSuggest.dismiss}
-                    />
-                    <div className="flex flex-wrap gap-2">
-                      {formData.skills.map((skill, idx) => (
-                        <Badge key={idx} className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 cursor-pointer" onClick={() => handleRemoveSkill(skill)}>{skill} ×</Badge>
-                      ))}
-                    </div>
-                  </div>
-                }
-              >
-                <div className="flex flex-wrap gap-2">
-                  {formData.skills.length > 0 ? (
-                    formData.skills.map((skill, idx) => <Badge key={idx} className="bg-yellow-500 text-gray-900">{skill}</Badge>)
-                  ) : <p className="text-slate-500">No skills added yet</p>}
-                </div>
-              </SectionCard>
           </div>
 
           <div id="section-portfolio" className="space-y-6 scroll-mt-24">
@@ -878,7 +784,7 @@ const Profile = () => {
                   <Link to="/portfolio" className="text-sm font-medium text-black hover:underline hidden sm:inline">Full Portfolio →</Link>
                   <label className="cursor-pointer">
                     <input type="file" accept="image/*" multiple onChange={(e) => handleGalleryFiles(e.target.files)} className="hidden" disabled={uploadingGallery} />
-                    <span className="flex items-center gap-1.5 text-sm font-medium bg-yellow-400 hover:bg-yellow-500 text-black rounded-lg px-3 py-1.5 transition">
+                    <span className="flex items-center gap-1.5 text-sm font-medium bg-[#16324F] hover:bg-[#0F2439] text-white rounded-lg px-3 py-1.5 transition">
                       <FiUpload className="w-3.5 h-3.5" />{uploadingGallery ? 'Adding...' : 'Add Photos'}
                     </span>
                   </label>
@@ -903,7 +809,7 @@ const Profile = () => {
                 <div className="flex items-center justify-between mb-4 gap-3">
                   <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 font-serif flex items-center gap-2"><FiBriefcase className="w-4 h-4" />Experience</h3>
                   {!expDraft && (
-                    <Button size="sm" onClick={() => setExpDraft({ index: -1, ...EMPTY_EXPERIENCE })} className="bg-yellow-400 hover:bg-yellow-500 text-black" data-testid="add-experience">
+                    <Button size="sm" onClick={() => setExpDraft({ index: -1, ...EMPTY_EXPERIENCE })} className="bg-[#16324F] hover:bg-[#0F2439] text-white" data-testid="add-experience">
                       <FiPlus className="mr-1" />Add
                     </Button>
                   )}
@@ -918,7 +824,7 @@ const Profile = () => {
                       </div>
                       <div className="space-y-1">
                         <Label>Company *</Label>
-                        <CompanyInput value={expDraft.company} pageId={expDraft.companyPage || null} onChange={(name, pageId) => setExpDraft((d) => ({ ...d, company: name, companyPage: pageId || undefined, page: undefined }))} />
+                        <CompanyInput canCreatePage={user?.role !== 'student'} value={expDraft.company} pageId={expDraft.companyPage || null} onChange={(name, pageId) => setExpDraft((d) => ({ ...d, company: name, companyPage: pageId || undefined, page: undefined }))} />
                       </div>
                       <div className="space-y-1">
                         <Label>Employment type</Label>
@@ -941,7 +847,7 @@ const Profile = () => {
                       </div>
                     </div>
                     <label className="flex items-center gap-2 text-sm text-gray-700">
-                      <input type="checkbox" checked={expDraft.current} onChange={(e) => setExpDraft((d) => ({ ...d, current: e.target.checked, endDate: e.target.checked ? '' : d.endDate }))} className="accent-yellow-500" data-testid="exp-current" />
+                      <input type="checkbox" checked={expDraft.current} onChange={(e) => setExpDraft((d) => ({ ...d, current: e.target.checked, endDate: e.target.checked ? '' : d.endDate }))} className="accent-[#16324F]" data-testid="exp-current" />
                       I currently work here
                     </label>
                     <div className="space-y-1">
@@ -949,7 +855,7 @@ const Profile = () => {
                       <Textarea value={expDraft.description} onChange={(e) => setExpDraft((d) => ({ ...d, description: e.target.value }))} rows={3} spellCheck placeholder="What did you work on? Projects, responsibilities, results" />
                     </div>
                     <div className="flex gap-2">
-                      <Button onClick={saveExperience} disabled={saving} className="bg-black text-white hover:bg-gray-800" data-testid="exp-save">{saving ? 'Saving...' : 'Save'}</Button>
+                      <Button onClick={saveExperience} disabled={saving} className="bg-[#16324F] text-white hover:bg-[#0F2439]" data-testid="exp-save">{saving ? 'Saving...' : 'Save'}</Button>
                       <Button onClick={() => setExpDraft(null)} variant="outline">Cancel</Button>
                     </div>
                   </div>
@@ -972,7 +878,7 @@ const Profile = () => {
                 <div className="flex items-center justify-between mb-4 gap-3">
                   <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 font-serif flex items-center gap-2"><FiBookOpen className="w-4 h-4" />Education</h3>
                   {!eduDraft && (
-                    <Button size="sm" onClick={() => setEduDraft({ index: -1, ...EMPTY_EDUCATION })} className="bg-yellow-400 hover:bg-yellow-500 text-black" data-testid="add-education">
+                    <Button size="sm" onClick={() => setEduDraft({ index: -1, ...EMPTY_EDUCATION })} className="bg-[#16324F] hover:bg-[#0F2439] text-white" data-testid="add-education">
                       <FiPlus className="mr-1" />Add
                     </Button>
                   )}
@@ -1014,7 +920,7 @@ const Profile = () => {
                       <Textarea value={eduDraft.description} onChange={(e) => setEduDraft((d) => ({ ...d, description: e.target.value }))} rows={2} spellCheck placeholder="Thesis, awards, activities (optional)" />
                     </div>
                     <div className="flex gap-2">
-                      <Button onClick={saveEducation} disabled={saving} className="bg-black text-white hover:bg-gray-800" data-testid="edu-save">{saving ? 'Saving...' : 'Save'}</Button>
+                      <Button onClick={saveEducation} disabled={saving} className="bg-[#16324F] text-white hover:bg-[#0F2439]" data-testid="edu-save">{saving ? 'Saving...' : 'Save'}</Button>
                       <Button onClick={() => setEduDraft(null)} variant="outline">Cancel</Button>
                     </div>
                   </div>
@@ -1038,43 +944,44 @@ const Profile = () => {
               </Card>
 
               <SectionCard
-                title="Languages" sectionKey="languages" editingSection={editingSection} icon={FiLanguage}
-                onEditClick={() => edit('languages')} onCancel={cancelSection} onSave={saveSection} saving={saving}
+                title="Skills" sectionKey="skills" editingSection={editingSection}
+                onEditClick={() => edit('skills')} onCancel={cancelSection} onSave={saveSection} saving={saving}
                 editContent={
                   <div className="space-y-3">
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <AutocompleteInput field="language" wrapperClassName="flex-1" value={langDraft.name} onChange={(v) => setLangDraft((d) => ({ ...d, name: v }))}
-                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addLanguage())} placeholder="e.g. Hindi" data-testid="language-input" />
-                      <select value={langDraft.proficiency} onChange={(e) => setLangDraft((d) => ({ ...d, proficiency: e.target.value }))} className={`${selectClass} sm:w-52`} aria-label="Proficiency">
-                        <option value="">Proficiency</option>
-                        {PROFICIENCY.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
-                      </select>
-                      <Button type="button" onClick={addLanguage} className="bg-yellow-400 hover:bg-yellow-500 text-black shrink-0" data-testid="add-language">Add</Button>
-                    </div>
-                    <div className="space-y-2">
-                      {formData.languages.map((l, i) => (
-                        <div key={l.name} className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2">
-                          <span className="flex-1 text-sm font-medium text-black">{l.name}</span>
-                          <select value={l.proficiency} onChange={(e) => setFormData((f) => ({ ...f, languages: f.languages.map((x, j) => (j === i ? { ...x, proficiency: e.target.value } : x)) }))} className="h-8 rounded-md border border-gray-200 bg-white px-2 text-xs" aria-label={`${l.name} proficiency`}>
-                            <option value="">Proficiency</option>
-                            {PROFICIENCY.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
-                          </select>
-                          <button type="button" onClick={() => setFormData((f) => ({ ...f, languages: f.languages.filter((_, j) => j !== i) }))} className="p-1 text-gray-400 hover:text-red-600" aria-label={`Remove ${l.name}`}><FiX /></button>
-                        </div>
+                    <ResumeImport onImported={handleResumeImported} />
+                    <SkillPicker
+                      skills={formData.skills}
+                      onAdd={(skill) => setFormData((f) => ({ ...f, skills: [...f.skills, skill] }))}
+                      onBlur={(e) => skillSuggest.check(e.target.value)}
+                    />
+                    <SuggestChip
+                      suggestion={skillSuggest.suggestion}
+                      onAccept={(corrected) => { if (!formData.skills.includes(corrected)) setFormData((f) => ({ ...f, skills: [...f.skills, corrected] })); skillSuggest.dismiss(); }}
+                      onAcceptAlternative={(alt) => { if (!formData.skills.includes(alt)) setFormData((f) => ({ ...f, skills: [...f.skills, alt] })); }}
+                      onDismiss={skillSuggest.dismiss}
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      {formData.skills.map((skill, idx) => (
+                        <Badge key={idx} className="bg-[#EEF2F6] text-[#16324F] hover:bg-[#E2E8F0] cursor-pointer" onClick={() => handleRemoveSkill(skill)}>{skill} ×</Badge>
                       ))}
                     </div>
                   </div>
                 }
               >
-                {formData.languages.length > 0 ? <LanguagesList languages={formData.languages} /> : <p className="text-slate-500">No languages added yet</p>}
+                <div className="flex flex-wrap gap-2">
+                  {formData.skills.length > 0 ? (
+                    formData.skills.map((skill, idx) => <Badge key={idx} className="bg-[#EEF2F6] text-[#16324F]">{skill}</Badge>)
+                  ) : <p className="text-slate-500">No skills added yet</p>}
+                </div>
               </SectionCard>
 
+              {(user?.role !== 'student' || myPages.length > 0) && (
               <Card className="p-5 sm:p-8 rounded-2xl border-black/5 shadow-sm" data-testid="company-pages-section">
                 <div className="flex items-center justify-between mb-4 gap-3">
                   <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 font-serif flex items-center gap-2"><FiHome className="w-4 h-4" />Company pages</h3>
-                  <Link to={user?.business?.name && !myPages.length ? '/company/new?from=business' : '/company/new'} className="inline-flex items-center gap-1.5 rounded-lg bg-yellow-400 px-3 py-1.5 text-sm font-semibold text-black hover:bg-yellow-500" data-testid="profile-create-page">
+                  {user?.role !== 'student' && <Link to={user?.business?.name && !myPages.length ? '/company/new?from=business' : '/company/new'} className="inline-flex items-center gap-1.5 rounded-lg bg-[#16324F] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#0F2439]" data-testid="profile-create-page">
                     <FiPlus className="w-4 h-4" />Create
-                  </Link>
+                  </Link>}
                 </div>
                 {myPages.length ? (
                   <div className="divide-y divide-gray-100">
@@ -1095,6 +1002,47 @@ const Profile = () => {
                   <p className="text-slate-500">Run a studio, firm, developer or supply business? Create its page so people can follow it, your team can add it to their Experience, and you can post jobs as the company.</p>
                 )}
               </Card>
+              )}
+
+              <SectionCard
+                title="Associated Professionals" sectionKey="associated" editingSection={editingSection} icon={FiUsers}
+                onEditClick={editAssociated} onCancel={cancelSection} onSave={saveAssociated} saving={saving}
+                editContent={
+                  <div className="space-y-3" data-testid="associated-editor">
+                    <p className="text-sm text-gray-500">Choose which of your connections appear on your profile, e.g. people you've worked with.</p>
+                    {myConnections === null ? (
+                      <p className="text-sm text-gray-400">Loading your connections...</p>
+                    ) : myConnections.length === 0 ? (
+                      <p className="text-sm text-gray-500">Connect with people first, then add them here. <Link to="/connections" className="font-medium text-black underline">Find people</Link></p>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-80 overflow-y-auto">
+                        {myConnections.map((c) => {
+                          const on = formData.associatedProfessionals.includes(c._id);
+                          return (
+                            <button key={c._id} type="button" onClick={() => toggleIn('associatedProfessionals', c._id)} aria-pressed={on}
+                              className={`flex items-center gap-3 rounded-lg border-2 p-2.5 text-left transition ${on ? 'border-yellow-400 bg-yellow-50' : 'border-gray-200 hover:border-gray-300'}`}>
+                              <Avatar className="w-9 h-9">
+                                <AvatarImage src={c.profilePic} />
+                                <AvatarFallback className="bg-gray-200 text-black text-sm font-semibold">{c.name?.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              <span className="flex-1 min-w-0">
+                                <span className="block text-sm font-medium text-black truncate">{c.name}</span>
+                                <span className="block text-xs text-gray-500 truncate">{personHeadline(c)}</span>
+                              </span>
+                              {on ? <FiCheckCircle className="text-yellow-500 shrink-0" /> : <FiPlus className="text-gray-400 shrink-0" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    <p className="text-xs text-gray-400">{formData.associatedProfessionals.length} selected</p>
+                  </div>
+                }
+              >
+                {galleryPreview.associatedProfessionals.length > 0
+                  ? <PeopleGrid people={galleryPreview.associatedProfessionals} />
+                  : <p className="text-slate-500">No one added yet. Use the pencil to add people you've worked with.</p>}
+              </SectionCard>
 
               <Card className="p-5 sm:p-8 rounded-2xl border-black/5 shadow-sm" data-testid="resume-section">
                 <div className="flex items-center justify-between mb-4 gap-3">
@@ -1136,29 +1084,29 @@ const Profile = () => {
                 action={
                   <>
                     <VisibilityPill isPublic={formData.activityPublic} editable onToggle={(v) => handleVisibilityToggle('activityPublic', v)} />
-                    <button type="button" onClick={() => setPostDraft({ kind: 'update', title: '', content: '', mediaUrl: '' })} className="inline-flex items-center gap-1.5 rounded-lg bg-[#2b2622] px-3 py-1.5 text-sm font-semibold text-white hover:bg-black" data-testid="post-update">
+                    <button type="button" onClick={() => setPostDraft({ kind: 'update', title: '', content: '', mediaUrl: '' })} className="inline-flex items-center gap-1.5 rounded-lg bg-[#16324F] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#0F2439]" data-testid="post-update">
                       <FiPlus className="w-4 h-4" />Post an update
                     </button>
                   </>
                 }
               >
                 {postDraft && (
-                  <div className="mb-5 space-y-3 rounded-2xl border border-[#f3d27a] bg-[#fffbeb] p-4" data-testid="post-form">
+                  <div className="mb-5 space-y-3 rounded-2xl border border-[#F4C430] bg-[#FFFBEA] p-4" data-testid="post-form">
                     <div className="flex flex-wrap gap-2">
                       {[['update', 'Update'], ['article', 'Article'], ['site_update', 'Site Update'], ['opinion', 'Opinion'], ['project', 'Project']].map(([v, l]) => (
-                        <button key={v} type="button" onClick={() => setPostDraft((d) => ({ ...d, kind: v }))} className={`rounded-full px-3 py-1 text-sm ${postDraft.kind === v ? 'bg-[#2b2622] text-white' : 'bg-white border border-[#e3ddd5] text-[#6f655c]'}`}>{l}</button>
+                        <button key={v} type="button" onClick={() => setPostDraft((d) => ({ ...d, kind: v }))} className={`rounded-full px-3 py-1 text-sm ${postDraft.kind === v ? 'bg-[#16324F] text-white' : 'bg-white border border-[#DCE3EB] text-[#6f655c]'}`}>{l}</button>
                       ))}
                     </div>
                     <Input value={postDraft.title} onChange={(e) => setPostDraft((d) => ({ ...d, title: e.target.value }))} placeholder="Title (optional)" maxLength={160} spellCheck data-testid="post-title" />
                     <Textarea value={postDraft.content} onChange={(e) => setPostDraft((d) => ({ ...d, content: e.target.value }))} placeholder="Share a project milestone, an idea or news" rows={4} maxLength={5000} spellCheck data-testid="post-content" />
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <label className="inline-flex cursor-pointer items-center gap-1.5 text-sm pf-muted hover:text-[#2b2622]">
+                      <label className="inline-flex cursor-pointer items-center gap-1.5 text-sm pf-muted hover:text-[#16324F]">
                         <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && uploadPostImage(e.target.files[0])} />
                         <FiImage className="w-4 h-4" />{postDraft.mediaUrl ? 'Change photo' : 'Add a photo'}
                       </label>
                       <div className="flex gap-2">
                         <Button variant="outline" onClick={() => setPostDraft(null)}>Cancel</Button>
-                        <Button onClick={publishPost} disabled={posting || !postDraft.content.trim()} className="bg-[#2b2622] text-white hover:bg-black" data-testid="post-submit">{posting ? 'Posting…' : 'Post'}</Button>
+                        <Button onClick={publishPost} disabled={posting || !postDraft.content.trim()} className="bg-[#16324F] text-white hover:bg-[#0F2439]" data-testid="post-submit">{posting ? 'Posting…' : 'Post'}</Button>
                       </div>
                     </div>
                     {postDraft.mediaUrl && <img src={postDraft.mediaUrl} alt="" className="max-h-48 rounded-xl object-cover" />}
@@ -1170,51 +1118,12 @@ const Profile = () => {
                     onDelete={deletePost}
                     renderShare={(post) => (
                       <ShareMenu path={`/in/${user?.username}`} title={post.title || `${user?.name} on BeeBark`} text={post.content?.slice(0, 140)} align="start"
-                        trigger={<button type="button" className="inline-flex items-center gap-1.5 hover:text-[#2b2622]"><FiShare2 className="w-4 h-4" />Share</button>} />
+                        trigger={<button type="button" className="inline-flex items-center gap-1.5 hover:text-[#16324F]"><FiShare2 className="w-4 h-4" />Share</button>} />
                     )}
                   />
                 ) : !postDraft && <p className="text-slate-500">No activity yet. Post an update about your work.</p>}
               </SectionCard>
 
-              <SectionCard
-                title="Associated Professionals" sectionKey="associated" editingSection={editingSection} icon={FiUsers}
-                onEditClick={editAssociated} onCancel={cancelSection} onSave={saveAssociated} saving={saving}
-                editContent={
-                  <div className="space-y-3" data-testid="associated-editor">
-                    <p className="text-sm text-gray-500">Choose which of your connections appear on your profile, e.g. people you've worked with.</p>
-                    {myConnections === null ? (
-                      <p className="text-sm text-gray-400">Loading your connections...</p>
-                    ) : myConnections.length === 0 ? (
-                      <p className="text-sm text-gray-500">Connect with people first, then add them here. <Link to="/connections" className="font-medium text-black underline">Find people</Link></p>
-                    ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-80 overflow-y-auto">
-                        {myConnections.map((c) => {
-                          const on = formData.associatedProfessionals.includes(c._id);
-                          return (
-                            <button key={c._id} type="button" onClick={() => toggleIn('associatedProfessionals', c._id)} aria-pressed={on}
-                              className={`flex items-center gap-3 rounded-lg border-2 p-2.5 text-left transition ${on ? 'border-yellow-400 bg-yellow-50' : 'border-gray-200 hover:border-gray-300'}`}>
-                              <Avatar className="w-9 h-9">
-                                <AvatarImage src={c.profilePic} />
-                                <AvatarFallback className="bg-gray-200 text-black text-sm font-semibold">{c.name?.charAt(0)}</AvatarFallback>
-                              </Avatar>
-                              <span className="flex-1 min-w-0">
-                                <span className="block text-sm font-medium text-black truncate">{c.name}</span>
-                                <span className="block text-xs text-gray-500 truncate">{personHeadline(c)}</span>
-                              </span>
-                              {on ? <FiCheckCircle className="text-yellow-500 shrink-0" /> : <FiPlus className="text-gray-400 shrink-0" />}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                    <p className="text-xs text-gray-400">{formData.associatedProfessionals.length} selected</p>
-                  </div>
-                }
-              >
-                {galleryPreview.associatedProfessionals.length > 0
-                  ? <PeopleGrid people={galleryPreview.associatedProfessionals} />
-                  : <p className="text-slate-500">No one added yet. Use the pencil to add people you've worked with.</p>}
-              </SectionCard>
           </div>
 
           {galleryPreview.listingCount > 0 && (
@@ -1229,17 +1138,6 @@ const Profile = () => {
             </div>
           )}
 
-          {galleryPreview.openJobs.length > 0 && (
-            <div id="section-hiring" className="scroll-mt-32">
-              <Card className="p-5 sm:p-8 rounded-2xl border-black/5 shadow-sm">
-                <div className="flex items-center justify-between mb-5 gap-3">
-                  <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 font-serif">Open Positions</h3>
-                  <Link to="/jobs" className="text-sm font-medium text-black hover:underline">Manage jobs →</Link>
-                </div>
-                <JobRows jobs={galleryPreview.openJobs} own />
-              </Card>
-            </div>
-          )}
         </div>
       </div>
 
@@ -1267,7 +1165,7 @@ const Profile = () => {
             Update your name everywhere on BeeBark to match your résumé?
           </p>
           <div className="flex gap-2 mt-2">
-            <Button onClick={() => confirmNameChange(true)} className="flex-1 bg-black text-white">
+            <Button onClick={() => confirmNameChange(true)} className="flex-1 bg-[#16324F] text-white">
               Yes, update to {nameMismatch?.detectedName}
             </Button>
             <Button onClick={() => confirmNameChange(false)} variant="outline" className="flex-1">Keep current name</Button>

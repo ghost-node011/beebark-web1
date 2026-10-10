@@ -90,7 +90,7 @@ const NotificationBell = () => {
       >
         <FiBell className="w-5 h-5 text-slate-600" />
         {unreadCount > 0 && (
-          <span className="absolute top-0.5 right-0.5 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-yellow-400 text-black text-[10px] font-bold">
+          <span className="absolute top-0.5 right-0.5 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-[#16324F] text-white text-[10px] font-bold">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -117,13 +117,13 @@ const NotificationBell = () => {
                   >
                     <Avatar className="w-9 h-9 shrink-0">
                       <AvatarImage src={n.actor?.profilePic} />
-                      <AvatarFallback className="bg-yellow-400 text-black font-semibold">{n.actor?.name?.charAt(0)}</AvatarFallback>
+                      <AvatarFallback className="bg-[#16324F] text-white font-semibold">{n.actor?.name?.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-black leading-snug">{message}</p>
                       <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1"><Icon className="w-3 h-3" />{timeAgo(n.createdAt)}</p>
                     </div>
-                    {!n.read && <span className="w-2 h-2 rounded-full bg-yellow-400 mt-1.5 shrink-0" />}
+                    {!n.read && <span className="w-2 h-2 rounded-full bg-[#16324F] mt-1.5 shrink-0" />}
                   </button>
                 );
               })}

@@ -29,6 +29,26 @@ const PROFICIENCY = ['basic', 'conversational', 'professional', 'native'];
 const EMPLOYMENT_TYPES = ['full_time', 'part_time', 'internship', 'freelance', 'contract', 'self_employed'];
 
 const SOCIAL_PLATFORMS = ['linkedin', 'instagram', 'behance', 'pinterest', 'youtube', 'x', 'facebook', 'github', 'houzz', 'dribbble', 'website'];
+// Each platform's own address; a link must be on it (any site is fine for "website")
+const SOCIAL_DOMAINS = {
+  linkedin: ['linkedin.com', 'lnkd.in'], instagram: ['instagram.com', 'instagr.am'], behance: ['behance.net'], pinterest: ['pinterest.com', 'pinterest.in', 'pin.it'],
+  youtube: ['youtube.com', 'youtu.be'], x: ['x.com', 'twitter.com'], facebook: ['facebook.com', 'fb.com', 'fb.me'], github: ['github.com'],
+  houzz: ['houzz.com', 'houzz.in'], dribbble: ['dribbble.com']
+};
+// '' when the link is fine, otherwise a message
+const socialLinkError = (platform, raw) => {
+  const text = String(raw || '').trim();
+  if (!text) return 'Add the link or remove this row';
+  if (/\s/.test(text)) return 'A link can\'t contain spaces';
+  let url;
+  try { url = new URL(/^https?:\/\//i.test(text) ? text : `https://${text}`); } catch { return 'Enter a full link, e.g. https://linkedin.com/in/yourname'; }
+  const host = url.hostname.toLowerCase().replace(/^www\./, '');
+  if (!/^https?:$/.test(url.protocol) || !host.includes('.') || !/\.[a-z]{2,}$/.test(host)) return 'Enter a full link, e.g. https://yourstudio.com';
+  const domains = SOCIAL_DOMAINS[platform];
+  if (domains && !domains.some((d) => host === d || host.endsWith(`.${d}`))) return `This link should be on ${domains[0]}`;
+  if (domains && url.pathname.replace(/\/+$/, '') === '') return 'Link to your own page, not the home page';
+  return '';
+};
 
 // Years since the earliest dated role (only counts structured start dates)
 function yearsOfExperience(experience) {
@@ -39,4 +59,4 @@ function yearsOfExperience(experience) {
   return Math.max(0, Math.floor(((now.getFullYear() - y) * 12 + (now.getMonth() + 1 - m)) / 12));
 }
 
-module.exports = { AVAILABILITY, availabilityOptionsFor, PROFICIENCY, EMPLOYMENT_TYPES, SOCIAL_PLATFORMS, yearsOfExperience };
+module.exports = { SOCIAL_DOMAINS, socialLinkError, AVAILABILITY, availabilityOptionsFor, PROFICIENCY, EMPLOYMENT_TYPES, SOCIAL_PLATFORMS, yearsOfExperience };

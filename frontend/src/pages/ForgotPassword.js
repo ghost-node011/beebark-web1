@@ -89,14 +89,14 @@ const ForgotPassword = () => {
               <div>
                 <label className="block text-sm font-medium text-black mb-1">Email</label>
                 <div className="relative">
-                  <FaEnvelope className="absolute left-0 top-4 text-gray-400" />
+                  <FaEnvelope className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
                   <input
                     type="email"
                     placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="input-beebark pl-7"
+                    className="input-beebark"
                     data-testid="email-input"
                   />
                 </div>
@@ -137,17 +137,17 @@ const ForgotPassword = () => {
               <div>
                 <label className="block text-sm font-medium text-black mb-1">New password</label>
                 <div className="relative">
-                  <FaLock className="absolute left-0 top-4 text-gray-400" />
+                  <FaLock className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
                   <input
                     type={show ? 'text' : 'password'}
                     placeholder="Create a new password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="input-beebark pl-7 pr-8"
+                    className="input-beebark pr-11"
                     data-testid="password-input"
                   />
-                  <button type="button" onClick={() => setShow((s) => !s)} className="absolute right-0 top-4 text-gray-400 hover:text-black" tabIndex={-1} aria-label="Toggle password visibility">
+                  <button type="button" onClick={() => setShow((s) => !s)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black" tabIndex={-1} aria-label="Toggle password visibility">
                     {show ? <FaEyeSlash /> : <FaEye />}
                   </button>
                 </div>
@@ -166,14 +166,14 @@ const ForgotPassword = () => {
               <div>
                 <label className="block text-sm font-medium text-black mb-1">Confirm password</label>
                 <div className="relative">
-                  <FaLock className="absolute left-0 top-4 text-gray-400" />
+                  <FaLock className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
                   <input
                     type={show ? 'text' : 'password'}
                     placeholder="Re-enter your new password"
                     value={confirm}
                     onChange={(e) => setConfirm(e.target.value)}
                     required
-                    className="input-beebark pl-7"
+                    className="input-beebark"
                     data-testid="confirm-password-input"
                   />
                 </div>

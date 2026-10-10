@@ -96,7 +96,7 @@ const PeopleSearchBox = () => {
         autoComplete="off"
         autoCorrect="off"
         spellCheck={false}
-        className="w-full h-10 rounded-md border border-slate-200 bg-slate-50 pl-10 pr-9 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-yellow-400"
+        className="w-full h-10 rounded-md border border-slate-200 bg-slate-50 pl-10 pr-9 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#245EA8]"
         role="combobox"
         aria-expanded={open}
         aria-controls="people-search-list"
@@ -136,7 +136,7 @@ const PeopleSearchBox = () => {
                 >
                   <Avatar className="w-10 h-10 shrink-0">
                     <AvatarImage src={p.profilePic} />
-                    <AvatarFallback className="bg-yellow-400 text-black font-semibold">{p.name?.charAt(0)}</AvatarFallback>
+                    <AvatarFallback className="bg-[#16324F] text-white font-semibold">{p.name?.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-1.5 text-sm text-slate-700">

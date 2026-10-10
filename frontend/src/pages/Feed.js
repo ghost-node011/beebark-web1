@@ -196,7 +196,7 @@ const Feed = () => {
                       <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 p-0.5 mb-2 hover:scale-105 transition">
                         <Avatar className="w-full h-full border-2 border-white">
                           <AvatarImage src={storyGroup.author.profilePic} />
-                          <AvatarFallback className="bg-yellow-400 text-black">
+                          <AvatarFallback className="bg-[#16324F] text-white">
                             {storyGroup.author.name.charAt(0)}
                           </AvatarFallback>
                         </Avatar>
@@ -221,7 +221,7 @@ const Feed = () => {
                 <div className="flex space-x-3 mb-4">
                   <Avatar className="w-12 h-12">
                     <AvatarImage src={user?.profilePic} />
-                    <AvatarFallback className="bg-yellow-400 text-black">{user?.name?.charAt(0)}</AvatarFallback>
+                    <AvatarFallback className="bg-[#16324F] text-white">{user?.name?.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <Textarea
                     placeholder={`What's your latest project, ${user?.name?.split(' ')[0]}?`}
@@ -257,7 +257,7 @@ const Feed = () => {
                   <Button 
                     onClick={handleCreatePost} 
                     disabled={loading || (!newPost.trim() && !mediaUrl)} 
-                    className="bg-black hover:bg-gray-900 text-white"
+                    className="bg-[#16324F] hover:bg-[#0F2439] text-white"
                   >
                     Share
                   </Button>
@@ -272,7 +272,7 @@ const Feed = () => {
                   <div className="p-4 flex items-center space-x-3">
                     <Avatar>
                       <AvatarImage src={post.author?.profilePic} />
-                      <AvatarFallback className="bg-yellow-400 text-black">
+                      <AvatarFallback className="bg-[#16324F] text-white">
                         {post.author?.name?.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
@@ -323,7 +323,7 @@ const Feed = () => {
                         onClick={() => handleComment(post._id)} 
                         size="sm"
                         disabled={!commentTexts[post._id]?.trim()}
-                        className="bg-yellow-500 hover:bg-yellow-600 text-black"
+                        className="bg-[#16324F] hover:bg-[#0F2439] text-white"
                       >
                         <FiSend />
                       </Button>
@@ -383,7 +383,7 @@ const Feed = () => {
               <Button 
                 onClick={handleCreateStory} 
                 disabled={loading || !storyMediaUrl}
-                className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black"
+                className="flex-1 bg-[#16324F] hover:bg-[#0F2439] text-white"
               >
                 Post Story
               </Button>

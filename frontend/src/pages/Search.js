@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
+import { LocationInput } from '../components/AutocompleteInput';
 import { toast } from 'sonner';
 import { FiSearch, FiX, FiMapPin, FiUserPlus, FiMessageCircle, FiUserCheck, FiClock, FiSliders } from 'react-icons/fi';
 import Sidebar from '../components/Sidebar';
@@ -24,7 +25,7 @@ const KEYS = ['q', 'network', 'role', 'industry', 'location', 'open'];
 
 const Chip = ({ active, children, onClick, testId }) => (
   <button type="button" onClick={onClick} data-testid={testId}
-    className={`shrink-0 rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${active ? 'border-black bg-black text-white' : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'}`}>
+    className={`shrink-0 rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${active ? 'border-[#16324F] bg-[#16324F] text-white' : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'}`}>
     {children}
   </button>
 );
@@ -100,7 +101,7 @@ const Search = () => {
   const clearAll = () => setParams(f.q ? { q: f.q } : {}, { replace: true });
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6]" data-testid="search-page">
+    <div className="min-h-screen bg-[#F5F7FA]" data-testid="search-page">
       <Sidebar />
       <TopBar />
       <div className="lg:ml-64 mt-16 p-4 sm:p-6 lg:p-8">
@@ -117,7 +118,7 @@ const Search = () => {
               onChange={(e) => setText(e.target.value)}
               autoFocus
               placeholder="e.g. interior designer pune, revit, studio lotus"
-              className="w-full h-12 rounded-xl border-2 border-gray-200 bg-white pl-12 pr-10 text-base focus:border-yellow-400 focus:outline-none"
+              className="w-full h-12 rounded-xl border-2 border-gray-200 bg-white pl-12 pr-10 text-base focus:border-[#245EA8] focus:outline-none"
               data-testid="people-search-input"
             />
             {text && <button type="button" onClick={() => setText('')} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-black" aria-label="Clear"><FiX /></button>}
@@ -147,7 +148,7 @@ const Search = () => {
               </label>
               <label className="space-y-1 text-sm">
                 <span className="font-medium text-gray-700">Location</span>
-                <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="City" className="w-full h-10 rounded-md border border-gray-300 px-3" data-testid="filter-location" />
+                <LocationInput value={location} onChange={setLocation} placeholder="Search a city" data-testid="filter-location" />
               </label>
               <label className="space-y-1 text-sm">
                 <span className="font-medium text-gray-700">Open to</span>
@@ -170,7 +171,7 @@ const Search = () => {
                   <Link to={`/profile/${p.username}`} className="shrink-0">
                     <Avatar className="w-14 h-14">
                       <AvatarImage src={p.profilePic} />
-                      <AvatarFallback className="bg-yellow-400 text-black font-semibold">{p.name?.charAt(0)}</AvatarFallback>
+                      <AvatarFallback className="bg-[#16324F] text-white font-semibold">{p.name?.charAt(0)}</AvatarFallback>
                     </Avatar>
                   </Link>
                   <div className="min-w-0 flex-1">
@@ -197,7 +198,7 @@ const Search = () => {
                     ) : p.status === 'sent' ? (
                       <Button variant="outline" size="sm" disabled className="rounded-full"><FiClock className="mr-1.5" />Pending</Button>
                     ) : (
-                      <Button size="sm" onClick={() => connect(p)} disabled={busy[p._id]} className="rounded-full bg-black text-white hover:bg-gray-800" data-testid={`person-connect-${p.username}`}>
+                      <Button size="sm" onClick={() => connect(p)} disabled={busy[p._id]} className="rounded-full bg-[#16324F] text-white hover:bg-[#0F2439]" data-testid={`person-connect-${p.username}`}>
                         {p.status === 'received' ? <><FiUserCheck className="mr-1.5" />Accept</> : <><FiUserPlus className="mr-1.5" />Connect</>}
                       </Button>
                     )}

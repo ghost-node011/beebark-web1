@@ -16,7 +16,7 @@ const PrivacyPolicy = () => (
   <div className="min-h-screen bg-white">
     <header className="border-b border-gray-100">
       <div className="max-w-3xl mx-auto px-5 py-5 flex items-center justify-between">
-        <Link to="/"><BrandMark /></Link>
+        <BrandMark />
         <Link to="/login" className="text-sm font-semibold text-black hover:underline">Sign in</Link>
       </div>
     </header>

@@ -11,7 +11,7 @@ import CompanyLogo from './CompanyLogo';
  * then names other members typed. Picking a Page links the entry to it.
  * `value` is the name, `pageId` the linked Page (or null).
  */
-const CompanyInput = ({ value, pageId, onChange, placeholder = 'e.g. Studio Lotus', testId = 'exp-company' }) => {
+const CompanyInput = ({ value, pageId, onChange, placeholder = 'e.g. Studio Lotus', testId = 'exp-company', canCreatePage = true }) => {
   const [pages, setPages] = useState([]);
   const [names, setNames] = useState([]);
   const [open, setOpen] = useState(false);
@@ -84,7 +84,7 @@ const CompanyInput = ({ value, pageId, onChange, placeholder = 'e.g. Studio Lotu
         </div>
       )}
       {!pageId && (
-        <p className="mt-1 text-xs text-gray-400">Pick the company page if it has one. <Link to="/company/new" className="underline hover:text-black">Create a page</Link></p>
+        <p className="mt-1 text-xs text-gray-400">Pick the company page if it has one.{canCreatePage && <> <Link to="/company/new" className="underline hover:text-black">Create a page</Link></>}</p>
       )}
     </div>
   );

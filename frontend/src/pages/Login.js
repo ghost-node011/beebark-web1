@@ -48,46 +48,43 @@ const Login = () => {
   return (
     <AuthShell>
       <div data-testid="login-page">
-        <h2 className="text-2xl sm:text-3xl font-bold text-black">Sign in</h2>
-        <p className="mt-2 text-gray-600 text-sm">
-          New to BeeBark?{' '}
-          <Link to="/register" className="font-semibold text-black hover:underline">Create an account</Link>
-        </p>
+        <h2 className="text-[32px] sm:text-[40px] font-bold leading-tight tracking-tight text-[#111827]">Welcome to BeeBark</h2>
+        <p className="mt-1.5 text-lg text-[#526174]">Sign in to your professional network.</p>
 
-        <form onSubmit={handleSubmit} className="mt-7 space-y-5" data-testid="login-form">
+        <form onSubmit={handleSubmit} className="mt-8 space-y-5" data-testid="login-form">
           <div>
-            <label className="block text-sm font-medium text-black mb-1">Email</label>
+            <label className="block text-[15px] font-semibold text-[#111827] mb-2">Email</label>
             <div className="relative">
-              <FaEnvelope className="absolute left-0 top-4 text-gray-400" />
+              <FaEnvelope className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
               <input
                 type="email"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="input-beebark pl-7"
+                className="input-beebark"
                 data-testid="email-input"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-black mb-1">Password</label>
+            <label className="block text-[15px] font-semibold text-[#111827] mb-2">Password</label>
             <div className="relative">
-              <FaLock className="absolute left-0 top-4 text-gray-400" />
+              <FaLock className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
               <input
                 type={showPassword ? 'text' : 'password'}
                 placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="input-beebark pl-7 pr-8"
+                className="input-beebark pr-11"
                 data-testid="password-input"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((s) => !s)}
-                className="absolute right-0 top-4 text-gray-400 hover:text-black"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black"
                 tabIndex={-1}
                 aria-label="Toggle password visibility"
               >
@@ -97,16 +94,16 @@ const Login = () => {
           </div>
 
           <div className="flex items-center justify-between">
-            <label className="flex items-center gap-2 text-sm text-gray-600">
+            <label className="flex items-center gap-2.5 text-[15px] text-[#1f2933] cursor-pointer">
               <input
                 type="checkbox"
-                className="accent-yellow-400"
+                className="h-5 w-5 rounded accent-[#FFD60A]"
                 checked={remember}
                 onChange={(e) => setRemember(e.target.checked)}
               />
               Remember me
             </label>
-            <Link to="/forgot-password" className="text-xs text-gray-400 hover:text-gray-600">
+            <Link to="/forgot-password" className="text-[15px] text-[#526174] hover:text-[#16324F]">
               Forgot password?
             </Link>
           </div>
@@ -121,7 +118,11 @@ const Login = () => {
           </button>
         </form>
 
-        <SocialAuth onGoogleCredential={handleGoogle} text="signin_with" />
+        <SocialAuth onGoogleCredential={handleGoogle} text="continue_with" />
+        <p className="mt-8 text-center text-[15px] text-[#526174]">
+          New to BeeBark?{' '}
+          <Link to="/register" className="font-semibold text-[#111827] hover:underline" data-testid="go-register">Create an account</Link>
+        </p>
       </div>
     </AuthShell>
   );

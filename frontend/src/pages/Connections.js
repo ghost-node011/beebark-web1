@@ -43,7 +43,7 @@ const timeAgo = (date) => {
   return new Date(date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
-const PersonAvatar = ({ person, className = 'w-14 h-14', fallbackClass = 'bg-yellow-400 text-black' }) => (
+const PersonAvatar = ({ person, className = 'w-14 h-14', fallbackClass = 'bg-[#16324F] text-white' }) => (
   <Avatar className={`${className} shrink-0`}>
     <AvatarImage src={person.profilePic} alt={person.name} className="object-cover" />
     <AvatarFallback className={`${fallbackClass} font-bold`}>{person.name?.charAt(0)?.toUpperCase()}</AvatarFallback>
@@ -98,7 +98,7 @@ const EmptyState = ({ icon: Icon, title, text, action }) => (
 );
 
 const pill = 'inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-full text-sm font-medium border';
-const TAB_CLASS = 'flex-1 sm:flex-none rounded-full px-3 sm:px-4 py-1.5 text-sm text-gray-600 data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-none whitespace-nowrap';
+const TAB_CLASS = 'flex-1 sm:flex-none rounded-full px-3 sm:px-4 py-1.5 text-sm text-gray-600 data-[state=active]:bg-[#16324F] data-[state=active]:text-white data-[state=active]:shadow-none whitespace-nowrap';
 
 const Connections = () => {
   const navigate = useNavigate();
@@ -372,7 +372,7 @@ const Connections = () => {
         <Button
           onClick={() => handleAccept(p._id)}
           disabled={busyId === p._id}
-          className="w-full rounded-full bg-yellow-400 hover:bg-yellow-500 text-black font-semibold"
+          className="w-full rounded-full bg-[#16324F] hover:bg-[#0F2439] text-white font-semibold"
           data-testid={`accept-search-btn-${p._id}`}
         >
           <FiCheck className="w-4 h-4 mr-1.5" />Accept
@@ -391,7 +391,7 @@ const Connections = () => {
         variant="outline"
         onClick={() => handleConnect(p._id)}
         disabled={busyId === p._id}
-        className="w-full rounded-full border-black text-black font-semibold hover:bg-yellow-400 hover:border-yellow-400"
+        className="w-full rounded-full border-black text-black font-semibold hover:bg-[#16324F] hover:text-white hover:border-[#16324F]"
         data-testid={testId}
       >
         <FiUserPlus className="w-4 h-4 mr-1.5" />Connect
@@ -406,7 +406,7 @@ const Connections = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6]" data-testid="connections-page">
+    <div className="min-h-screen bg-[#F5F7FA]" data-testid="connections-page">
       <Sidebar />
       <TopBar />
       <div className="lg:ml-64 mt-16 p-4 sm:p-6 lg:p-8">
@@ -444,7 +444,7 @@ const Connections = () => {
                 placeholder="Search by name, role, company, skill or city"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-11 pr-10 h-12 bg-white border border-gray-200 focus-visible:ring-yellow-400 rounded-xl"
+                className="pl-11 pr-10 h-12 bg-white border border-gray-200 focus-visible:ring-[#245EA8] rounded-xl"
                 data-testid="connection-search-input"
               />
               {searching && <span className="absolute right-10 top-1/2 -mt-2 h-4 w-4 rounded-full border-2 border-yellow-400 border-t-transparent animate-spin" aria-label="Searching" />}
@@ -462,7 +462,7 @@ const Connections = () => {
             {searchQuery.trim() && (
               <Button
                 type="submit"
-                className="h-12 bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-4 sm:px-6 rounded-xl shrink-0"
+                className="h-12 bg-[#16324F] hover:bg-[#0F2439] text-white font-semibold px-4 sm:px-6 rounded-xl shrink-0"
                 data-testid="search-button"
               >
                 <FiSearch className="w-4 h-4 sm:mr-2" /><span className="hidden sm:inline">Search</span>
@@ -485,7 +485,7 @@ const Connections = () => {
             <section id="invitations" className="mb-6 bg-white border border-gray-200 rounded-xl overflow-hidden" data-testid="invitations">
               <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-gray-100">
                 <h2 className="font-serif font-semibold text-lg text-black">Invitations</h2>
-                <span className="text-xs font-semibold bg-yellow-400 text-black rounded-full px-2 py-0.5">{pendingRequests.length}</span>
+                <span className="text-xs font-semibold bg-[#16324F] text-white rounded-full px-2 py-0.5">{pendingRequests.length}</span>
               </div>
               <ul className="divide-y divide-gray-100">
                 {pendingRequests.map((request) => (
@@ -513,7 +513,7 @@ const Connections = () => {
                       <Button
                         onClick={() => handleAccept(request._id)}
                         disabled={busyId === request._id}
-                        className="flex-1 sm:flex-none rounded-full bg-yellow-400 hover:bg-yellow-500 text-black font-semibold"
+                        className="flex-1 sm:flex-none rounded-full bg-[#16324F] hover:bg-[#0F2439] text-white font-semibold"
                         data-testid={`accept-${request._id}`}
                       >
                         Accept
@@ -553,7 +553,7 @@ const Connections = () => {
                   title="No connections yet"
                   text="Connect with classmates, colleagues and firms you work with. They'll show up here."
                   action={(
-                    <Button onClick={() => setActiveTab('suggestions')} className="rounded-full bg-black hover:bg-gray-800 text-white">
+                    <Button onClick={() => setActiveTab('suggestions')} className="rounded-full bg-[#16324F] hover:bg-[#0F2439] text-white">
                       See suggestions
                     </Button>
                   )}
@@ -578,7 +578,7 @@ const Connections = () => {
                         <select
                           value={sortBy}
                           onChange={(e) => setSortBy(e.target.value)}
-                          className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-black focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                          className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-black focus:outline-none focus:ring-2 focus:ring-[#245EA8]"
                           data-testid="connection-sort"
                         >
                           <option value="recent">Recently added</option>
@@ -638,7 +638,7 @@ const Connections = () => {
                           <div className="mt-auto p-4 flex gap-2">
                             <Button
                               onClick={() => navigate(`/chat?with=${c._id}`)}
-                              className="flex-1 rounded-full bg-yellow-400 hover:bg-yellow-500 text-black font-semibold"
+                              className="flex-1 rounded-full bg-[#16324F] hover:bg-[#0F2439] text-white font-semibold"
                               data-testid={`message-${c._id}`}
                             >
                               <FiMessageCircle className="w-4 h-4 mr-1.5" />Message

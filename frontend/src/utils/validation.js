@@ -38,3 +38,28 @@ export const checkSalary = (raw) => {
   if (rest) return 'Use numbers for the salary, e.g. ₹40,000/month or ₹6–8 LPA';
   return '';
 };
+
+// Social links: a real link on the chosen platform (the backend checks the same)
+const SOCIAL_DOMAINS = {
+  linkedin: ['linkedin.com', 'lnkd.in'], instagram: ['instagram.com', 'instagr.am'], behance: ['behance.net'], pinterest: ['pinterest.com', 'pinterest.in', 'pin.it'],
+  youtube: ['youtube.com', 'youtu.be'], x: ['x.com', 'twitter.com'], facebook: ['facebook.com', 'fb.com', 'fb.me'], github: ['github.com'],
+  houzz: ['houzz.com', 'houzz.in'], dribbble: ['dribbble.com']
+};
+const SOCIAL_EXAMPLES = {
+  linkedin: 'https://linkedin.com/in/yourname', instagram: 'https://instagram.com/yourstudio', behance: 'https://behance.net/yourname',
+  website: 'https://yourstudio.com'
+};
+export const checkSocialLink = (platform, raw) => {
+  const text = String(raw || '').trim();
+  const example = SOCIAL_EXAMPLES[platform] || `https://${SOCIAL_DOMAINS[platform]?.[0] || 'yourstudio.com'}/yourname`;
+  if (!text) return 'Add the link or remove this row';
+  if (/\s/.test(text)) return "A link can't contain spaces";
+  let url;
+  try { url = new URL(/^https?:\/\//i.test(text) ? text : `https://${text}`); } catch { return `Enter a full link, e.g. ${example}`; }
+  const host = url.hostname.toLowerCase().replace(/^www\./, '');
+  if (!/^https?:$/.test(url.protocol) || !host.includes('.') || !/\.[a-z]{2,}$/.test(host)) return `Enter a full link, e.g. ${example}`;
+  const domains = SOCIAL_DOMAINS[platform];
+  if (domains && !domains.some((d) => host === d || host.endsWith(`.${d}`))) return `This link should be on ${domains[0]}, e.g. ${example}`;
+  if (domains && url.pathname.replace(/\/+$/, '') === '') return `Link to your own page, e.g. ${example}`;
+  return '';
+};

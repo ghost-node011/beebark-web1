@@ -54,8 +54,8 @@ const GoogleAuthButton = ({ onCredential, text = 'continue_with' }) => {
         window.google.accounts.id.renderButton(containerRef.current, {
           theme: 'outline',
           size: 'large',
-          width: 320,
-          shape: 'pill',
+          width: Math.max(240, Math.min(400, containerRef.current.offsetWidth || 320)),
+          shape: 'rectangular',
           text,
           logo_alignment: 'center'
         });

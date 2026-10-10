@@ -13,7 +13,7 @@ const { analyzeResumeForProfile } = require('../utils/resumeVerifier');
 const { rateProfile } = require('../utils/profileRating');
 const PortfolioItem = require('../models/PortfolioItem');
 const Post = require('../models/Post');
-const { availabilityOptionsFor, PROFICIENCY, EMPLOYMENT_TYPES, SOCIAL_PLATFORMS, yearsOfExperience } = require('../utils/profileOptions');
+const { availabilityOptionsFor, PROFICIENCY, EMPLOYMENT_TYPES, SOCIAL_PLATFORMS, socialLinkError, yearsOfExperience } = require('../utils/profileOptions');
 const Listing = require('../models/Listing');
 const Job = require('../models/Job');
 const { isBlockedBetween } = require('../utils/userRelations');
@@ -152,6 +152,7 @@ const meResponse = (user) => ({
       pronouns: user.pronouns || '',
       skills: user.skills,
       specialization: user.specialization || [],
+      activeProjects: user.activeProjects || [],
       projectTypeFocus: user.projectTypeFocus || [],
       markets: user.markets || [],
       experience: user.experience,
@@ -260,7 +261,7 @@ function activeProjects(items) {
   return [ongoing && `${ongoing} ongoing`, pre && `${pre} in pre-launch`].filter(Boolean).join(', ');
 }
 
-const PUBLIC_SELECT = 'name username profilePic coverPhoto bio pronouns headline contact socialLinks role careerStage location industries skills specialization projectTypeFocus markets experience education languages availability business associatedProfessionals connections followers following badges createdAt settings accountStatus blockedUsers profileViews';
+const PUBLIC_SELECT = 'name username profilePic coverPhoto bio pronouns headline contact socialLinks role careerStage location industries skills specialization projectTypeFocus markets activeProjects experience education languages availability business associatedProfessionals connections followers following badges createdAt settings accountStatus blockedUsers profileViews';
 
 /**
  * Everything a profile page shows, for a signed-in viewer (viewerId) or an
@@ -343,7 +344,8 @@ async function buildProfile(username, viewerId, { visitor = '', countView = true
       specialization: user.specialization || [],
       projectTypeFocus: user.projectTypeFocus || [],
       markets: user.markets || [],
-      activeProjects: activeProjects(items),
+      // What they listed themselves, otherwise counted from portfolio statuses
+      activeProjects: (user.activeProjects || []).length ? user.activeProjects.join(', ') : activeProjects(items),
       experience: await withPages(user.experience),
       education: user.education || [],
       careerStage: user.careerStage || '',
@@ -480,6 +482,8 @@ router.get('/activity', auth, async (req, res) => {
 // Suggests what other members already use (so spellings stay consistent),
 // topped up with common values.
 const COMMON = {
+  specialization: ['Sustainable Design', 'Residential Architecture', 'Commercial Architecture', 'Interior Design', 'Urban Design', 'Landscape Architecture', 'Hospitality Design', 'Healthcare Design', 'Restoration & Conservation', 'Parametric Design', 'BIM Coordination', 'Façade Design', 'Workplace Design', 'Retail Design', 'Master Planning', 'Lighting Design', 'Furniture Design', 'Project Management', 'Structural Design', 'Real Estate Development'],
+  projectTypeFocus: ['Residential', 'High-Rise Residential', 'Villas', 'Mixed-Use', 'Commercial Offices', 'Retail', 'Hospitality', 'Healthcare', 'Education', 'Institutional', 'Industrial', 'Infrastructure', 'Interiors', 'Affordable Housing', 'Township', 'Landscape', 'Adaptive Reuse', 'Religious'],
   school: ['School of Planning and Architecture, Delhi', 'School of Planning and Architecture, Bhopal', 'School of Planning and Architecture, Vijayawada', 'CEPT University, Ahmedabad', 'Sir J.J. College of Architecture, Mumbai', 'IIT Kharagpur', 'IIT Roorkee', 'IIT Bombay', 'IIT Delhi', 'IIT Madras', 'IIT Kanpur', 'IIT Guwahati', 'NIT Trichy', 'NIT Calicut', 'NIT Patna', 'NIT Raipur', 'NIT Hamirpur', 'NIT Jaipur (MNIT)', 'Visvesvaraya NIT, Nagpur', 'Jamia Millia Islamia, New Delhi', 'Chandigarh College of Architecture', 'Rizvi College of Architecture, Mumbai', 'Kamla Raheja Vidyanidhi Institute for Architecture, Mumbai', 'Academy of Architecture, Mumbai', 'L.S. Raheja School of Architecture, Mumbai', 'Bharati Vidyapeeth College of Architecture, Pune', 'Dr. D.Y. Patil College of Architecture, Pune', 'BNCA (Dr. Bhanuben Nanavati College of Architecture), Pune', 'Sinhgad College of Architecture, Pune', 'MIT School of Architecture, Pune', 'Manipal School of Architecture and Planning', 'RV College of Architecture, Bengaluru', 'BMS College of Architecture, Bengaluru', 'MS Ramaiah Institute of Technology, Bengaluru', 'Anna University, Chennai', 'SRM Institute of Science and Technology', 'Sushant University, Gurugram', 'Amity School of Architecture and Planning', 'Lovely Professional University', 'Chitkara University', 'Indian Institute of Engineering Science and Technology, Shibpur', 'Jadavpur University, Kolkata', 'Aligarh Muslim University', 'Delhi Technological University', 'Guru Gobind Singh Indraprastha University', 'Sushant School of Art and Architecture', 'Vastu Kala Academy, New Delhi', 'Apeejay Institute of Technology, School of Architecture', 'Gateway College of Architecture and Design, Sonipat', 'National Institute of Design, Ahmedabad', 'NIFT Delhi', 'Pearl Academy', 'Srishti Manipal Institute of Art, Design and Technology', 'MIT Institute of Design, Pune', 'Symbiosis Institute of Design, Pune', 'JNAFAU, Hyderabad', 'Osmania University, Hyderabad', 'Kerala University (College of Engineering, Trivandrum)', 'Thiagarajar College of Engineering, Madurai', 'Government College of Architecture, Lucknow', 'Faculty of Architecture, AKTU, Lucknow', 'Rachana Sansad Academy of Architecture, Mumbai', 'Pillai College of Architecture, Navi Mumbai', 'Vivekanand Education Society’s College of Architecture, Mumbai', 'Smt. Manoramabai Mundle College of Architecture, Nagpur', 'Maulana Azad NIT, Bhopal', 'Birla Institute of Technology, Mesra', 'Indian Institute of Technology (BHU), Varanasi', 'Goa College of Architecture', 'Nirma University, Ahmedabad', 'Anant National University, Ahmedabad', 'Faculty of Architecture, MSU Baroda', 'Sarvajanik College of Engineering and Technology, Surat', 'Mumbai University', 'Pune University (SPPU)', 'Delhi University', 'Christ University, Bengaluru'],
   degree: ['B.Arch', 'M.Arch', 'B.Des', 'M.Des', 'B.Tech', 'M.Tech', 'B.E.', 'Diploma', 'B.Planning', 'M.Planning', 'MBA', 'B.Sc', 'M.Sc', 'BBA', 'Ph.D'],
   field: ['Architecture', 'Interior Design', 'Civil Engineering', 'Urban Planning', 'Landscape Architecture', 'Construction Management', 'Real Estate', 'Structural Engineering', 'Product Design', 'Building Services'],
@@ -487,7 +491,7 @@ const COMMON = {
   language: ['English', 'Hindi', 'Bengali', 'Marathi', 'Telugu', 'Tamil', 'Gujarati', 'Urdu', 'Kannada', 'Odia', 'Malayalam', 'Punjabi', 'Assamese', 'Konkani', 'Sanskrit', 'Arabic', 'French', 'German', 'Spanish', 'Japanese', 'Mandarin'],
   skill: ['AutoCAD', 'Revit', 'SketchUp', 'Rhino', 'Grasshopper', 'Lumion', 'V-Ray', 'Enscape', '3ds Max', 'Photoshop', 'InDesign', 'Illustrator', 'BIM', 'ArchiCAD', 'STAAD Pro', 'ETABS', 'Primavera', 'MS Project', 'Estimation', 'Site Supervision', 'Space Planning', 'Working Drawings', 'Sustainable Design', 'Sales', 'Negotiation']
 };
-const SUGGEST_PATH = { school: 'education.school', degree: 'education.degree', field: 'education.field', company: 'experience.company', title: 'experience.title', language: 'languages.name', skill: 'skills' };
+const SUGGEST_PATH = { specialization: 'specialization', projectTypeFocus: 'projectTypeFocus', school: 'education.school', degree: 'education.degree', field: 'education.field', company: 'experience.company', title: 'experience.title', language: 'languages.name', skill: 'skills' };
 
 router.get('/suggest', auth, async (req, res) => {
   try {
@@ -497,7 +501,7 @@ router.get('/suggest', auth, async (req, res) => {
     const q = String(req.query.q || '').trim().slice(0, 60);
     const re = q ? new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') : null;
     const rows = await User.aggregate([
-      ...(path.includes('.') ? [{ $unwind: `$${path.split('.')[0]}` }] : [{ $unwind: '$skills' }]),
+      { $unwind: `$${path.split('.')[0]}` },
       { $project: { v: `$${path}` } },
       { $match: { v: re ? re : { $type: 'string', $ne: '' } } },
       { $group: { _id: { $toLower: { $trim: { input: '$v' } } }, v: { $first: { $trim: { input: '$v' } } }, n: { $sum: 1 } } },
@@ -549,7 +553,7 @@ router.get('/:userId', auth, async (req, res) => {
 
 router.put('/update', auth, async (req, res) => {
   try {
-    const { name, bio, pronouns, profilePic, coverPhoto, skills, experience, education, location, intent, industries, specialization, projectTypeFocus, markets, analyticsPublic, galleryPublic, activityPublic, readReceipts, jobsView, publicProfile, careerStage, headline, contact, socialLinks, languages, availability, business, associatedProfessionals } = req.body;
+    const { name, bio, pronouns, profilePic, coverPhoto, skills, experience, education, location, intent, industries, specialization, projectTypeFocus, markets, activeProjects, analyticsPublic, galleryPublic, activityPublic, readReceipts, jobsView, publicProfile, careerStage, headline, contact, socialLinks, languages, availability, business, associatedProfessionals } = req.body;
     const VALID_INTENT = ['learn', 'network', 'hire', 'get_hired'];
     const VALID_INDUSTRY = ['architecture', 'interiors', 'construction', 'real_estate', 'related'];
     const asTagList = (arr) => arr.map((s) => String(s).trim()).filter(Boolean).slice(0, 20);
@@ -585,11 +589,18 @@ router.put('/update', auth, async (req, res) => {
       }
       updateData.contact = cleanContact(contact);
     }
-    if (Array.isArray(socialLinks)) updateData.socialLinks = cleanSocialLinks(socialLinks);
+    if (Array.isArray(socialLinks)) {
+      for (const l of socialLinks.slice(0, 12)) {
+        const problem = SOCIAL_PLATFORMS.includes(l?.platform) ? socialLinkError(l.platform, l.url) : 'Choose where this link goes';
+        if (problem) return res.status(400).json({ error: `Social link: ${problem}`, field: 'socialLinks' });
+      }
+      updateData.socialLinks = cleanSocialLinks(socialLinks);
+    }
     if (business && typeof business === 'object') updateData.business = cleanBusiness(business);
     if (Array.isArray(intent)) updateData.intent = intent.filter((i) => VALID_INTENT.includes(i));
     if (Array.isArray(industries)) updateData.industries = industries.filter((i) => VALID_INDUSTRY.includes(i));
     if (Array.isArray(specialization)) updateData.specialization = asTagList(specialization);
+    if (Array.isArray(activeProjects)) updateData.activeProjects = asTagList(activeProjects);
     if (Array.isArray(projectTypeFocus)) updateData.projectTypeFocus = asTagList(projectTypeFocus);
     if (Array.isArray(markets)) updateData.markets = asTagList(markets);
     const VALID_STAGE = ['studying', 'career_prep', 'fresher', 'intern', 'employed', 'freelance', 'business_owner', ''];

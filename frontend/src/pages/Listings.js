@@ -25,7 +25,7 @@ const TYPES = [
 const STATUSES = [
   { value: 'active', label: 'Active', chip: 'bg-green-100 text-green-700' },
   { value: 'pre_launch', label: 'Pre-launch', chip: 'bg-amber-50 text-amber-700' },
-  { value: 'under_offer', label: 'Under offer', chip: 'bg-yellow-100 text-yellow-800' },
+  { value: 'under_offer', label: 'Under offer', chip: 'bg-[#EEF2F6] text-[#16324F]' },
   { value: 'sold', label: 'Sold', chip: 'bg-gray-200 text-gray-700' },
   { value: 'rented', label: 'Rented', chip: 'bg-gray-200 text-gray-700' },
   { value: 'draft', label: 'Draft', chip: 'bg-blue-50 text-blue-700' }
@@ -35,7 +35,7 @@ const AREA_UNITS = [{ value: 'sqft', label: 'sq ft' }, { value: 'sqm', label: 's
 const AMENITIES = ['Parking', 'Lift', 'Power backup', 'Security', 'Gym', 'Swimming pool', 'Garden', 'Furnished', 'Semi-furnished', 'Gated community', 'Clubhouse', 'Vastu compliant'];
 
 const label = (list, v) => list.find((x) => x.value === v)?.label || '';
-const selectClass = 'w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400';
+const selectClass = 'w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#245EA8]';
 
 // ₹1.2 Cr, ₹45 L, ₹25,000
 const formatPrice = (n) => {
@@ -125,7 +125,7 @@ const Listings = () => {
   const showRooms = form && !['plot', 'warehouse', 'retail'].includes(form.propertyType);
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6]" data-testid="listings-page">
+    <div className="min-h-screen bg-[#F5F7FA]" data-testid="listings-page">
       <Sidebar />
       <TopBar />
       <div className="lg:ml-64 mt-16 p-4 sm:p-6 lg:p-8">
@@ -135,7 +135,7 @@ const Listings = () => {
               <h1 className="text-2xl sm:text-3xl font-bold text-black">Listings</h1>
               <p className="text-gray-600 mt-1">Properties you're selling or renting out.</p>
             </div>
-            <Button onClick={() => setDraft({ ...EMPTY })} className="bg-yellow-400 hover:bg-yellow-500 text-black" data-testid="listing-add">
+            <Button onClick={() => setDraft({ ...EMPTY })} className="bg-[#16324F] hover:bg-[#0F2439] text-white" data-testid="listing-add">
               <FiPlus className="mr-1" />Add listing
             </Button>
           </div>
@@ -148,7 +148,7 @@ const Listings = () => {
             <div className="flex gap-1.5 overflow-x-auto">
               {[{ value: '', label: 'All' }, ...STATUSES].map((s) => (
                 <button key={s.value} onClick={() => setStatus(s.value)}
-                  className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${status === s.value ? 'bg-black text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                  className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${status === s.value ? 'bg-[#16324F] text-white' : 'bg-white border border-[#DCE3EB] text-[#526174] hover:border-gray-300'}`}>
                   {s.label}
                 </button>
               ))}
@@ -291,7 +291,7 @@ const Listings = () => {
                     const on = form.amenities.includes(a);
                     return (
                       <button key={a} type="button" onClick={() => set({ amenities: on ? form.amenities.filter((x) => x !== a) : [...form.amenities, a] })}
-                        className={`rounded-full border px-3 py-1 text-xs font-medium transition ${on ? 'border-black bg-black text-white' : 'border-gray-200 text-gray-700 hover:border-gray-300'}`}>
+                        className={`rounded-full border px-3 py-1 text-xs font-medium transition ${on ? 'border-[#16324F] bg-[#16324F] text-white' : 'border-gray-200 text-gray-700 hover:border-gray-300'}`}>
                         {a}
                       </button>
                     );
@@ -301,7 +301,7 @@ const Listings = () => {
               <div className="space-y-1"><Label htmlFor="l-desc">Description</Label><Textarea id="l-desc" rows={4} value={form.description} onChange={(e) => set({ description: e.target.value })} spellCheck placeholder="Floor, facing, nearby schools and transport, possession date..." /></div>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setDraft(null)}>Cancel</Button>
-                <Button onClick={save} disabled={saving || uploading} className="bg-black text-white hover:bg-gray-800" data-testid="listing-save">{saving ? 'Saving...' : 'Save listing'}</Button>
+                <Button onClick={save} disabled={saving || uploading} className="bg-[#16324F] text-white hover:bg-[#0F2439]" data-testid="listing-save">{saving ? 'Saving...' : 'Save listing'}</Button>
               </div>
             </div>
           )}

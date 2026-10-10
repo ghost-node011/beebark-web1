@@ -177,7 +177,7 @@ const PublicPortfolio = () => {
         showContact={showContact}
         onContact={() => contactRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
       />
-      <div ref={captureRef}>
+      <div ref={captureRef} className="pf-template">
         {data.items.length === 0 ? (
           <p className="text-gray-500 px-4 py-6 sm:px-6">This portfolio is empty for now.</p>
         ) : (

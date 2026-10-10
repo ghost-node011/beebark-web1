@@ -70,6 +70,8 @@ const userSchema = new mongoose.Schema({
   specialization: [{ type: String }],
   projectTypeFocus: [{ type: String }],
   markets: [{ type: String }],
+  // Projects the person is working on now (shown under Portfolio Identity)
+  activeProjects: [{ type: String }],
   pronouns: { type: String, default: '', maxlength: 30 },
   bio: {
     type: String,

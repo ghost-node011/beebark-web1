@@ -39,6 +39,7 @@ import PendingApplications from '../components/jobs/PendingApplications';
 import SwipeDeck from '../components/jobs/SwipeDeck';
 import { SkeletonRows } from '../components/Skeletons';
 import { checkSalary } from '../utils/validation';
+import { AutocompleteInput, LocationInput } from '../components/AutocompleteInput';
 import { usePages } from '../context/PagesContext';
 import CompanyLogo from '../components/company/CompanyLogo';
 import ScreeningQuestionsEditor, { questionsError, questionsPayload } from '../components/jobs/ScreeningQuestionsEditor';
@@ -109,8 +110,8 @@ const JobForm = ({ initial, submitLabel, onSubmit, pages = [], defaultPage = nul
   const [showSalaryError, setShowSalaryError] = useState(false);
   const salaryError = showSalaryError ? checkSalary(form.salary) : '';
 
-  const addSkill = () => {
-    const skill = skillInput.trim().replace(/,$/, '').slice(0, 40);
+  const addSkill = (picked) => {
+    const skill = String(picked ?? skillInput).trim().replace(/,$/, '').slice(0, 40);
     if (skill && form.skills.length < 20 && !form.skills.some((s) => s.toLowerCase() === skill.toLowerCase())) {
       set('skills')([...form.skills, skill]);
     }
@@ -143,7 +144,7 @@ const JobForm = ({ initial, submitLabel, onSubmit, pages = [], defaultPage = nul
               return (
                 <button key={p._id || 'me'} type="button" role="radio" aria-checked={active}
                   onClick={() => setForm((f) => ({ ...f, companyPage: p._id, company: p._id ? p.name : (f.companyPage ? '' : f.company) }))}
-                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm ${active ? 'border-[#2b2622] bg-[#2b2622] text-white' : 'border-[#e3ddd5] bg-white text-[#2b2622] hover:border-[#cfc6bb]'}`}
+                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm ${active ? 'border-[#2b2622] bg-[#16324F] text-white' : 'border-[#DCE3EB] bg-white text-[#16324F] hover:border-[#B9C6D5]'}`}
                   data-testid={`job-post-as-${p._id ? p.slug : 'me'}`}>
                   {p._id ? <CompanyLogo page={p} className="w-5 h-5" rounded="rounded" text="text-[8px]" /> : null}{p.name}
                 </button>
@@ -159,12 +160,12 @@ const JobForm = ({ initial, submitLabel, onSubmit, pages = [], defaultPage = nul
       <div>
         <Label>Company</Label>
         <Input value={postAsPage ? postAsPage.name : form.company} onChange={(e) => set('company')(e.target.value)} maxLength={150} required disabled={!!postAsPage} data-testid="job-form-company" />
-        {postAsPage && <p className="mt-1 text-xs text-[#7a7067]">The job shows {postAsPage.name}'s page and logo.</p>}
+        {postAsPage && <p className="mt-1 text-xs text-[#526174]">The job shows {postAsPage.name}'s page and logo.</p>}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <Label>Location</Label>
-          <Input value={form.location} onChange={(e) => set('location')(e.target.value)} maxLength={150} data-testid="job-form-location" />
+          <LocationInput value={form.location} onChange={set('location')} maxLength={150} placeholder="Search a city, e.g. Pune" data-testid="job-form-location" />
         </div>
         <div>
           <Label>Salary</Label>
@@ -191,14 +192,17 @@ const JobForm = ({ initial, submitLabel, onSubmit, pages = [], defaultPage = nul
         <div>
           <Label>Skills</Label>
           <div className="flex gap-2">
-            <Input
+            <AutocompleteInput
+              field="skill"
+              wrapperClassName="flex-1"
               value={skillInput}
-              onChange={(e) => setSkillInput(e.target.value)}
+              onChange={setSkillInput}
+              onPick={(v) => addSkill(v)}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addSkill(); } }}
-              placeholder="e.g. Revit, then Enter"
+              placeholder="Search skills, e.g. Revit"
               data-testid="job-form-skill-input"
             />
-            <Button type="button" variant="outline" onClick={addSkill} aria-label="Add skill"><FiPlus /></Button>
+            <Button type="button" variant="outline" onClick={() => addSkill()} aria-label="Add skill"><FiPlus /></Button>
           </div>
         </div>
         <div>
@@ -228,7 +232,7 @@ const JobForm = ({ initial, submitLabel, onSubmit, pages = [], defaultPage = nul
         skills={form.skills}
         location={form.location}
       />
-      <Button type="submit" disabled={saving} className="w-full bg-black text-white" data-testid="job-form-submit">
+      <Button type="submit" disabled={saving} className="w-full bg-[#16324F] text-white" data-testid="job-form-submit">
         {saving ? 'Saving...' : submitLabel}
       </Button>
     </form>
@@ -253,26 +257,26 @@ const PostedJobItem = ({ job, selected, onSelect, onEdit, onToggleStatus, onDele
       onClick={() => onSelect(job)}
       onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onSelect(job); } }}
       className={`relative rounded-2xl border bg-white p-3 sm:p-4 cursor-pointer transition outline-none focus-visible:ring-2 focus-visible:ring-[#F2B21B]
-        ${selected ? 'border-[#F2B21B] ring-1 ring-[#F2B21B] bg-[#FFFBF0]' : 'border-[#ebe6df] hover:border-[#d9d0c4]'} ${isClosed(job) ? 'opacity-80' : ''}`}
+        ${selected ? 'border-[#F2B21B] ring-1 ring-[#F2B21B] bg-[#FFFBF0]' : 'border-[#DCE3EB] hover:border-[#B9C6D5]'} ${isClosed(job) ? 'opacity-80' : ''}`}
       data-testid={`posted-job-${job._id}`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="font-semibold text-[#2b2622] break-words">{job.title}</p>
-          <p className="text-sm text-[#7a7067] truncate">{[job.company, job.location].filter(Boolean).join(' · ')}</p>
-          {chips.length > 0 && <p className="text-xs text-[#7a7067] mt-0.5">{chips.join(' · ')}</p>}
+          <p className="font-semibold text-[#16324F] break-words">{job.title}</p>
+          <p className="text-sm text-[#526174] truncate">{[job.company, job.location].filter(Boolean).join(' · ')}</p>
+          {chips.length > 0 && <p className="text-xs text-[#526174] mt-0.5">{chips.join(' · ')}</p>}
         </div>
         <div className="flex items-center gap-1 shrink-0">
           <JobCardActions job={job} isMine onReport={() => {}} />
           <span className={`text-xs rounded-full px-2 py-0.5 ${isClosed(job) ? 'bg-gray-100 text-gray-600' : 'bg-green-50 text-green-700'}`}>{isClosed(job) ? 'Closed' : 'Open'}</span>
         </div>
       </div>
-      <p className="text-xs text-[#7a7067] mt-1">
+      <p className="text-xs text-[#526174] mt-1">
         {job.createdAt ? `Posted ${shortDate(job.createdAt)}` : ''}
         {job.questions?.length ? `${job.createdAt ? ' · ' : ''}${job.questions.length} screening question${job.questions.length === 1 ? '' : 's'}` : ''}
       </p>
       <div className="flex flex-wrap gap-2 mt-3" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-        <Button size="sm" onClick={() => onApplicants(job)} className="bg-[#2b2622] hover:bg-black text-white h-8" data-testid={`applicants-${job._id}`}>
+        <Button size="sm" onClick={() => onApplicants(job)} className="bg-[#16324F] hover:bg-[#0F2439] text-white h-8" data-testid={`applicants-${job._id}`}>
           <FiUsers className="mr-1" />Applicants ({count})
         </Button>
         <Button variant="outline" size="sm" className="h-8" onClick={() => onEdit(job)} data-testid={`job-edit-${job._id}`}>
@@ -284,7 +288,7 @@ const PostedJobItem = ({ job, selected, onSelect, onEdit, onToggleStatus, onDele
         <Button variant="outline" size="sm" onClick={() => onDelete(job)} className="h-8 text-red-600 hover:text-red-700" data-testid={`job-delete-${job._id}`}>
           <FiTrash2 className="mr-1" />Delete
         </Button>
-        <Button size="sm" onClick={() => onMatches(job)} className="h-8 bg-yellow-400 hover:bg-yellow-500 text-black" data-testid={`job-matches-${job._id}`}>
+        <Button size="sm" onClick={() => onMatches(job)} className="h-8 bg-[#16324F] hover:bg-[#0F2439] text-white" data-testid={`job-matches-${job._id}`}>
           <FiStar className="mr-1" />Top 10 matches
         </Button>
       </div>
@@ -669,7 +673,7 @@ const Jobs = () => {
       aria-selected={tab === value}
       onClick={() => setTab(value)}
       className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition whitespace-nowrap
-        ${tab === value ? 'bg-[#2b2622] text-white' : 'bg-white border border-[#ebe6df] text-[#2b2622] hover:border-[#d9d0c4]'}`}
+        ${tab === value ? 'bg-[#16324F] text-white' : 'bg-white border border-[#DCE3EB] text-[#16324F] hover:border-[#B9C6D5]'}`}
       {...extra}
     >
       {label}
@@ -677,7 +681,7 @@ const Jobs = () => {
   );
 
   const countPill = (n, active) => (
-    <span className={`min-w-[1.25rem] h-5 px-1.5 rounded-full text-[11px] font-bold inline-flex items-center justify-center ${active ? 'bg-[#F2B21B] text-[#2b2622]' : 'bg-[#F2EEE8] text-[#7a7067]'}`}>{n}</span>
+    <span className={`min-w-[1.25rem] h-5 px-1.5 rounded-full text-[11px] font-bold inline-flex items-center justify-center ${active ? 'bg-[#F2B21B] text-[#16324F]' : 'bg-[#F2EEE8] text-[#526174]'}`}>{n}</span>
   );
 
   const emptyList = {
@@ -689,20 +693,20 @@ const Jobs = () => {
   const filteredPending = pending.filter((p) => matches(p.job, search.trim()));
 
   return (
-    <div className="min-h-screen bg-[#F7F5F2] pf-page" style={{ overflowX: 'clip' }}>
+    <div className="min-h-screen bg-[#F5F7FA] pf-page" style={{ overflowX: 'clip' }}>
       <Sidebar />
       <TopBar />
       <div className="lg:ml-64 mt-16 p-4 sm:p-6 lg:p-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 mb-6">
           <div className="min-w-0">
-            <h1 className="pf-serif text-3xl sm:text-4xl text-[#2b2622]">{copy.jobsLabel}</h1>
-            <p className="text-[#7a7067] mt-1">{copy.jobsSubtitle}</p>
+            <h1 className="pf-serif text-3xl sm:text-4xl text-[#16324F]">{copy.jobsLabel}</h1>
+            <p className="text-[#526174] mt-1">{copy.jobsSubtitle}</p>
           </div>
           {canPost && (
             <Dialog open={showPostDialog} onOpenChange={setShowPostDialog}>
               <DialogTrigger asChild>
-                <Button className="bg-[#2b2622] hover:bg-black text-white rounded-full self-start sm:self-auto" data-testid="post-job-button">
+                <Button className="bg-[#16324F] hover:bg-[#0F2439] text-white rounded-full self-start sm:self-auto" data-testid="post-job-button">
                   <FiPlus className="mr-2" />Post a job
                 </Button>
               </DialogTrigger>
@@ -718,19 +722,19 @@ const Jobs = () => {
 
         {/* Résumé + auto-apply */}
         {!isRecruiter && (
-          <div className="rounded-2xl border border-[#ebe6df] bg-white p-4 sm:p-5 mb-6" data-testid="auto-apply-card">
+          <div className="rounded-2xl border border-[#DCE3EB] bg-white p-4 sm:p-5 mb-6" data-testid="auto-apply-card">
             <div className="flex flex-col lg:flex-row lg:items-center gap-4">
               <div className="flex items-start gap-3 flex-1 min-w-0">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${autoApplyEnabled ? 'bg-[#F2B21B] text-[#2b2622]' : 'bg-[#F2EEE8] text-[#7a7067]'}`}>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${autoApplyEnabled ? 'bg-[#F2B21B] text-[#16324F]' : 'bg-[#F2EEE8] text-[#526174]'}`}>
                   <FiZap className="w-5 h-5" />
                 </div>
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-3" data-testid="auto-apply-toggle">
-                    <p className="font-semibold text-[#2b2622]">Auto-apply</p>
+                    <p className="font-semibold text-[#16324F]">Auto-apply</p>
                     <Switch checked={autoApplyEnabled} onCheckedChange={handleToggleAutoApply} disabled={savingPreference} aria-label="Auto-apply to strong matches" />
-                    <span className="text-xs text-[#7a7067]">{autoApplyEnabled ? 'On' : 'Off'}</span>
+                    <span className="text-xs text-[#526174]">{autoApplyEnabled ? 'On' : 'Off'}</span>
                   </div>
-                  <p className="text-sm text-[#7a7067] mt-1">
+                  <p className="text-sm text-[#526174] mt-1">
                     Auto-apply: our AI applies to strong matches for you using your profile and saved answers. If a job asks something only you can answer, we'll email you and keep it under Needs your answers.
                   </p>
                 </div>
@@ -741,7 +745,7 @@ const Jobs = () => {
                 </Button>
                 <label className="cursor-pointer">
                   <input type="file" accept=".pdf,.docx" onChange={handleUploadResume} className="hidden" data-testid="resume-upload-input" />
-                  <span className="inline-flex items-center gap-2 rounded-full bg-[#F2B21B] hover:bg-[#e0a312] text-[#2b2622] font-semibold px-4 py-1.5 text-sm transition">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-[#16324F] hover:bg-[#e0a312] text-white font-semibold px-4 py-1.5 text-sm transition">
                     <FiUpload className="w-4 h-4" />{uploadingResume ? 'Uploading...' : resumeReview ? 'Update résumé' : 'Upload résumé'}
                   </span>
                 </label>
@@ -753,10 +757,10 @@ const Jobs = () => {
                 <button type="button" onClick={() => setShowReview((v) => !v)} className="w-full flex items-center gap-3 text-left" aria-expanded={showReview}>
                   <span className={`${getMatchColor(resumeReview.score)} w-11 h-11 rounded-full flex items-center justify-center text-white font-bold shrink-0`}>{resumeReview.score}</span>
                   <span className="flex-1 min-w-0">
-                    <span className="block font-semibold text-[#2b2622]">Your résumé score</span>
-                    <span className="block text-xs text-[#7a7067]">AI-reviewed · {showReview ? 'hide' : 'see'} the review</span>
+                    <span className="block font-semibold text-[#16324F]">Your résumé score</span>
+                    <span className="block text-xs text-[#526174]">AI-reviewed · {showReview ? 'hide' : 'see'} the review</span>
                   </span>
-                  <FiChevronDown className={`text-[#7a7067] transition ${showReview ? 'rotate-180' : ''}`} />
+                  <FiChevronDown className={`text-[#526174] transition ${showReview ? 'rotate-180' : ''}`} />
                 </button>
                 {showReview && (
                   <div className="mt-4 space-y-4">
@@ -764,7 +768,7 @@ const Jobs = () => {
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         {Object.entries(resumeReview.breakdown).map(([key, val]) => (
                           <div key={key}>
-                            <p className="text-xs text-[#7a7067] capitalize mb-1">{key}</p>
+                            <p className="text-xs text-[#526174] capitalize mb-1">{key}</p>
                             <Progress value={val} className="h-2" />
                           </div>
                         ))}
@@ -773,20 +777,20 @@ const Jobs = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {resumeReview.strengths?.length > 0 && (
                         <div>
-                          <p className="text-sm font-semibold text-[#2b2622] mb-2">Strengths</p>
+                          <p className="text-sm font-semibold text-[#16324F] mb-2">Strengths</p>
                           <ul className="space-y-1">
                             {resumeReview.strengths.map((s, i) => (
-                              <li key={i} className="flex items-start gap-2 text-sm text-[#2b2622]"><FiCheckCircle className="text-green-500 mt-0.5 shrink-0" />{s}</li>
+                              <li key={i} className="flex items-start gap-2 text-sm text-[#16324F]"><FiCheckCircle className="text-green-500 mt-0.5 shrink-0" />{s}</li>
                             ))}
                           </ul>
                         </div>
                       )}
                       {resumeReview.improvements?.length > 0 && (
                         <div>
-                          <p className="text-sm font-semibold text-[#2b2622] mb-2">How to improve</p>
+                          <p className="text-sm font-semibold text-[#16324F] mb-2">How to improve</p>
                           <ul className="space-y-1">
                             {resumeReview.improvements.map((s, i) => (
-                              <li key={i} className="flex items-start gap-2 text-sm text-[#2b2622]"><FiAward className="text-yellow-500 mt-0.5 shrink-0" />{s}</li>
+                              <li key={i} className="flex items-start gap-2 text-sm text-[#16324F]"><FiAward className="text-yellow-500 mt-0.5 shrink-0" />{s}</li>
                             ))}
                           </ul>
                         </div>
@@ -794,9 +798,9 @@ const Jobs = () => {
                     </div>
                     {resumeReview.suggestedRoles?.length > 0 && (
                       <div>
-                        <p className="text-xs text-[#7a7067] mb-2">Well-suited roles:</p>
+                        <p className="text-xs text-[#526174] mb-2">Well-suited roles:</p>
                         <div className="flex flex-wrap gap-2">
-                          {resumeReview.suggestedRoles.map((role, i) => <Badge key={i} className="bg-[#F2EEE8] text-[#2b2622] hover:bg-[#F2EEE8]">{role}</Badge>)}
+                          {resumeReview.suggestedRoles.map((role, i) => <Badge key={i} className="bg-[#F2EEE8] text-[#16324F] hover:bg-[#F2EEE8]">{role}</Badge>)}
                         </div>
                       </div>
                     )}
@@ -818,12 +822,12 @@ const Jobs = () => {
           </div>
           {(tab !== 'foryou' || forYouList) && (
             <div className="relative lg:w-72">
-              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7a7067]" />
+              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[#526174]" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search title, company, location"
-                className="pl-9 rounded-full bg-white border-[#ebe6df]"
+                className="pl-9 rounded-full bg-white border-[#DCE3EB]"
                 autoComplete="off"
                 data-testid="jobs-search"
               />
@@ -850,7 +854,7 @@ const Jobs = () => {
                     />
                   ))}
                   {!recLoading && forYouJobs.length === 0 && (
-                    <div className="rounded-2xl border border-[#ebe6df] bg-white text-center py-12 px-4 text-[#7a7067]">
+                    <div className="rounded-2xl border border-[#DCE3EB] bg-white text-center py-12 px-4 text-[#526174]">
                       {search.trim() ? 'No matching jobs' : 'No recommendations yet'}
                     </div>
                   )}
@@ -870,7 +874,7 @@ const Jobs = () => {
                 paused={!!deepLinkId || !!applyJob}
               />
             )}
-            <p className="text-center text-xs text-[#7a7067] mt-3">
+            <p className="text-center text-xs text-[#526174] mt-3">
               {forYouList ? 'Prefer swiping?' : 'Prefer a list?'}{' '}
               <button type="button" onClick={toggleJobsView} className="font-medium text-black underline underline-offset-2" data-testid="jobs-view-toggle">
                 {forYouList ? 'Switch to swipe view' : 'Switch to list view'}
@@ -878,7 +882,7 @@ const Jobs = () => {
               <span className="hidden sm:inline"> · also in Settings</span>
             </p>
             {!recLoading && recommendedJobs.length === 0 && !resumeReview && !isRecruiter && (
-              <p className="text-center text-sm text-[#7a7067] mt-4">Tip: upload your résumé above to get AI-matched jobs here.</p>
+              <p className="text-center text-sm text-[#526174] mt-4">Tip: upload your résumé above to get AI-matched jobs here.</p>
             )}
           </>
         )}
@@ -898,7 +902,7 @@ const Jobs = () => {
               data-testid="jobs-list"
             >
               {listForTab.length > 0 && (
-                <p className="text-xs text-[#7a7067] px-1">{listForTab.length} {listForTab.length === 1 ? 'job' : 'jobs'}</p>
+                <p className="text-xs text-[#526174] px-1">{listForTab.length} {listForTab.length === 1 ? 'job' : 'jobs'}</p>
               )}
               {tab === 'posted' ? listForTab.map((job) => (
                 <PostedJobItem
@@ -928,13 +932,13 @@ const Jobs = () => {
                       {job.applicationSource === 'auto' && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 text-purple-700 px-2 py-0.5"><FiZap className="w-3 h-3" />Auto-applied</span>
                       )}
-                      {job.applicationStatus && <span className="rounded-full bg-[#F2EEE8] text-[#2b2622] px-2 py-0.5 capitalize">{job.applicationStatus}</span>}
+                      {job.applicationStatus && <span className="rounded-full bg-[#F2EEE8] text-[#16324F] px-2 py-0.5 capitalize">{job.applicationStatus}</span>}
                     </>
                   ) : null}
                 />
               ))}
               {listForTab.length === 0 && (
-                <div className="rounded-2xl border border-[#ebe6df] bg-white text-center py-12 px-4 text-[#7a7067]">{emptyList}</div>
+                <div className="rounded-2xl border border-[#DCE3EB] bg-white text-center py-12 px-4 text-[#526174]">{emptyList}</div>
               )}
             </div>
 
@@ -942,7 +946,7 @@ const Jobs = () => {
               {(detailJob || deepLinkId || listForTab.length > 0) ? (
                 <JobDetail {...detailProps} onBack={closeJob} />
               ) : (
-                <div className="rounded-2xl border border-[#ebe6df] bg-white p-8 text-center text-[#7a7067]">Nothing to show yet</div>
+                <div className="rounded-2xl border border-[#DCE3EB] bg-white p-8 text-center text-[#526174]">Nothing to show yet</div>
               )}
             </div>
           </div>
@@ -964,20 +968,20 @@ const Jobs = () => {
               </DialogHeader>
               <div className="space-y-4 mt-4">
                 {matchedCandidates.map((candidate, idx) => (
-                  <Card key={candidate._id} className="border border-[#ebe6df] rounded-2xl">
+                  <Card key={candidate._id} className="border border-[#DCE3EB] rounded-2xl">
                     <CardContent className="pt-4">
                       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center font-bold text-black shrink-0">#{idx + 1}</div>
+                          <div className="w-10 h-10 bg-[#16324F] rounded-full flex items-center justify-center font-bold text-white shrink-0">#{idx + 1}</div>
                           <Avatar className="w-12 h-12 shrink-0">
                             <AvatarImage src={candidate.profilePic} />
                             <AvatarFallback className="bg-gray-300 text-xl">{candidate.name?.charAt(0)}</AvatarFallback>
                           </Avatar>
                           <div className="min-w-0">
-                            <h3 className="font-bold text-[#2b2622] truncate">{candidate.name}</h3>
-                            <p className="text-sm text-[#7a7067] truncate">{candidate.email}</p>
+                            <h3 className="font-bold text-[#16324F] truncate">{candidate.name}</h3>
+                            <p className="text-sm text-[#526174] truncate">{candidate.email}</p>
                             {candidate.resume?.parsedData?.experience?.years && (
-                              <p className="text-xs text-[#7a7067]">{candidate.resume.parsedData.experience.years} years experience</p>
+                              <p className="text-xs text-[#526174]">{candidate.resume.parsedData.experience.years} years experience</p>
                             )}
                           </div>
                         </div>

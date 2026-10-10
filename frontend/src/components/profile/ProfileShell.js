@@ -8,7 +8,7 @@ import { FaCrown } from 'react-icons/fa';
 
 // Page background used by both profile pages — a warm off-white rather than
 // plain slate, to match the reference design's editorial tone.
-export const PAGE_BG = 'bg-[#F7F5F2] pf-page';
+export const PAGE_BG = 'bg-[#F5F7FA] pf-page';
 
 export const PillFilter = ({ options, active, onChange }) => (
   <div className="flex flex-wrap gap-2">
@@ -16,7 +16,7 @@ export const PillFilter = ({ options, active, onChange }) => (
       <button
         key={o}
         onClick={() => onChange(o)}
-        className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${active === o ? 'bg-[#2b2622] text-white' : 'bg-[#f0ece6] text-[#6f655c] hover:bg-[#e8e2da]'}`}
+        className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${active === o ? 'bg-[#16324F] text-white' : 'bg-[#f0ece6] text-[#6f655c] hover:bg-[#e8e2da]'}`}
       >
         {o}
       </button>
@@ -81,13 +81,13 @@ export const ProfileTabs = ({ tabs }) => {
   };
 
   return (
-    <nav className="sticky top-16 z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-white/95 backdrop-blur border-b border-[#ebe6df]" aria-label="Profile sections">
+    <nav className="sticky top-16 z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-white/95 backdrop-blur border-b border-[#DCE3EB]" aria-label="Profile sections">
       <div className="max-w-6xl mx-auto flex gap-2 overflow-x-auto">
         {tabs.map((t) => (
           <button
             key={t.id}
             onClick={() => go(t.id)}
-            className={`relative px-4 sm:px-5 py-4 text-[15px] whitespace-nowrap transition ${active === t.id ? 'text-[#2b2622] font-semibold' : 'pf-muted hover:text-[#2b2622]'}`}
+            className={`relative px-4 sm:px-5 py-4 text-[15px] whitespace-nowrap transition ${active === t.id ? 'text-[#16324F] font-semibold' : 'pf-muted hover:text-[#16324F]'}`}
             aria-current={active === t.id ? 'true' : undefined}
             data-testid={`profile-tab-${t.id}`}
           >
@@ -133,7 +133,7 @@ export const ProfileHero = ({
         className="relative h-56 sm:h-72 lg:h-80"
         style={coverPhoto
           ? { backgroundImage: `url(${coverPhoto})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-          : { background: 'linear-gradient(120deg, #c89a5b 0%, #8a6136 38%, #3b2a1c 75%, #1f1812 100%)' }}
+          : { background: 'linear-gradient(120deg, #2C5A85 0%, #1E4266 40%, #16324F 75%, #0F2439 100%)' }}
       >
         <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(20,15,10,0) 35%, rgba(20,15,10,0.55) 100%)' }} />
         {headerExtra}
@@ -148,11 +148,11 @@ export const ProfileHero = ({
               >
                 <Avatar className="w-28 h-28 sm:w-40 sm:h-40 lg:w-44 lg:h-44 border-[5px] border-white shadow-[0_10px_30px_-10px_rgba(0,0,0,0.45)]">
                   <AvatarImage src={profilePic} className="object-cover" />
-                  <AvatarFallback className="bg-[#F2B21B] text-[#2b2622] text-5xl font-bold pf-serif">{name?.charAt(0)}</AvatarFallback>
+                  <AvatarFallback className="bg-[#16324F] text-white text-5xl font-bold pf-serif">{name?.charAt(0)}</AvatarFallback>
                 </Avatar>
               </button>
               {onPhotoEdit && (
-                <label className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-[#2b2622] text-white border-2 border-white cursor-pointer hover:bg-[#F2B21B] hover:text-black transition" aria-label="Change profile photo">
+                <label className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-[#16324F] text-white border-2 border-white cursor-pointer hover:bg-[#F2B21B] hover:text-black transition" aria-label="Change profile photo">
                   <FiCamera className="w-4 h-4" />
                   <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && onPhotoEdit(e.target.files[0])} />
                 </label>
@@ -181,18 +181,18 @@ export const ProfileHero = ({
             {location ? (
               <span className="inline-flex items-center gap-1.5"><FiMapPin className="w-4 h-4" />{location}</span>
             ) : onAddLocation && (
-              <button type="button" onClick={onAddLocation} className="inline-flex items-center gap-1 hover:text-[#2b2622] hover:underline"><FiPlus className="w-4 h-4" />Add location</button>
+              <button type="button" onClick={onAddLocation} className="inline-flex items-center gap-1 hover:text-[#16324F] hover:underline"><FiPlus className="w-4 h-4" />Add location</button>
             )}
             {yearsOfExperience > 0 && <span className="inline-flex items-center gap-1.5"><FiCalendar className="w-4 h-4" />{yearsOfExperience} year{yearsOfExperience === 1 ? '' : 's'} experience</span>}
             {roleLabel && !yearsOfExperience && <span className="inline-flex items-center gap-1.5"><FiBriefcase className="w-4 h-4" />{roleLabel}</span>}
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-1.5 text-[15px] pf-muted">
-            <span><b className="font-semibold text-[#2b2622]">{compact(connectionCount)}</b> connection{connectionCount === 1 ? '' : 's'}</span>
+            <span><b className="font-semibold text-[#16324F]">{compact(connectionCount)}</b> connection{connectionCount === 1 ? '' : 's'}</span>
             <button type="button" onClick={onFollowers} className={onFollowers ? 'hover:underline' : 'cursor-default'} data-testid="follower-count">
-              <b className="font-semibold text-[#2b2622]">{compact(followerCount || 0)}</b> follower{followerCount === 1 ? '' : 's'}
+              <b className="font-semibold text-[#16324F]">{compact(followerCount || 0)}</b> follower{followerCount === 1 ? '' : 's'}
             </button>
             {onContactInfo && (
-              <button type="button" onClick={onContactInfo} className="inline-flex items-center gap-1.5 font-semibold text-[#2b2622] hover:underline" data-testid="contact-info-button">
+              <button type="button" onClick={onContactInfo} className="inline-flex items-center gap-1.5 font-semibold text-[#16324F] hover:underline" data-testid="contact-info-button">
                 <FiInfo className="w-4 h-4" />Contact info
               </button>
             )}
@@ -214,10 +214,10 @@ export const ProfileHero = ({
 
 // Hero buttons in the reference style
 export const heroBtn = {
-  dark: 'inline-flex items-center gap-2 rounded-xl bg-[#2b2622] px-6 py-3 text-[15px] font-semibold text-white hover:bg-black transition disabled:opacity-60',
-  honey: 'inline-flex items-center gap-2 rounded-xl bg-[#F6D46B] px-6 py-3 text-[15px] font-semibold text-[#2b2622] hover:bg-[#F2C744] transition disabled:opacity-60',
-  outline: 'inline-flex items-center gap-2 rounded-xl border border-[#e3ddd5] bg-white px-6 py-3 text-[15px] font-medium text-[#2b2622] hover:border-[#cfc6bb] transition disabled:opacity-60',
-  ghost: 'inline-flex items-center gap-1.5 rounded-xl px-3 py-3 text-[15px] font-medium pf-muted hover:text-[#2b2622] transition'
+  dark: 'inline-flex items-center gap-2 rounded-xl bg-[#16324F] px-6 py-3 text-[15px] font-semibold text-white hover:bg-[#0F2439] transition disabled:opacity-60',
+  honey: 'inline-flex items-center gap-2 rounded-xl border border-[#16324F] bg-white px-6 py-3 text-[15px] font-semibold text-[#16324F] hover:bg-[#F3F6FA] transition disabled:opacity-60',
+  outline: 'inline-flex items-center gap-2 rounded-xl border border-[#DCE3EB] bg-white px-6 py-3 text-[15px] font-medium text-[#16324F] hover:border-[#B9C6D5] transition disabled:opacity-60',
+  ghost: 'inline-flex items-center gap-1.5 rounded-xl px-3 py-3 text-[15px] font-medium pf-muted hover:text-[#16324F] transition'
 };
 
 // Per-section Public/Private badge — clickable to toggle when the owner is

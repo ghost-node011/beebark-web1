@@ -10,7 +10,7 @@
   }
   body {
     @apply bg-slate-50 text-slate-900;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
 }
 
@@ -29,8 +29,8 @@
   --card-foreground: 222.2 84% 4.9%;
   --popover: 0 0% 100%;
   --popover-foreground: 222.2 84% 4.9%;
-  --primary: 47 100% 50%;
-  --primary-foreground: 210 40% 2%;
+  --primary: 210 57% 20%;
+  --primary-foreground: 0 0% 100%;
   --secondary: 210 40% 96.1%;
   --secondary-foreground: 222.2 47.4% 11.2%;
   --muted: 210 40% 96.1%;
@@ -39,9 +39,9 @@
   --accent-foreground: 222.2 47.4% 11.2%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 47 100% 50%;
+  --border: 211 30% 89%;
+  --input: 211 30% 89%;
+  --ring: 213 65% 40%;
   --radius: 0.5rem;
 }
 
@@ -60,22 +60,17 @@
 }
 
 .sidebar-item.active {
-  @apply bg-yellow-400 text-black font-semibold hover:bg-yellow-500;
-  border-right: 4px solid #1A1A1A;
+  background: #FFF7D6; color: #16324F; font-weight: 700;
+  box-shadow: inset 4px 0 0 #F4C430;
 }
+.sidebar-item.active:hover { background: #FFF1C2; }
 
 .sidebar-item:hover {
   @apply text-black;
 }
 
 /* Auth Page Styles */
-.input-beebark {
-  @apply w-full py-4 border-b-2 border-gray-200 bg-transparent focus:border-yellow-400 focus:outline-none transition-colors;
-}
 
-.auth-yellow-btn {
-  @apply w-full py-4 bg-yellow-400 hover:bg-yellow-500 text-black font-semibold rounded-full transition-all duration-200 shadow-lg hover:shadow-xl;
-}
 
 /* Role selection cards (registration step 1) */
 .role-card {
@@ -244,3 +239,22 @@
 .glass {
   @apply bg-white/80 backdrop-blur-md;
 }
+
+/* ================= BeeBark theme =================
+   Navy for actions and headings, white and soft grey for surfaces,
+   yellow only for brand accents and selected states.
+   Fonts: Space Grotesk (headings), Manrope (everything else). */
+:root {
+  --bb-navy: #16324F; --bb-navy-dark: #0F2439; --bb-white: #FFFFFF; --bb-bg: #F5F7FA; --bb-yellow: #F4C430;
+  --bb-pale-yellow: #FFF7D6; --bb-slate: #526174; --bb-link: #245EA8; --bb-border: #DCE3EB; --bb-ink: #1F2933;
+}
+body { font-family: 'Manrope', system-ui, sans-serif; background: var(--bb-bg); color: var(--bb-ink); }
+:is(h1, h2, h3, h4):not(.pf-template *), .font-display, .font-serif, .pf-serif { font-family: 'Space Grotesk', 'Manrope', system-ui, sans-serif; letter-spacing: -0.01em; }
+.pf-page { font-family: 'Manrope', system-ui, sans-serif; color: var(--bb-ink); }
+.pf-card { background: #fff; border: 1px solid var(--bb-border); border-radius: 1rem; }
+.pf-soft { background: #EEF2F6; }
+.pf-muted { color: var(--bb-slate); }
+.pf-hover:hover { border-color: #B9C6D5; box-shadow: 0 6px 20px -12px rgba(22, 50, 79, .35); }
+.sidebar-item { color: var(--bb-slate); }
+.sidebar-item:hover { color: var(--bb-navy); background: #F0F3F7; }
+a.text-link, .text-link { color: var(--bb-link); }

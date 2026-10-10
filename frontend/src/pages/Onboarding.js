@@ -29,7 +29,7 @@ const OptionCard = ({ active, onClick, title, description, icon: Icon, testId })
     }`}
   >
     {Icon && (
-      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors ${active ? 'bg-yellow-400 text-black' : 'bg-yellow-100 text-black group-hover:bg-yellow-200'}`}>
+      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors ${active ? 'bg-[#16324F] text-white' : 'bg-[#EEF2F6] text-[#16324F] group-hover:bg-yellow-200'}`}>
         <Icon className="text-lg" />
       </span>
     )}
@@ -37,7 +37,7 @@ const OptionCard = ({ active, onClick, title, description, icon: Icon, testId })
       <span className="block text-base font-semibold text-black">{title}</span>
       {description && <span className="mt-0.5 block text-sm text-gray-500">{description}</span>}
     </span>
-    <span className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all ${active ? 'border-yellow-400 bg-yellow-400 text-black' : 'border-gray-300 text-transparent'}`}>
+    <span className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all ${active ? 'border-[#16324F] bg-[#16324F] text-white' : 'border-gray-300 text-transparent'}`}>
       <FaCheck className="text-[10px]" />
     </span>
   </button>
@@ -210,7 +210,7 @@ const Onboarding = () => {
                       onChange={(e) => { setIndustriesOther(e.target.value); if (domainSuggest.suggestion) domainSuggest.dismiss(); }}
                       onBlur={(e) => domainSuggest.check(e.target.value)}
                       placeholder="e.g. Product Design, Quantity Surveying, Facilities Management"
-                      className="w-full rounded-xl border-2 border-gray-200 p-3 text-sm focus:border-yellow-400 focus:outline-none"
+                      className="w-full rounded-xl border-2 border-gray-200 p-3 text-sm focus:border-[#245EA8] focus:outline-none"
                       data-testid="industry-other-input"
                     />
                     {domainSuggest.suggestion?.relevant === false && domainSuggest.original === industriesOther && (
@@ -298,7 +298,7 @@ const Onboarding = () => {
                     rows={3}
                     maxLength={500}
                     placeholder="A short line about what you do"
-                    className="w-full rounded-xl border-2 border-gray-200 p-3 text-sm focus:border-yellow-400 focus:outline-none resize-none"
+                    className="w-full rounded-xl border-2 border-gray-200 p-3 text-sm focus:border-[#245EA8] focus:outline-none resize-none"
                     data-testid="bio-input"
                   />
                   <p className="mt-1 text-xs text-gray-400 text-right">{bio.length}/500</p>
@@ -313,7 +313,7 @@ const Onboarding = () => {
                           className={`block w-full text-left rounded-xl border-2 p-3 text-xs transition-colors ${bio === s ? 'border-yellow-400 bg-yellow-50' : 'border-gray-200 hover:border-yellow-300'}`}
                         >
                           {i === 0 && (
-                            <span className="mb-1 inline-block rounded-full bg-yellow-400 px-2 py-0.5 text-[10px] font-semibold text-black">
+                            <span className="mb-1 inline-block rounded-full bg-[#16324F] px-2 py-0.5 text-[10px] font-semibold text-white">
                               Recommended
                             </span>
                           )}
@@ -330,7 +330,7 @@ const Onboarding = () => {
                     value={location}
                     onChange={setLocation}
                     placeholder="Start typing your city"
-                    className="w-full rounded-xl border-2 border-gray-200 h-auto p-3 text-sm focus:border-yellow-400 focus-visible:ring-0"
+                    className="w-full rounded-xl border-2 border-gray-200 h-auto p-3 text-sm focus:border-[#245EA8] focus-visible:ring-0"
                     data-testid="location-input"
                   />
                   {detectedLocation && location === detectedLocation && (
@@ -391,7 +391,7 @@ const Onboarding = () => {
               type="button"
               onClick={next}
               disabled={!canContinue || checkingField}
-              className="w-full max-w-xs rounded-full bg-yellow-400 py-3.5 font-semibold text-black transition-all hover:bg-yellow-500 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
+              className="w-full max-w-xs rounded-full bg-[#16324F] py-3.5 font-semibold text-white transition-all hover:bg-[#0F2439] disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
               data-testid="onboarding-next"
             >
               {checkingField ? 'Checking...' : 'Continue'}
@@ -401,7 +401,7 @@ const Onboarding = () => {
               type="button"
               onClick={finish}
               disabled={saving}
-              className="w-full max-w-xs rounded-full bg-yellow-400 py-3.5 font-semibold text-black transition-all hover:bg-yellow-500 disabled:opacity-50"
+              className="w-full max-w-xs rounded-full bg-[#16324F] py-3.5 font-semibold text-white transition-all hover:bg-[#0F2439] disabled:opacity-50"
               data-testid="onboarding-finish"
             >
               {saving ? 'Saving...' : 'Finish'}

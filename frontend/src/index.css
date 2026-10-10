@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-@import url('https://api.fontshare.com/v2/css?f[]=satoshi@700,900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -15,19 +13,15 @@
 }
 
 body {
-  font-family: 'Inter', sans-serif;
-  background: var(--gray-bg);
+  font-family: 'Manrope', sans-serif;
+  background: #F5F7FA;
 }
 
 .sidebar-item {
   @apply flex items-center space-x-3 px-6 py-3 text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer rounded-lg mx-2;
 }
 
-.sidebar-item.active {
-  background: var(--yellow-primary);
-  color: var(--black-primary);
-  font-weight: 600;
-}
+
 
 .btn-yellow {
   background: var(--yellow-primary);
@@ -56,9 +50,6 @@ body {
   color: var(--black-primary);
 }
 
-.input-beebark {
-  @apply w-full px-4 py-3 border-b-2 border-gray-300 focus:outline-none focus:border-yellow-400 bg-transparent;
-}
 
 .message-bubble {
   @apply max-w-md px-4 py-2 rounded-2xl;
@@ -82,26 +73,9 @@ body {
   @apply bg-white rounded-2xl shadow-sm border border-gray-200 p-8;
 }
 
-.auth-yellow-btn {
-  background: #FFEB3B;
-  color: #000000;
-  font-weight: 600;
-  padding: 14px 32px;
-  border-radius: 12px;
-  width: 100%;
-  border: none;
-  cursor: pointer;
-  transition: all 0.3s;
-  font-size: 16px;
-}
 
-.auth-yellow-btn:hover {
-  background: #FDD835;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(255, 235, 59, 0.5);
-}
 /* Headings on the dashboard, News and Official pages */
-.font-display { font-family: 'Satoshi', 'Inter', sans-serif; }
+.font-display { font-family: 'Space Grotesk', 'Manrope', sans-serif; }
 
 /* ---------- Bee loader ---------- */
 .bee-loader .bee-track { fill: none; stroke: rgba(245, 158, 11, 0.14); stroke-width: 5; stroke-linejoin: round; }
@@ -156,10 +130,35 @@ body {
 input[name="beebark-people-search"]::-webkit-search-cancel-button { display: none; }
 
 /* ---------- Profile pages ---------- */
-.pf-page { font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif; color: #2b2622; }
-.pf-serif { font-family: 'Playfair Display', Georgia, serif; }
 .pf-card { background: #fff; border: 1px solid #ebe6df; border-radius: 1.25rem; }
 .pf-soft { background: #f6f3ef; }
 .pf-muted { color: #7a7067; }
 .pf-hover { transition: border-color .2s, box-shadow .2s, transform .2s; }
 .pf-hover:hover { border-color: #f3d27a; box-shadow: 0 6px 20px -12px rgba(120, 90, 30, .35); }
+
+/* ---------- Collapsed desktop sidebar (icons only) ---------- */
+@media (min-width: 1024px) {
+  .sb-collapsed .lg\:ml-64 { margin-left: 4.5rem; }
+  .sb-collapsed .lg\:left-64 { left: 4.5rem; }
+  .sb-collapsed [data-testid="sidebar"] { width: 4.5rem; }
+  .sb-collapsed .sb-label { display: none; }
+  .sb-collapsed .sidebar-item { justify-content: center; padding-left: 0; padding-right: 0; }
+  .sb-collapsed .sidebar-item > :not(:first-child) { margin-left: 0; }
+  .sb-collapsed .sb-badge { position: absolute; top: 4px; right: 8px; min-width: 16px; height: 16px; font-size: 10px; padding: 0 4px; }
+}
+.lg\:ml-64, .lg\:left-64, [data-testid="sidebar"] { transition: margin-left .2s ease, left .2s ease, width .2s ease, transform .3s ease; }
+
+/* ---------- Sign-in / sign-up ---------- */
+.input-beebark {
+  width: 100%; height: 3rem; padding: 0 1rem; border: 1px solid #DCE3EB; border-radius: 0.5rem;
+  background: #fff; color: #16324F; font-size: 0.95rem; outline: none; transition: border-color .15s, box-shadow .15s;
+}
+.relative > svg ~ .input-beebark { padding-left: 2.75rem; }
+.relative > button ~ .input-beebark, .input-beebark.pr-11 { padding-right: 2.75rem; }
+.input-beebark::placeholder { color: #8A96A6; }
+.input-beebark:focus { border-color: #245EA8; box-shadow: 0 0 0 3px rgba(36, 94, 168, 0.15); }
+.auth-yellow-btn {
+  width: 100%; height: 3.25rem; border-radius: 0.5rem; background: #FFD60A; color: #111827; font-weight: 700; font-size: 1.05rem;
+  transition: background .15s, box-shadow .15s;
+}
+.auth-yellow-btn:hover:not(:disabled) { background: #F4C430; box-shadow: 0 8px 20px -10px rgba(244, 196, 48, 0.9); }

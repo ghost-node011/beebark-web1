@@ -15,9 +15,9 @@ import { FIREBASE_ENABLED } from '../../config/firebase';
 const SocialAuth = ({ onGoogleCredential, text = 'continue_with' }) => (
   <div className="mt-6">
     <div className="flex items-center gap-3 mb-5">
-      <span className="h-px flex-1 bg-gray-200" />
-      <span className="text-xs uppercase tracking-wide text-gray-400">or</span>
-      <span className="h-px flex-1 bg-gray-200" />
+      <span className="h-px flex-1 bg-[#DCE3EB]" />
+      <span className="text-xs uppercase tracking-wide text-[#7a8696]">or</span>
+      <span className="h-px flex-1 bg-[#DCE3EB]" />
     </div>
 
     <div className="space-y-3">
@@ -29,7 +29,7 @@ const SocialAuth = ({ onGoogleCredential, text = 'continue_with' }) => (
         <button
           type="button"
           onClick={() => toast.info('LinkedIn sign-in is coming soon')}
-          className="w-full flex items-center justify-center gap-2 rounded-full border-2 border-gray-200 py-3 text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-2 rounded-lg border border-[#DCE3EB] bg-white h-12 text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors cursor-not-allowed"
           aria-disabled="true"
           data-testid="linkedin-soon"
         >
@@ -44,7 +44,7 @@ const SocialAuth = ({ onGoogleCredential, text = 'continue_with' }) => (
       {FIREBASE_ENABLED && (
         <Link
           to="/phone-login"
-          className="w-full flex items-center justify-center gap-2 rounded-full border-2 border-gray-200 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+          className="w-full flex items-center justify-center gap-2 rounded-lg border border-[#DCE3EB] bg-white h-12 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
           data-testid="phone-signin"
         >
           <FiPhone className="text-base" />

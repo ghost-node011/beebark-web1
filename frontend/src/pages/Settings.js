@@ -48,6 +48,7 @@ const Settings = () => {
   const { user, setUser, logout, logoutAll } = useAuth();
   const navigate = useNavigate();
   const { pages, setActingAs } = usePages();
+  const showPages = user?.role !== 'student' || pages.length > 0;
   const [blocked, setBlocked] = useState(null);
   const [deactivateOpen, setDeactivateOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -127,7 +128,7 @@ const Settings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6]" data-testid="settings-page">
+    <div className="min-h-screen bg-[#F5F7FA]" data-testid="settings-page">
       <Sidebar />
       <TopBar />
       <div className="lg:ml-64 mt-16 p-4 sm:p-6 lg:p-8">
@@ -139,7 +140,7 @@ const Settings = () => {
           <div className="lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-8 lg:items-start">
           {/* Section menu (a scrolling row of chips on phones) */}
           <nav className="mb-6 lg:mb-0 lg:sticky lg:top-24 flex lg:flex-col gap-1 overflow-x-auto -mx-4 px-4 lg:mx-0 lg:px-0 lg:rounded-2xl lg:border lg:border-gray-200 lg:bg-white lg:p-2" aria-label="Settings sections">
-            {NAV.map((n) => (
+            {NAV.filter((n) => n.id !== 'pages' || showPages).map((n) => (
               <a key={n.id} href={`#settings-${n.id}`}
                 onClick={(e) => { e.preventDefault(); document.getElementById(`settings-${n.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
                 className={`shrink-0 flex items-center gap-2.5 rounded-full lg:rounded-lg border lg:border-0 border-gray-200 bg-white lg:bg-transparent px-3 py-2 text-sm font-medium hover:bg-gray-50 ${n.danger ? 'text-red-600' : 'text-gray-700'}`}
@@ -154,7 +155,7 @@ const Settings = () => {
             <div className="flex items-center gap-3 mb-4">
               <Avatar className="w-12 h-12">
                 <AvatarImage src={user?.profilePic} />
-                <AvatarFallback className="bg-yellow-400 text-black font-semibold">{user?.name?.charAt(0)}</AvatarFallback>
+                <AvatarFallback className="bg-[#16324F] text-white font-semibold">{user?.name?.charAt(0)}</AvatarFallback>
               </Avatar>
               <div className="min-w-0">
                 <p className="font-semibold text-black truncate">{user?.name}</p>
@@ -173,7 +174,7 @@ const Settings = () => {
             </div>
           </Section>
 
-          <Section id="pages" icon={FiGrid} title="Company pages">
+          {showPages && <Section id="pages" icon={FiGrid} title="Company pages">
             {pages.length ? (
               <div className="divide-y divide-gray-100 border-y border-gray-100">
                 {pages.map((p) => (
@@ -185,10 +186,10 @@ const Settings = () => {
                 ))}
               </div>
             ) : <p className="text-sm text-gray-500">You don't manage any company pages yet.</p>}
-            <Link to="/company/new" className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-yellow-400 px-3 py-2 text-sm font-semibold text-black hover:bg-yellow-500" data-testid="settings-create-page">
+            {user?.role !== 'student' && <Link to="/company/new" className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-[#16324F] px-3 py-2 text-sm font-semibold text-white hover:bg-[#0F2439]" data-testid="settings-create-page">
               <FiPlus className="w-4 h-4" />Create a company page
-            </Link>
-          </Section>
+            </Link>}
+          </Section>}
 
           <Section id="privacy" icon={FiLock} title="Privacy">
             <div className="space-y-4">
@@ -217,7 +218,7 @@ const Settings = () => {
                 return (
                   <button key={o.value} type="button" role="radio" aria-checked={active} onClick={() => setJobsView(o.value)}
                     data-testid={`jobs-view-${o.value}`}
-                    className={`rounded-xl border px-3 py-2.5 text-left transition ${active ? 'border-black bg-black text-white' : 'border-gray-200 bg-white text-black hover:border-gray-300'}`}>
+                    className={`rounded-xl border px-3 py-2.5 text-left transition ${active ? 'border-[#16324F] bg-[#16324F] text-white' : 'border-gray-200 bg-white text-black hover:border-gray-300'}`}>
                     <span className="block text-sm font-medium">{o.label}</span>
                     <span className={`block text-xs ${active ? 'text-white/70' : 'text-gray-500'}`}>{o.hint}</span>
                   </button>
@@ -289,7 +290,7 @@ const Settings = () => {
           </ul>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => setDeactivateOpen(false)}>Cancel</Button>
-            <Button onClick={deactivate} disabled={busy} className="bg-black text-white hover:bg-gray-800" data-testid="deactivate-confirm">{busy ? 'Deactivating...' : 'Deactivate'}</Button>
+            <Button onClick={deactivate} disabled={busy} className="bg-[#16324F] text-white hover:bg-[#0F2439]" data-testid="deactivate-confirm">{busy ? 'Deactivating...' : 'Deactivate'}</Button>
           </div>
         </DialogContent>
       </Dialog>

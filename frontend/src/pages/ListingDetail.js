@@ -39,7 +39,7 @@ const ListingDetail = () => {
 
   if (missing) {
     return (
-      <div className="min-h-screen bg-[#FAF9F6]"><Sidebar /><TopBar />
+      <div className="min-h-screen bg-[#F5F7FA]"><Sidebar /><TopBar />
         <div className="lg:ml-64 mt-16 p-8 text-center">
           <p className="text-gray-600 mb-3">This listing isn't available any more.</p>
           <Link to="/dashboard" className="font-semibold text-black hover:underline">Back to BeeBark</Link>
@@ -64,7 +64,7 @@ const ListingDetail = () => {
   ].filter(Boolean);
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6]" data-testid="listing-detail">
+    <div className="min-h-screen bg-[#F5F7FA]" data-testid="listing-detail">
       <Sidebar />
       <TopBar />
       <div className="lg:ml-64 mt-16 p-4 sm:p-6 lg:p-8">
@@ -123,14 +123,14 @@ const ListingDetail = () => {
                 </div>
               </Link>
               {isOwner ? (
-                <Link to="/listings"><Button className="w-full bg-black text-white hover:bg-gray-800"><FiEdit2 className="mr-2" />Manage listing</Button></Link>
+                <Link to="/listings"><Button className="w-full bg-[#16324F] text-white hover:bg-[#0F2439]"><FiEdit2 className="mr-2" />Manage listing</Button></Link>
               ) : (
                 <Button
                   onClick={() => {
                     axios.post(`${API_URL}/api/profile/${owner._id}/event`, { type: 'enquiry', item: listing._id }, { silent: true }).catch(() => {});
                     navigate(`/chat?with=${owner._id}&draft=${encodeURIComponent(`Hi ${owner.name.split(' ')[0]}, I'm interested in "${listing.title}". Is it still available?`)}`);
                   }}
-                  className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-semibold"
+                  className="w-full bg-[#16324F] hover:bg-[#0F2439] text-white font-semibold"
                   data-testid="listing-enquire"
                 >
                   <FiMessageCircle className="mr-2" />Enquire

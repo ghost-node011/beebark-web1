@@ -119,7 +119,7 @@ const PageForm = ({ form, setForm, showErrors = false, pageId = null }) => {
       <div>
         <Label>Cover and logo</Label>
         <div className="mt-1.5 relative h-32 sm:h-40 rounded-xl overflow-hidden border border-gray-200"
-          style={form.cover ? { backgroundImage: `url(${form.cover})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: 'linear-gradient(120deg, #c89a5b 0%, #8a6136 38%, #3b2a1c 75%, #1f1812 100%)' }}>
+          style={form.cover ? { backgroundImage: `url(${form.cover})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: 'linear-gradient(120deg, #2C5A85 0%, #1E4266 40%, #16324F 75%, #0F2439 100%)' }}>
           <label className="absolute top-2 right-2 cursor-pointer rounded-lg bg-black/55 px-2.5 py-1 text-xs font-medium text-white hover:bg-black/75" data-testid="page-cover-upload">
             <FiCamera className="inline w-3.5 h-3.5 mr-1" />{uploading === 'cover' ? 'Uploading…' : form.cover ? 'Change cover' : 'Add cover'}
             <input type="file" accept="image/*" className="hidden" onChange={pickImage('cover')} />

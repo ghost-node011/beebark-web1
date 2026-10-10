@@ -69,12 +69,12 @@ const ScreeningQuestionsEditor = ({ questions, onChange, skills, location }) => 
   };
 
   return (
-    <div className="rounded-2xl border border-[#ebe6df] bg-[#FBFAF8] p-3 sm:p-4" data-testid="job-form-questions">
+    <div className="rounded-2xl border border-[#DCE3EB] bg-[#FBFAF8] p-3 sm:p-4" data-testid="job-form-questions">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="font-semibold text-[#2b2622]">Screening questions</p>
-        <p className="text-xs text-[#7a7067]">{questions.length}/{MAX_QUESTIONS}</p>
+        <p className="font-semibold text-[#16324F]">Screening questions</p>
+        <p className="text-xs text-[#526174]">{questions.length}/{MAX_QUESTIONS}</p>
       </div>
-      <p className="text-xs text-[#7a7067] mt-1">Ask applicants a few things up front. Answers are shown with each application.</p>
+      <p className="text-xs text-[#526174] mt-1">Ask applicants a few things up front. Answers are shown with each application.</p>
 
       <div className="flex flex-wrap gap-2 mt-3">
         {QUICK_ADDS.map((quick) => (
@@ -84,7 +84,7 @@ const ScreeningQuestionsEditor = ({ questions, onChange, skills, location }) => 
             disabled={full}
             onClick={() => add(quick)}
             data-testid={`add-question-${quick.kind}`}
-            className="inline-flex items-center gap-1 rounded-full border border-[#e2dbd2] bg-white px-3 py-1 text-xs font-medium text-[#2b2622] hover:border-[#F2B21B] hover:bg-[#FFF8E6] disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1 rounded-full border border-[#e2dbd2] bg-white px-3 py-1 text-xs font-medium text-[#16324F] hover:border-[#F2B21B] hover:bg-[#FFF8E6] disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <FiPlus className="w-3 h-3" />{quick.label}
           </button>
@@ -94,9 +94,9 @@ const ScreeningQuestionsEditor = ({ questions, onChange, skills, location }) => 
       {questions.length > 0 && (
         <ol className="space-y-3 mt-4">
           {questions.map((q, i) => (
-            <li key={q.key || q._id || i} className="rounded-xl border border-[#ebe6df] bg-white p-3">
+            <li key={q.key || q._id || i} className="rounded-xl border border-[#DCE3EB] bg-white p-3">
               <div className="flex items-start gap-2">
-                <span className="mt-2 text-xs font-semibold text-[#7a7067] w-4 shrink-0">{i + 1}.</span>
+                <span className="mt-2 text-xs font-semibold text-[#526174] w-4 shrink-0">{i + 1}.</span>
                 <div className="flex-1 min-w-0 space-y-2">
                   <Input
                     value={q.text}
@@ -113,7 +113,7 @@ const ScreeningQuestionsEditor = ({ questions, onChange, skills, location }) => 
                         {Object.entries(QUESTION_TYPES).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}
                       </SelectContent>
                     </Select>
-                    <label className="flex items-center gap-2 text-sm text-[#2b2622]">
+                    <label className="flex items-center gap-2 text-sm text-[#16324F]">
                       <Switch checked={!!q.required} onCheckedChange={(c) => update(i, { required: c })} data-testid={`question-required-${i}`} />
                       Required
                     </label>
@@ -132,13 +132,13 @@ const ScreeningQuestionsEditor = ({ questions, onChange, skills, location }) => 
                             className="h-9"
                             data-testid={`question-option-${i}-${oi}`}
                           />
-                          <button type="button" onClick={() => update(i, { options: q.options.filter((_, k) => k !== oi) })} className="p-1.5 text-[#7a7067] hover:text-red-600" aria-label="Remove option">
+                          <button type="button" onClick={() => update(i, { options: q.options.filter((_, k) => k !== oi) })} className="p-1.5 text-[#526174] hover:text-red-600" aria-label="Remove option">
                             <FiX className="w-4 h-4" />
                           </button>
                         </div>
                       ))}
                       {(q.options || []).length < 10 && (
-                        <button type="button" onClick={() => update(i, { options: [...(q.options || []), ''] })} className="text-xs font-medium text-[#2b2622] underline underline-offset-2">
+                        <button type="button" onClick={() => update(i, { options: [...(q.options || []), ''] })} className="text-xs font-medium text-[#16324F] underline underline-offset-2">
                           + Add option
                         </button>
                       )}
@@ -156,9 +156,9 @@ const ScreeningQuestionsEditor = ({ questions, onChange, skills, location }) => 
                   />
                 </div>
                 <div className="flex flex-col items-center shrink-0">
-                  <button type="button" onClick={() => move(i, -1)} disabled={i === 0} className="p-1.5 text-[#7a7067] hover:text-[#2b2622] disabled:opacity-30" aria-label="Move up"><FiArrowUp className="w-4 h-4" /></button>
-                  <button type="button" onClick={() => move(i, 1)} disabled={i === questions.length - 1} className="p-1.5 text-[#7a7067] hover:text-[#2b2622] disabled:opacity-30" aria-label="Move down"><FiArrowDown className="w-4 h-4" /></button>
-                  <button type="button" onClick={() => remove(i)} className="p-1.5 text-[#7a7067] hover:text-red-600" aria-label="Remove question" data-testid={`question-remove-${i}`}><FiTrash2 className="w-4 h-4" /></button>
+                  <button type="button" onClick={() => move(i, -1)} disabled={i === 0} className="p-1.5 text-[#526174] hover:text-[#16324F] disabled:opacity-30" aria-label="Move up"><FiArrowUp className="w-4 h-4" /></button>
+                  <button type="button" onClick={() => move(i, 1)} disabled={i === questions.length - 1} className="p-1.5 text-[#526174] hover:text-[#16324F] disabled:opacity-30" aria-label="Move down"><FiArrowDown className="w-4 h-4" /></button>
+                  <button type="button" onClick={() => remove(i)} className="p-1.5 text-[#526174] hover:text-red-600" aria-label="Remove question" data-testid={`question-remove-${i}`}><FiTrash2 className="w-4 h-4" /></button>
                 </div>
               </div>
             </li>

@@ -96,8 +96,8 @@ const ApplyDialog = ({ job, onClose, onApplied }) => {
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="w-[calc(100%-1.5rem)] max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl pf-page" data-testid="apply-dialog">
         <DialogHeader className="text-left">
-          <DialogTitle className="pf-serif text-xl text-[#2b2622] pr-6">Apply to {job.title}</DialogTitle>
-          <DialogDescription className="text-[#7a7067]">{job.company}{job.location ? ` · ${job.location}` : ''}</DialogDescription>
+          <DialogTitle className="pf-serif text-xl text-[#16324F] pr-6">Apply to {job.title}</DialogTitle>
+          <DialogDescription className="text-[#526174]">{job.company}{job.location ? ` · ${job.location}` : ''}</DialogDescription>
         </DialogHeader>
 
         {loading ? (
@@ -105,23 +105,23 @@ const ApplyDialog = ({ job, onClose, onApplied }) => {
             {[0, 1].map((i) => <div key={i} className="h-16 rounded-xl bg-[#F2EEE8] animate-pulse" />)}
           </div>
         ) : questions.length === 0 ? (
-          <p className="text-sm text-[#2b2622]">
+          <p className="text-sm text-[#16324F]">
             Your BeeBark profile and résumé will be shared with the poster. Send your application?
           </p>
         ) : (
           <div className="space-y-4">
-            <p className="text-xs text-[#7a7067] flex items-start gap-1.5">
+            <p className="text-xs text-[#526174] flex items-start gap-1.5">
               <FiBookmark className="mt-0.5 shrink-0" />
               Your answers are saved so you don't have to type them again.
             </p>
             {questions.map((q, i) => (
-              <div key={q._id} className={`rounded-xl border p-3 ${errors[q._id] ? 'border-red-300 bg-red-50/40' : 'border-[#ebe6df]'}`}>
+              <div key={q._id} className={`rounded-xl border p-3 ${errors[q._id] ? 'border-red-300 bg-red-50/40' : 'border-[#DCE3EB]'}`}>
                 <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
-                  <p className="text-sm font-medium text-[#2b2622] min-w-0 break-words">
+                  <p className="text-sm font-medium text-[#16324F] min-w-0 break-words">
                     {i + 1}. {q.text}{q.required && <span className="text-red-500" aria-label="required"> *</span>}
                   </p>
                   {saved[q._id] && (
-                    <span className="text-[10px] uppercase tracking-wide font-semibold rounded-full bg-[#FFF3D1] text-[#8a6100] px-2 py-0.5 shrink-0">Saved answer</span>
+                    <span className="text-[10px] uppercase tracking-wide font-semibold rounded-full bg-[#EEF2F6] text-[#16324F] px-2 py-0.5 shrink-0">Saved answer</span>
                   )}
                 </div>
                 <QuestionInput
@@ -139,7 +139,7 @@ const ApplyDialog = ({ job, onClose, onApplied }) => {
 
         <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2">
           <Button variant="outline" onClick={onClose} disabled={submitting}>Cancel</Button>
-          <Button onClick={submit} disabled={loading || submitting} className="bg-[#2b2622] hover:bg-black text-white" data-testid="apply-submit">
+          <Button onClick={submit} disabled={loading || submitting} className="bg-[#16324F] hover:bg-[#0F2439] text-white" data-testid="apply-submit">
             <FiCheckCircle className="mr-2" />{submitting ? 'Sending…' : 'Send application'}
           </Button>
         </div>

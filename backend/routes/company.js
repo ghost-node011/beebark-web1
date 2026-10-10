@@ -133,6 +133,7 @@ router.get('/check-slug', auth, async (req, res) => {
 
 router.post('/', auth, async (req, res) => {
   try {
+    if (req.user?.role === 'student') return res.status(403).json({ error: 'Company pages are for professionals and businesses' });
     const owned = await Company.countDocuments({ owner: req.userId });
     if (owned >= MAX_OWNED) return res.status(400).json({ error: `You can create up to ${MAX_OWNED} pages` });
     const { fields, error } = pageFields(req.body);

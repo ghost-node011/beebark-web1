@@ -6,7 +6,7 @@ import { useUI } from '../context/UIContext';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import {
   FiHome, FiMessageCircle, FiUsers, FiLayers, FiBriefcase,
-  FiVideo, FiX, FiImage, FiFileText, FiSend, FiHome as FiProperty, FiSettings, FiGrid
+  FiVideo, FiX, FiImage, FiFileText, FiSend, FiHome as FiProperty, FiSettings, FiGrid, FiChevronsLeft, FiChevronsRight
 } from 'react-icons/fi';
 import { getCopy } from '../config/roleDomainCopy';
 import { personHeadline } from '../utils/personHeadline';
@@ -17,7 +17,7 @@ import CompanyLogo from './company/CompanyLogo';
 
 const SidebarFrame = () => {
   const { user } = useAuth();
-  const { sidebarOpen, setSidebarOpen } = useUI();
+  const { sidebarOpen, setSidebarOpen, collapsed, toggleCollapsed } = useUI();
   const close = () => setSidebarOpen(false);
   const copy = getCopy(user);
   const badges = useNavBadges();
@@ -77,14 +77,18 @@ const SidebarFrame = () => {
         }`}
         data-testid="sidebar"
       >
-        <div className="p-6 shrink-0">
-          <div className="flex items-center justify-between mb-8">
+        <div className={`shrink-0 ${collapsed ? 'p-6 lg:px-3' : 'p-6'}`}>
+          <div className={`flex items-center justify-between mb-8 ${collapsed ? 'lg:flex-col lg:gap-4' : ''}`}>
             <NavLink to="/dashboard" onClick={close} className="flex items-center space-x-3">
               <img src="/image.png" alt="BeeBark" className="w-9 h-9 object-contain" />
-              <span className="text-2xl font-bold text-black">BeeBark</span>
+              <span className="sb-label text-2xl font-bold text-black">BeeBark</span>
             </NavLink>
             <button onClick={close} className="lg:hidden p-1 text-slate-500 hover:text-black" aria-label="Close menu">
               <FiX className="w-6 h-6" />
+            </button>
+            <button type="button" onClick={toggleCollapsed} className="hidden lg:flex p-1.5 rounded-md text-slate-500 hover:bg-slate-100 hover:text-black"
+              aria-label={collapsed ? 'Expand menu' : 'Collapse menu'} title={collapsed ? 'Expand menu' : 'Collapse menu'} data-testid="sidebar-collapse">
+              {collapsed ? <FiChevronsRight className="w-5 h-5" /> : <FiChevronsLeft className="w-5 h-5" />}
             </button>
           </div>
         </div>
@@ -107,11 +111,12 @@ const SidebarFrame = () => {
                   return `sidebar-item ${on ? 'active' : ''}`;
                 }}
                 data-testid={`sidebar-${item.id}`}
+                title={collapsed ? item.label : undefined}
               >
-                <Icon className="w-5 h-5" />
-                <span className="flex-1">{item.label}</span>
+                <Icon className="w-5 h-5 shrink-0" />
+                <span className="sb-label flex-1">{item.label}</span>
                 {countFor[item.id] > 0 && (
-                  <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center"
+                  <span className="sb-badge ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center"
                     aria-label={`${countFor[item.id]} new`} data-testid={`sidebar-badge-${item.id}`}>
                     {countFor[item.id] > 99 ? '99+' : countFor[item.id]}
                   </span>
@@ -126,24 +131,24 @@ const SidebarFrame = () => {
             <div className="space-y-1">
               <NavLink to={`/company/${acting.slug}`} onClick={close} className="flex items-center space-x-3 p-3 hover:bg-slate-50 rounded-lg">
                 <CompanyLogo page={acting} className="w-10 h-10" rounded="rounded-lg" text="text-sm" />
-                <div className="flex-1 min-w-0">
+                <div className="sb-label flex-1 min-w-0">
                   <p className="font-semibold text-sm text-black truncate">{acting.name}</p>
                   <p className="text-xs text-slate-500 truncate">Acting as page</p>
                 </div>
               </NavLink>
-              <button type="button" onClick={() => { setActingAs(null); close(); navigate('/dashboard'); }} className="w-full text-left text-xs font-medium text-slate-600 hover:text-black px-3 py-1.5" data-testid="switch-back-personal">
+              <button type="button" onClick={() => { setActingAs(null); close(); navigate('/dashboard'); }} className="sb-label w-full text-left text-xs font-medium text-slate-600 hover:text-black px-3 py-1.5" data-testid="switch-back-personal">
                 Switch back to {user?.name?.split(' ')[0] || 'your profile'}
               </button>
             </div>
           ) : (
-          <NavLink to="/profile" onClick={close} className="flex items-center space-x-3 p-3 hover:bg-slate-50 rounded-lg">
+          <NavLink to="/profile" onClick={close} className={`flex items-center space-x-3 p-3 hover:bg-slate-50 rounded-lg ${collapsed ? 'lg:justify-center lg:p-1' : ''}`} title={collapsed ? user?.name : undefined}>
             <Avatar className="w-10 h-10">
               <AvatarImage src={user?.profilePic} />
-              <AvatarFallback className="bg-yellow-400 text-black font-semibold">
+              <AvatarFallback className="bg-[#16324F] text-white font-semibold">
                 {user?.name?.charAt(0)}
               </AvatarFallback>
             </Avatar>
-            <div className="flex-1 min-w-0">
+            <div className="sb-label flex-1 min-w-0">
               <p className="font-semibold text-sm text-black truncate">{user?.name}</p>
               <p className="text-xs text-slate-500 truncate">{personHeadline(user)}</p>
             </div>

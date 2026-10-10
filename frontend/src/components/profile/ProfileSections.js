@@ -22,7 +22,7 @@ export const Section = ({ id, title, action, children, className = '' }) => (
   <section id={id} className={`scroll-mt-36 pf-card p-6 sm:p-9 ${className}`}>
     {(title || action) && (
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-        {title && <h2 className="pf-serif text-2xl sm:text-[28px] font-semibold text-[#2b2622]">{title}</h2>}
+        {title && <h2 className="pf-serif text-2xl sm:text-[28px] font-semibold text-[#16324F]">{title}</h2>}
         {action && <div className="flex flex-wrap items-center gap-2">{action}</div>}
       </div>
     )}
@@ -35,7 +35,7 @@ export const AnalyticsCards = ({ items }) => (
     {items.map(({ icon: Icon, value, label, note }) => (
       <div key={label} className="pf-soft rounded-2xl px-4 py-6 text-center">
         <Icon className="w-6 h-6 mx-auto text-[#F2B21B] mb-3" />
-        <p className="pf-serif text-3xl font-bold text-[#2b2622]">{value}</p>
+        <p className="pf-serif text-3xl font-bold text-[#16324F]">{value}</p>
         <p className="mt-1 text-[15px] pf-muted">{label}</p>
         {note && <p className="mt-2 text-xs font-medium text-[#E0A21A]">{note}</p>}
       </div>
@@ -54,7 +54,7 @@ export const InfoTiles = ({ items }) => {
           <Icon className="w-5 h-5 mt-1 shrink-0 text-[#F2B21B]" />
           <div className="min-w-0">
             <p className="text-sm font-semibold uppercase tracking-wide pf-muted">{label}</p>
-            <p className="mt-1 text-[17px] text-[#2b2622]">{Array.isArray(value) ? value.join(', ') : value}</p>
+            <p className="mt-1 text-[17px] text-[#16324F]">{Array.isArray(value) ? value.join(', ') : value}</p>
           </div>
         </div>
       ))}
@@ -110,15 +110,15 @@ export const ExperienceCard = ({ exp, actions }) => {
   const [open, setOpen] = useState(false);
   const hasMore = Boolean(exp.description || exp.employmentType);
   return (
-    <div className={`rounded-2xl border bg-white pf-hover ${open ? 'border-[#f3d27a]' : 'border-[#e8e2da]'}`}>
+    <div className={`rounded-2xl border bg-white pf-hover ${open ? 'border-[#F4C430]' : 'border-[#DCE3EB]'}`}>
       <div className="flex items-start gap-4 p-5 sm:p-6">
         {exp.page ? (
           <Link to={`/company/${exp.page.slug}`} className="shrink-0" aria-label={exp.page.name} data-testid="exp-company-link">
             <CompanyLogo page={exp.page} className="w-12 h-12 sm:w-14 sm:h-14" text="text-sm" />
           </Link>
-        ) : <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl pf-soft flex items-center justify-center shrink-0"><FiBriefcaseAlt className="w-6 h-6 text-[#3a322b]" /></div>}
+        ) : <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl pf-soft flex items-center justify-center shrink-0"><FiBriefcaseAlt className="w-6 h-6 text-[#1F2933]" /></div>}
         <button type="button" onClick={() => hasMore && setOpen((o) => !o)} className="flex-1 min-w-0 text-left" aria-expanded={open}>
-          <p className="pf-serif text-lg sm:text-xl font-semibold text-[#2b2622]">{exp.title}</p>
+          <p className="pf-serif text-lg sm:text-xl font-semibold text-[#16324F]">{exp.title}</p>
           <p className="text-[16px] sm:text-[17px] pf-muted">
             {exp.page ? exp.page.name : exp.company}
           </p>
@@ -128,7 +128,7 @@ export const ExperienceCard = ({ exp, actions }) => {
           </p>
           {open && (
             <div className="mt-4 space-y-2 text-[15px] leading-relaxed pf-muted">
-              {exp.employmentType && <p className="text-sm font-medium text-[#2b2622]">{employmentTypeLabel(exp.employmentType)} · {experienceDates(exp)}</p>}
+              {exp.employmentType && <p className="text-sm font-medium text-[#16324F]">{employmentTypeLabel(exp.employmentType)} · {experienceDates(exp)}</p>}
               {exp.description && <p className="whitespace-pre-line">{exp.description}</p>}
             </div>
           )}
@@ -136,7 +136,7 @@ export const ExperienceCard = ({ exp, actions }) => {
         <div className="flex items-center gap-1 shrink-0">
           {actions}
           {hasMore && (
-            <button type="button" onClick={() => setOpen((o) => !o)} className="p-2 pf-muted hover:text-[#2b2622]" aria-label={open ? 'Show less' : 'Show more'}>
+            <button type="button" onClick={() => setOpen((o) => !o)} className="p-2 pf-muted hover:text-[#16324F]" aria-label={open ? 'Show less' : 'Show more'}>
               <FiChevronDown className={`w-5 h-5 transition ${open ? 'rotate-180' : ''}`} />
             </button>
           )}
@@ -152,9 +152,9 @@ export const PeopleGrid = ({ people }) => (
     {people.map((p) => (
       <Link key={p._id} to={`/profile/${p.username}`} className="group flex flex-col items-center text-center min-w-0">
         <span className="w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-full pf-soft flex items-center justify-center overflow-hidden ring-0 group-hover:ring-2 ring-[#F2B21B] transition">
-          {p.profilePic ? <img src={p.profilePic} alt="" className="h-full w-full object-cover" /> : <span className="text-lg font-semibold text-[#2b2622]">{initials(p.name)}</span>}
+          {p.profilePic ? <img src={p.profilePic} alt="" className="h-full w-full object-cover" /> : <span className="text-lg font-semibold text-[#16324F]">{initials(p.name)}</span>}
         </span>
-        <span className="mt-3 w-full truncate text-[15px] font-medium text-[#2b2622]">{p.name}</span>
+        <span className="mt-3 w-full truncate text-[15px] font-medium text-[#16324F]">{p.name}</span>
         <span className="w-full truncate text-xs pf-muted">{personHeadline(p)}</span>
       </Link>
     ))}
@@ -176,13 +176,13 @@ const ago = (d) => {
 export const ActivityCards = ({ posts, renderShare, onDelete }) => (
   <div className="space-y-4">
     {posts.map((post) => (
-      <article key={post._id} className="rounded-2xl border border-[#e8e2da] bg-white p-5 sm:p-6 pf-hover" data-testid={`activity-${post._id}`}>
+      <article key={post._id} className="rounded-2xl border border-[#DCE3EB] bg-white p-5 sm:p-6 pf-hover" data-testid={`activity-${post._id}`}>
         <div className="flex items-center gap-3 text-[15px] pf-muted">
           <span className="inline-flex items-center gap-1.5 rounded-full pf-soft px-3 py-1 text-sm"><FiFileText className="w-3.5 h-3.5" />{KIND[post.kind] || 'Update'}</span>
           <span>{ago(post.createdAt)}</span>
           {onDelete && <button type="button" onClick={() => onDelete(post)} className="ml-auto p-1 pf-muted hover:text-red-600" aria-label="Delete update"><FiTrash2 className="w-4 h-4" /></button>}
         </div>
-        {post.title && <h3 className="pf-serif mt-3 text-lg sm:text-xl font-semibold text-[#2b2622]">{post.title}</h3>}
+        {post.title && <h3 className="pf-serif mt-3 text-lg sm:text-xl font-semibold text-[#16324F]">{post.title}</h3>}
         <p className={`${post.title ? 'mt-1.5' : 'mt-3'} text-[16px] leading-relaxed pf-muted whitespace-pre-line line-clamp-4`}>{post.content}</p>
         {post.mediaUrl && <img src={post.mediaUrl} alt="" className="mt-4 rounded-xl max-h-72 w-full object-cover" loading="lazy" />}
         <div className="mt-4 flex items-center gap-5 text-[15px] pf-muted">
@@ -224,12 +224,12 @@ export const ListingCards = ({ listings }) => (
       const Icon = ['apartment', 'villa', 'house', 'plot'].includes(l.propertyType) ? FiHome : FiBriefcaseAlt;
       const sub = l.subtitle || [l.bedrooms ? `${l.bedrooms} BHK` : '', l.area ? `${Number(l.area).toLocaleString('en-IN')} ${l.areaUnit === 'sqm' ? 'sq m' : l.areaUnit === 'acre' ? 'acre' : 'sq ft'}` : '', l.location].filter(Boolean).join(' · ');
       return (
-        <Link key={l._id} to={`/listing/${l._id}`} className="flex items-start gap-4 rounded-2xl border border-[#e8e2da] bg-white p-5 sm:p-6 pf-hover" data-testid={`profile-listing-${l._id}`}>
-          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl pf-soft flex items-center justify-center shrink-0"><Icon className="w-6 h-6 text-[#3a322b]" /></div>
+        <Link key={l._id} to={`/listing/${l._id}`} className="flex items-start gap-4 rounded-2xl border border-[#DCE3EB] bg-white p-5 sm:p-6 pf-hover" data-testid={`profile-listing-${l._id}`}>
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl pf-soft flex items-center justify-center shrink-0"><Icon className="w-6 h-6 text-[#1F2933]" /></div>
           <div className="flex-1 min-w-0">
-            <p className="pf-serif text-lg sm:text-xl font-semibold text-[#2b2622]">{l.title}</p>
+            <p className="pf-serif text-lg sm:text-xl font-semibold text-[#16324F]">{l.title}</p>
             {sub && <p className="text-[15px] pf-muted">{sub}</p>}
-            <p className="mt-1.5 text-[16px] font-semibold text-[#2b2622]">{listingPrice(l)}</p>
+            <p className="mt-1.5 text-[16px] font-semibold text-[#16324F]">{listingPrice(l)}</p>
           </div>
           <span className={`shrink-0 rounded-full px-3 py-1 text-sm font-medium ${pill.className}`}>{pill.label}</span>
         </Link>
@@ -247,18 +247,18 @@ const WORKPLACE = { onsite: 'On-site', remote: 'Remote', hybrid: 'Hybrid' };
 export const JobRows = ({ jobs, onApply, applyingId, own }) => (
   <div className="space-y-4">
     {jobs.map((j) => (
-      <div key={j._id} className="flex items-center gap-4 rounded-2xl border border-[#e8e2da] bg-white p-5 sm:p-6 pf-hover" data-testid={`profile-job-${j._id}`}>
-        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl pf-soft flex items-center justify-center shrink-0"><FiBriefcase className="w-6 h-6 text-[#3a322b]" /></div>
+      <div key={j._id} className="flex items-center gap-4 rounded-2xl border border-[#DCE3EB] bg-white p-5 sm:p-6 pf-hover" data-testid={`profile-job-${j._id}`}>
+        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl pf-soft flex items-center justify-center shrink-0"><FiBriefcase className="w-6 h-6 text-[#1F2933]" /></div>
         <Link to={`/jobs?job=${j._id}`} className="flex-1 min-w-0">
-          <p className="pf-serif text-lg sm:text-xl font-semibold text-[#2b2622] hover:underline">{j.title}</p>
+          <p className="pf-serif text-lg sm:text-xl font-semibold text-[#16324F] hover:underline">{j.title}</p>
           <p className="text-[15px] pf-muted">{[JOB_TYPE[j.employmentType], WORKPLACE[j.workplace] === 'Remote' ? 'Remote' : j.location, inrSalary(j.salary)].filter(Boolean).join(' · ')}</p>
         </Link>
         {own ? (
-          <Link to={`/jobs?job=${j._id}`} className="shrink-0 rounded-xl border border-[#e3ddd5] px-4 py-2.5 text-[15px] font-medium text-[#2b2622] hover:border-[#cfc6bb]">{j.applicantCount || 0} applicant{j.applicantCount === 1 ? '' : 's'}</Link>
+          <Link to={`/jobs?job=${j._id}`} className="shrink-0 rounded-xl border border-[#DCE3EB] px-4 py-2.5 text-[15px] font-medium text-[#16324F] hover:border-[#B9C6D5]">{j.applicantCount || 0} applicant{j.applicantCount === 1 ? '' : 's'}</Link>
         ) : j.hasApplied ? (
           <span className="shrink-0 inline-flex items-center gap-2 rounded-xl bg-green-50 px-4 py-2.5 text-[15px] font-semibold text-green-700"><FiCheckCircle className="w-4 h-4" />Applied</span>
         ) : (
-          <button type="button" onClick={() => onApply?.(j)} disabled={applyingId === j._id} className="shrink-0 inline-flex items-center gap-2 rounded-xl bg-[#2b2622] px-5 py-2.5 text-[15px] font-semibold text-white hover:bg-black disabled:opacity-60" data-testid={`apply-${j._id}`}>
+          <button type="button" onClick={() => onApply?.(j)} disabled={applyingId === j._id} className="shrink-0 inline-flex items-center gap-2 rounded-xl bg-[#16324F] px-5 py-2.5 text-[15px] font-semibold text-white hover:bg-[#0F2439] disabled:opacity-60" data-testid={`apply-${j._id}`}>
             <FiSend className="w-4 h-4" />{applyingId === j._id ? 'Applying…' : 'Apply'}
           </button>
         )}
@@ -313,7 +313,7 @@ export const ContactInfoDialog = ({ open, onOpenChange, name, username, contact,
             <p className="text-xs text-gray-500">
               {contact?.visibility === 'everyone' ? 'Visible to everyone' : contact?.visibility === 'only_me' ? 'Only you can see these' : 'Visible to your connections'}
             </p>
-            <button type="button" onClick={onEdit} className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800" data-testid="contact-info-edit">Edit</button>
+            <button type="button" onClick={onEdit} className="rounded-md bg-[#16324F] px-4 py-2 text-sm font-medium text-white hover:bg-[#0F2439]" data-testid="contact-info-edit">Edit</button>
           </div>
         )}
       </DialogContent>

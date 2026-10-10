@@ -43,7 +43,7 @@ const SkillPicker = ({ skills = [], onAdd, max = 50, inputClassName = '', testId
           placeholder="Search skills, e.g. Revit"
           data-testid={testId}
         />
-        <Button type="button" onClick={() => add(text)} disabled={!text.trim()} className="bg-yellow-400 hover:bg-yellow-500 text-black shrink-0" data-testid="add-skill-button">Add</Button>
+        <Button type="button" onClick={() => add(text)} disabled={!text.trim()} className="bg-[#16324F] hover:bg-[#0F2439] text-white shrink-0" data-testid="add-skill-button">Add</Button>
       </div>
       {suggestions.length > 0 && (
         <div>

@@ -94,7 +94,7 @@ const Meetings = () => {
                   </div>
                   <h3 className="text-2xl font-bold text-black mb-4">Start a New Meeting</h3>
                   <p className="text-gray-600 mb-6">Start an instant meeting now</p>
-                  <Button onClick={handleStartMeeting} className="w-full bg-black hover:bg-gray-900 text-white py-6 text-lg font-semibold">
+                  <Button onClick={handleStartMeeting} className="w-full bg-[#16324F] hover:bg-[#0F2439] text-white py-6 text-lg font-semibold">
                     Start Meeting Now
                   </Button>
                 </div>
@@ -152,7 +152,7 @@ const Meetings = () => {
                           </p>
                         </div>
                       </div>
-                      <Button onClick={() => navigate(`/meeting-room/${meeting.meetingId}`)} size="sm" className="bg-black text-white">
+                      <Button onClick={() => navigate(`/meeting-room/${meeting.meetingId}`)} size="sm" className="bg-[#16324F] text-white">
                         Join
                       </Button>
                     </div>
@@ -177,7 +177,7 @@ const Meetings = () => {
                 onChange={(e) => setScheduleData({ ...scheduleData, title: e.target.value })}
                 placeholder="Enter meeting title"
                 required
-                className="border-2 border-yellow-400 focus:ring-yellow-400"
+                className="border-2 border-yellow-400 focus:ring-[#245EA8]"
               />
             </div>
 
@@ -227,13 +227,13 @@ const Meetings = () => {
               </Label>
               <div className="flex space-x-2">
                 <Input placeholder="Enter email addresses" className="flex-1 border-2 border-gray-300" />
-                <Button type="button" className="bg-yellow-400 hover:bg-yellow-500 text-black">
+                <Button type="button" className="bg-[#16324F] hover:bg-[#0F2439] text-white">
                   <FiPlus className="w-5 h-5" />
                 </Button>
               </div>
             </div>
 
-            <Button type="submit" className="w-full bg-black hover:bg-gray-900 text-white py-6 text-lg font-semibold">
+            <Button type="submit" className="w-full bg-[#16324F] hover:bg-[#0F2439] text-white py-6 text-lg font-semibold">
               Schedule Meeting
             </Button>
           </form>
