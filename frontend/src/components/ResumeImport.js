@@ -5,7 +5,7 @@ import { FiUploadCloud } from 'react-icons/fi';
 import { API_URL } from '../config/api';
 
 /**
- * Upload a résumé/CV (PDF/DOCX) → backend parses it and auto-fills skills.
+ * Upload a resume/CV (PDF/DOCX) → backend parses it and auto-fills skills.
  * Calls onImported(data) where data = { skills, parsed } so the parent can
  * prefill its fields. A LinkedIn "Save to PDF" export works here too.
  */
@@ -24,7 +24,7 @@ const ResumeImport = ({ onImported }) => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       const count = res.data?.parsed?.skills?.length || 0;
-      toast.success(count ? `Imported ${count} skill${count === 1 ? '' : 's'} from your résumé` : 'Résumé imported');
+      toast.success(count ? `Imported ${count} skill${count === 1 ? '' : 's'} from your resume` : 'Resume imported');
       onImported?.(res.data);
     } catch (error) {
       const data = error.response?.data;
@@ -47,7 +47,7 @@ const ResumeImport = ({ onImported }) => {
         data-testid="resume-import-button"
       >
         <FiUploadCloud className="text-base" />
-        {loading ? 'Reading résumé…' : 'Import from résumé (PDF / DOCX)'}
+        {loading ? 'Reading resume…' : 'Import from resume (PDF / DOCX)'}
       </button>
       <p className="mt-1 text-xs text-gray-400 text-center">Auto-fills your skills. A LinkedIn “Save to PDF” export works too.</p>
     </div>

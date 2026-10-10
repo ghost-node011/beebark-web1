@@ -1,6 +1,6 @@
 const User = require('../models/User');
 
-const PUBLIC_FIELDS = 'name username profilePic role bio location skills industries experience careerStage connections followers isDemo';
+const PUBLIC_FIELDS = 'name username profilePic coverPhoto headline availability role bio location skills industries experience careerStage connections followers isDemo';
 
 const getConnectionSuggestions = async (userId, limit = 10) => {
   try {
@@ -27,8 +27,8 @@ const getConnectionSuggestions = async (userId, limit = 10) => {
       blockedUsers: { $ne: currentUser._id }
     })
     .select(PUBLIC_FIELDS)
-    .populate('connections', '_id name')
-    .limit(50)
+    .populate('connections', '_id name profilePic')
+    .limit(200)
     .lean();
 
     const scoredUsers = potentialConnections.map(user => {
@@ -59,7 +59,7 @@ const getConnectionSuggestions = async (userId, limit = 10) => {
         followerCount: (followers || []).length,
         suggestionScore: score,
         mutualConnectionsCount: mutualConnections.length,
-        mutualConnections: mutualConnections.slice(0, 3),
+        mutualConnections: mutualConnections.slice(0, 3).map((m) => ({ _id: m._id, name: m.name, profilePic: m.profilePic })),
         commonSkills: commonSkills.slice(0, 5)
       };
     });

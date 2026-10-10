@@ -8,24 +8,23 @@ import ReportDialog from '../components/ReportDialog';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Tabs, TabsContent } from '../components/ui/tabs';
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator
 } from '../components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import {
-  FiSearch, FiUserPlus, FiUserCheck, FiMessageCircle, FiX, FiUsers, FiMoreHorizontal, FiUser,
+  FiSearch, FiUserPlus, FiMessageCircle, FiX, FiUsers, FiMoreHorizontal, FiUser,
   FiShare2, FiUserMinus, FiFlag, FiSlash, FiMapPin, FiClock, FiSend, FiCheck,
-  FiSliders, FiUserX,
+  FiSliders, FiUserX, FiArrowRight, FiBriefcase,
 } from 'react-icons/fi';
 import { API_URL } from '../config/api';
-import { getCopy } from '../config/roleDomainCopy';
 import { useAuth } from '../context/AuthContext';
 import { personHeadline } from '../utils/personHeadline';
 import { SkeletonCards } from '../components/Skeletons';
 import Highlight, { searchWords } from '../components/Highlight';
 import { refreshBadges } from '../hooks/useNavBadges';
-import FollowButton, { toggleFollow, followersLabel } from '../components/FollowButton';
+import { toggleFollow, followersLabel } from '../components/FollowButton';
 
 // "3d ago" style label for a date, or '' when there isn't one
 const timeAgo = (date) => {
@@ -50,43 +49,83 @@ const PersonAvatar = ({ person, className = 'w-14 h-14', fallbackClass = 'bg-[#3
   </Avatar>
 );
 
-// Small cover band with the avatar overlapping it, shared by the card grids
+// A photo of the person's work (first portfolio image), or a picture of their field
+const FIELD_PHOTO = {
+  architecture: '1600585154340-be6161a56a0c', interiors: '1618221195710-dd6b41faaea6', real_estate: '1545324418-cc1a3fa10c00',
+  construction: '1541888946425-d81bb19240f5', student: '1503387762-592deb58ef4e'
+};
+const coverFor = (p) => p.cover || p.coverPhoto
+  || `https://images.unsplash.com/photo-${FIELD_PHOTO[p.role === 'student' ? 'student' : (p.industries || [])[0]] || FIELD_PHOTO.architecture}?auto=format&fit=crop&w=800&q=60`;
+
 const CardTop = ({ person, children }) => (
   <>
-    <div
-      className="relative h-16 bg-gradient-to-r from-yellow-200 via-amber-100 to-stone-200 bg-cover bg-center"
-      style={person.coverPhoto ? { backgroundImage: `url(${person.coverPhoto})` } : undefined}
-    >
+    <div className="relative h-36 bg-[#EFECE8] bg-cover bg-center" style={{ backgroundImage: `url(${coverFor(person)})` }}>
       {children}
     </div>
-    <div className="px-4 -mt-9 flex justify-center">
-      <Link to={`/profile/${person.username}`} className="rounded-full ring-4 ring-white">
+    <div className="px-4 -mt-9 relative">
+      <Link to={`/profile/${person.username}`} className="inline-block rounded-full ring-4 ring-white">
         <PersonAvatar person={person} className="w-[72px] h-[72px]" />
       </Link>
     </div>
   </>
 );
 
+const openToCollab = (p) => (p.availability || []).some((a) => /collab|project|freelance|hiring/i.test(a));
+
 const CardIdentity = ({ person, words }) => (
-  <div className="px-4 pt-2 text-center min-w-0">
-    <Link to={`/profile/${person.username}`} className="block font-semibold text-black hover:underline truncate">
+  <div className="px-4 pt-1.5 min-w-0">
+    <Link to={`/profile/${person.username}`} className="block text-[17px] font-semibold text-[#1C1712] hover:underline truncate">
       <Highlight text={person.name} words={words} />
     </Link>
-    <p className="text-sm text-gray-600 line-clamp-2 min-h-[2.5rem]"><Highlight text={personHeadline(person)} words={words} /></p>
-    {typeof person.followerCount === 'number' && (
-      <p className="text-xs text-gray-500" data-testid={`follower-count-${person._id}`}>{followersLabel(person.followerCount)}</p>
-    )}
+    <p className="text-sm text-[#6B625A] line-clamp-1"><Highlight text={person.headline || personHeadline(person)} words={words} /></p>
     {person.location && (
-      <p className="mt-1 text-xs text-gray-500 flex items-center justify-center gap-1 truncate">
-        <FiMapPin className="w-3 h-3 shrink-0" /><span className="truncate"><Highlight text={person.location} words={words} /></span>
+      <p className="mt-1 text-xs text-[#6B625A] flex items-center gap-1 truncate">
+        <FiMapPin className="w-3.5 h-3.5 shrink-0" /><span className="truncate"><Highlight text={person.location} words={words} /></span>
       </p>
     )}
-    {person.matchedOn && <p className="mt-1 text-xs text-gray-500 truncate"><Highlight text={person.matchedOn} words={words} /></p>}
-    {person.mutualConnectionsCount > 0 && words && (
-      <p className="mt-1 text-xs text-gray-500">{person.mutualConnectionsCount} mutual connection{person.mutualConnectionsCount > 1 ? 's' : ''}</p>
-    )}
+    <div className="mt-2 min-h-[1.5rem] flex items-center gap-2 text-xs text-[#6B625A]">
+      {person.mutualConnectionsCount > 0 ? (
+        <>
+          <span className="flex -space-x-2">
+            {(person.mutualConnections || []).slice(0, 3).map((m, idx) => (
+              <PersonAvatar key={m._id || idx} person={m} className="w-6 h-6 ring-2 ring-white text-[10px]" fallbackClass="bg-[#E9E3DC] text-[#32281F]" />
+            ))}
+          </span>
+          {person.mutualConnectionsCount} mutual connection{person.mutualConnectionsCount === 1 ? '' : 's'}
+        </>
+      ) : openToCollab(person) ? (
+        <><FiBriefcase className="w-3.5 h-3.5" />Open to collaboration</>
+      ) : person.matchedOn ? (
+        <span className="truncate"><Highlight text={person.matchedOn} words={words} /></span>
+      ) : typeof person.followerCount === 'number' ? (
+        <span data-testid={`follower-count-${person._id}`}>{followersLabel(person.followerCount)}</span>
+      ) : null}
+    </div>
   </div>
 );
+
+// "View profile →" on the left, the main action on the right
+const CardFooter = ({ person, children }) => (
+  <div className="mt-auto px-4 pb-4 pt-3 flex items-center justify-between gap-2">
+    <Link to={`/profile/${person.username}`} className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#1C1712] hover:underline whitespace-nowrap">
+      View profile <FiArrowRight className="w-4 h-4" />
+    </Link>
+    <div className="min-w-0 flex items-center gap-2">{children}</div>
+  </div>
+);
+
+const CARD = 'bg-white border border-[#E6E1DB] rounded-2xl overflow-hidden flex flex-col hover:shadow-[0_12px_30px_-18px_rgba(50,40,31,0.45)] transition-shadow';
+
+// Field chips over Discover and search results
+const FIELDS = [
+  { id: 'all', label: 'All' },
+  { id: 'architecture', label: 'Architecture' },
+  { id: 'interiors', label: 'Interiors' },
+  { id: 'real_estate', label: 'Real estate' },
+  { id: 'construction', label: 'Construction' },
+  { id: 'students', label: 'Students' }
+];
+const inField = (p, field) => field === 'all' || (field === 'students' ? p.role === 'student' : (p.industries || []).includes(field));
 
 const EmptyState = ({ icon: Icon, title, text, action }) => (
   <div className="bg-white border border-gray-200 rounded-xl text-center py-12 px-6">
@@ -98,12 +137,10 @@ const EmptyState = ({ icon: Icon, title, text, action }) => (
 );
 
 const pill = 'inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-full text-sm font-medium border';
-const TAB_CLASS = 'flex-1 sm:flex-none rounded-full px-3 sm:px-4 py-1.5 text-sm text-gray-600 data-[state=active]:bg-[#32281F] data-[state=active]:text-white data-[state=active]:shadow-none whitespace-nowrap';
 
 const Connections = () => {
   const navigate = useNavigate();
   const { user, refreshUser } = useAuth();
-  const copy = getCopy(user);
   const [suggestions, setSuggestions] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -114,7 +151,8 @@ const Connections = () => {
   const [loading, setLoading] = useState(true);
   const [connectionsLoading, setConnectionsLoading] = useState(true);
   const [searching, setSearching] = useState(false);
-  const [activeTab, setActiveTab] = useState('connections');
+  const [activeTab, setActiveTab] = useState('suggestions');
+  const [field, setField] = useState('all');
   const [filter, setFilter] = useState('');
   const [sortBy, setSortBy] = useState('recent');
   const [reportTarget, setReportTarget] = useState(null);
@@ -190,25 +228,13 @@ const Connections = () => {
     setSentRequests(apply);
   };
 
-  const followButton = (p) => (
-    <FollowButton
-      userId={p._id}
-      name={p.name}
-      isFollowing={p.isFollowing}
-      followerCount={p.followerCount || 0}
-      onChange={(changes) => patchFollow(p._id, changes)}
-      size="default"
-      className="shrink-0 px-3"
-    />
-  );
-
   // Results update as you type (name, role, company, skills, city)
   const searchSeq = useRef(0);
   const runSearch = useCallback(async (term) => {
     const seq = ++searchSeq.current;
     setSearching(true);
     try {
-      const response = await axios.get(`${API_URL}/api/people/search`, { params: { q: term, limit: 30 }, silent: true });
+      const response = await axios.get(`${API_URL}/api/people/search`, { params: { q: term, limit: 30, covers: 1 }, silent: true });
       if (seq !== searchSeq.current) return; // a newer search has started
       setSearchResults(response.data.people || []);
       setHasSearched(true);
@@ -362,8 +388,8 @@ const Connections = () => {
     const id = String(p._id);
     if (p.isConnected) {
       return (
-        <Button variant="outline" onClick={() => navigate(`/chat?with=${p._id}`)} className="w-full rounded-full border-green-200 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800">
-          <FiUserCheck className="w-4 h-4 mr-1.5" /><span className="truncate">Connected · Message</span>
+        <Button variant="outline" onClick={() => navigate(`/chat?with=${p._id}`)} className="rounded-lg border-green-200 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800">
+          <FiMessageCircle className="w-4 h-4 mr-1.5" />Message
         </Button>
       );
     }
@@ -372,7 +398,7 @@ const Connections = () => {
         <Button
           onClick={() => handleAccept(p._id)}
           disabled={busyId === p._id}
-          className="w-full rounded-full bg-[#32281F] hover:bg-[#221A14] text-white font-semibold"
+          className="rounded-lg bg-[#32281F] hover:bg-[#221A14] text-white font-semibold"
           data-testid={`accept-search-btn-${p._id}`}
         >
           <FiCheck className="w-4 h-4 mr-1.5" />Accept
@@ -381,17 +407,16 @@ const Connections = () => {
     }
     if (p.requestSent || sentIds.has(id)) {
       return (
-        <span className={`${pill} w-full border-gray-200 bg-gray-50 text-gray-500`}>
+        <span className={`${pill} rounded-lg border-gray-200 bg-gray-50 text-gray-500`}>
           <FiClock className="w-4 h-4" />Pending
         </span>
       );
     }
     return (
       <Button
-        variant="outline"
         onClick={() => handleConnect(p._id)}
         disabled={busyId === p._id}
-        className="w-full rounded-full border-black text-black font-semibold hover:bg-[#32281F] hover:text-white hover:border-[#32281F]"
+        className="rounded-lg bg-[#F4C430] hover:bg-[#E9B824] text-[#1C1712] font-semibold shadow-none"
         data-testid={testId}
       >
         <FiUserPlus className="w-4 h-4 mr-1.5" />Connect
@@ -399,49 +424,47 @@ const Connections = () => {
     );
   };
 
-  const counts = [
-    { key: 'connections', label: copy.connectionsLabel, value: connections.length },
-    { key: 'invitations', label: 'Invitations', value: pendingRequests.length },
-    { key: 'sent', label: 'Sent', value: sentRequests.length }
-  ];
-
   return (
     <div className="min-h-screen bg-[#F7F6F4]" data-testid="connections-page">
       <Sidebar />
       <TopBar />
       <div className="lg:ml-64 mt-16 p-4 sm:p-6 lg:p-8">
         <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="mb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-            <div className="min-w-0">
-              <h1 className="text-2xl sm:text-3xl font-serif font-bold text-black">{copy.connectionsLabel}</h1>
-              <p className="text-gray-600 mt-1">{copy.connectionsSubtitle}</p>
-            </div>
-            <div className="grid grid-cols-3 gap-2 sm:gap-3 md:w-auto">
-              {counts.map((c) => (
-                <button
-                  key={c.key}
-                  type="button"
-                  onClick={() => {
-                    if (c.key === 'invitations') document.getElementById('invitations')?.scrollIntoView({ behavior: 'smooth' });
-                    else setActiveTab(c.key);
-                  }}
-                  className="bg-white border border-gray-200 rounded-xl px-3 sm:px-4 py-2 text-left hover:border-yellow-400 transition min-w-0"
-                  data-testid={`count-${c.key}`}
-                >
-                  <p className="text-xl font-bold text-black leading-tight">{c.value}</p>
-                  <p className="text-xs text-gray-500 truncate">{c.label}</p>
-                </button>
-              ))}
-            </div>
+          {/* Header (wording by role) */}
+          <div className="mb-6">
+            <p className="text-xs font-semibold tracking-[0.2em] text-[#6B625A]">CONNECTIONS</p>
+            <h1 className="mt-1 text-[30px] sm:text-[44px] font-bold leading-[1.05] tracking-tight text-[#1C1712]" data-testid="connections-heading">
+              {user?.role === 'student' ? 'Find your next connection.' : 'Good work starts with a connection.'}
+            </h1>
+            <p className="mt-2 text-[#6B625A] sm:text-lg">
+              {user?.role === 'student' ? 'Meet mentors, studios and classmates shaping the built world.' : 'Discover people shaping the built world.'}
+            </p>
           </div>
 
+          {/* Tabs */}
+          <nav className="mb-5 flex gap-1 sm:gap-6 overflow-x-auto border-b border-[#E6E1DB]" role="tablist" aria-label="Connections">
+            {[
+              { id: 'suggestions', label: 'Discover', testId: 'tab-suggestions' },
+              { id: 'connections', label: 'My connections', count: connections.length, testId: 'tab-connections' },
+              { id: 'requests', label: 'Requests', count: pendingRequests.length, testId: 'tab-requests' },
+              { id: 'sent', label: 'Sent', count: sentRequests.length, testId: 'tab-sent' },
+              ...(hasSearched ? [{ id: 'search', label: 'Results', count: searchResults.length, testId: 'tab-search' }] : [])
+            ].map((t) => (
+              <button key={t.id} type="button" role="tab" aria-selected={activeTab === t.id} onClick={() => setActiveTab(t.id)} data-testid={t.testId}
+                className={`relative shrink-0 px-2 sm:px-0 pb-3 pt-1 text-[15px] whitespace-nowrap ${activeTab === t.id ? 'font-semibold text-[#1C1712]' : 'text-[#6B625A] hover:text-[#1C1712]'}`}>
+                {t.label}
+                {typeof t.count === 'number' && <span className={`ml-2 inline-flex min-w-[22px] justify-center rounded-full px-1.5 py-0.5 text-xs font-semibold ${t.id === 'requests' && t.count ? 'bg-[#F4C430] text-[#1C1712]' : 'bg-[#F2EFEC] text-[#6B625A]'}`}>{t.count}</span>}
+                {activeTab === t.id && <span className="absolute inset-x-0 bottom-0 h-[3px] rounded-full bg-[#F4C430]" />}
+              </button>
+            ))}
+          </nav>
+
           {/* People search */}
-          <form onSubmit={handleSearch} className="mb-6 flex gap-2 sm:gap-3">
-            <div className="relative flex-1 min-w-0 max-w-2xl">
+          <form onSubmit={handleSearch} className="mb-4 flex gap-2 sm:gap-3">
+            <div className="relative flex-1 min-w-0">
               <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
               <Input
-                placeholder="Search by name, role, company, skill or city"
+                placeholder="Search people, firms or skills"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-11 pr-10 h-12 bg-white border border-gray-200 focus-visible:ring-[#7A6450] rounded-xl"
@@ -476,12 +499,23 @@ const Connections = () => {
               data-testid="advanced-search-button"
               title="Search with filters (role, industry, location, open to)"
             >
-              <FiSliders className="w-4 h-4 sm:mr-2" /><span className="hidden sm:inline">Advanced</span>
+              <FiSliders className="w-4 h-4 sm:mr-2" /><span className="hidden sm:inline">Filters</span>
             </Button>
           </form>
 
+          {(activeTab === 'suggestions' || activeTab === 'search') && (
+            <div className="mb-5 flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0" role="group" aria-label="Field">
+              {FIELDS.map((f) => (
+                <button key={f.id} type="button" onClick={() => setField(f.id)} aria-pressed={field === f.id} data-testid={`field-${f.id}`}
+                  className={`shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition ${field === f.id ? 'border-[#32281F] bg-[#32281F] text-white' : 'border-[#E6E1DB] bg-white text-[#1C1712] hover:border-[#CFC6BC]'}`}>
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Invitations */}
-          {pendingRequests.length > 0 && (
+          {activeTab === 'requests' && (pendingRequests.length > 0 ? (
             <section id="invitations" className="mb-6 bg-white border border-gray-200 rounded-xl overflow-hidden" data-testid="invitations">
               <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-gray-100">
                 <h2 className="font-serif font-semibold text-lg text-black">Invitations</h2>
@@ -523,25 +557,9 @@ const Connections = () => {
                 ))}
               </ul>
             </section>
-          )}
+          ) : <EmptyState icon={FiUsers} title="No requests right now" text="When someone asks to connect, it shows up here." />)}
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="flex w-full sm:w-auto sm:inline-flex h-auto justify-start overflow-x-auto mb-5 bg-white border border-gray-200 p-1 rounded-full gap-1">
-              <TabsTrigger value="connections" className={TAB_CLASS} data-testid="tab-connections">
-                My connections
-              </TabsTrigger>
-              <TabsTrigger value="suggestions" className={TAB_CLASS} data-testid="tab-suggestions">
-                Suggestions
-              </TabsTrigger>
-              <TabsTrigger value="sent" className={TAB_CLASS} data-testid="tab-sent">
-                Sent{sentRequests.length > 0 ? ` (${sentRequests.length})` : ''}
-              </TabsTrigger>
-              {hasSearched && (
-                <TabsTrigger value="search" className={TAB_CLASS} data-testid="tab-search">
-                  Results ({searchResults.length})
-                </TabsTrigger>
-              )}
-            </TabsList>
 
             {/* My connections */}
             <TabsContent value="connections" className="mt-0">
@@ -593,7 +611,7 @@ const Connections = () => {
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                       {visibleConnections.map((c) => (
-                        <div key={c._id} className="bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col hover:shadow-md transition-shadow" data-testid={`connection-${c._id}`}>
+                        <div key={c._id} className={CARD} data-testid={`connection-${c._id}`}>
                           <CardTop person={c}>
                             <DropdownMenu modal={false}>
                               <DropdownMenuTrigger asChild>
@@ -635,10 +653,11 @@ const Connections = () => {
                             </DropdownMenu>
                           </CardTop>
                           <CardIdentity person={c} />
-                          <div className="mt-auto p-4 flex gap-2">
+                          <div className="mt-auto px-4 pb-4 pt-3 flex items-center gap-2">
+                            <Link to={`/profile/${c.username}`} className="mr-auto inline-flex items-center gap-1.5 text-sm font-semibold text-[#1C1712] hover:underline whitespace-nowrap">View profile <FiArrowRight className="w-4 h-4" /></Link>
                             <Button
                               onClick={() => navigate(`/chat?with=${c._id}`)}
-                              className="flex-1 rounded-full bg-[#32281F] hover:bg-[#221A14] text-white font-semibold"
+                              className="rounded-lg bg-[#32281F] hover:bg-[#221A14] text-white font-semibold"
                               data-testid={`message-${c._id}`}
                             >
                               <FiMessageCircle className="w-4 h-4 mr-1.5" />Message
@@ -675,8 +694,11 @@ const Connections = () => {
                 <EmptyState icon={FiUsers} title="No suggestions right now" text="Try searching for people by name, username or email." />
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {suggestions.map((s) => (
-                    <div key={s._id} className="bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col hover:shadow-md transition-shadow" data-testid={`suggestion-card-${s._id}`}>
+                  {suggestions.filter((p) => inField(p, field)).length === 0 && (
+                    <div className="sm:col-span-2 xl:col-span-3"><EmptyState icon={FiUsers} title="No one here yet" text="Try another field, or search by name." /></div>
+                  )}
+                  {suggestions.filter((p) => inField(p, field)).map((s) => (
+                    <div key={s._id} className={CARD} data-testid={`suggestion-card-${s._id}`}>
                       <CardTop person={s}>
                         <button
                           type="button"
@@ -689,24 +711,7 @@ const Connections = () => {
                         </button>
                       </CardTop>
                       <CardIdentity person={s} />
-                      <div className="px-4 mt-2 min-h-[1.75rem] flex items-center justify-center gap-2 text-xs text-gray-500">
-                        {s.mutualConnectionsCount > 0 ? (
-                          <>
-                            <div className="flex -space-x-2">
-                              {s.mutualConnections?.slice(0, 3).map((m, idx) => (
-                                <PersonAvatar key={m._id || idx} person={m} className="w-6 h-6 ring-2 ring-white text-[10px]" fallbackClass="bg-gray-200 text-gray-700" />
-                              ))}
-                            </div>
-                            <span>{s.mutualConnectionsCount} mutual connection{s.mutualConnectionsCount === 1 ? '' : 's'}</span>
-                          </>
-                        ) : s.commonSkills?.length > 0 ? (
-                          <span className="truncate">Shared skills: {s.commonSkills.slice(0, 3).join(', ')}</span>
-                        ) : null}
-                      </div>
-                      <div className="mt-auto p-4 flex gap-2">
-                        <div className="flex-1 min-w-0">{relationAction(s, `connect-btn-${s._id}`)}</div>
-                        {followButton(s)}
-                      </div>
+                      <CardFooter person={s}>{relationAction(s, `connect-btn-${s._id}`)}</CardFooter>
                     </div>
                   ))}
                 </div>
@@ -754,14 +759,11 @@ const Connections = () => {
                 />
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {searchResults.map((p) => (
-                    <div key={p._id} className="bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col hover:shadow-md transition-shadow" data-testid={`search-result-${p._id}`}>
+                  {searchResults.filter((p) => inField(p, field)).map((p) => (
+                    <div key={p._id} className={CARD} data-testid={`search-result-${p._id}`}>
                       <CardTop person={p} />
                       <CardIdentity person={p} words={searchWords(searchQuery)} />
-                      <div className="mt-auto p-4 flex gap-2">
-                        <div className="flex-1 min-w-0">{relationAction(p, `connect-search-btn-${p._id}`)}</div>
-                        {followButton(p)}
-                      </div>
+                      <CardFooter person={p}>{relationAction(p, `connect-search-btn-${p._id}`)}</CardFooter>
                     </div>
                   ))}
                 </div>

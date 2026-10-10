@@ -106,7 +106,7 @@ const ApplyDialog = ({ job, onClose, onApplied }) => {
           </div>
         ) : questions.length === 0 ? (
           <p className="text-sm text-[#32281F]">
-            Your BeeBark profile and résumé will be shared with the poster. Send your application?
+            Your BeeBark profile and resume will be shared with the poster. Send your application?
           </p>
         ) : (
           <div className="space-y-4">

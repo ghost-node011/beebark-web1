@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
-import { FaCheck, FaArrowLeft, FaTimes } from 'react-icons/fa';
+import { FaCheck, FaTimes } from 'react-icons/fa';
+import { FiArrowLeft } from 'react-icons/fi';
 import ImageUpload from '../components/ImageUpload';
 import ResumeImport from '../components/ResumeImport';
 import { ROLES } from '../config/roles';
 import { intentsFor, INDUSTRIES } from '../config/onboarding';
-import { LocationInput } from '../components/AutocompleteInput';
+import { AutocompleteInput, LocationInput } from '../components/AutocompleteInput';
+import CompanyInput from '../components/company/CompanyInput';
 import SkillPicker from '../components/SkillPicker';
 import { SuggestChip, useSuggestChip } from '../components/ai/SuggestChip';
 
@@ -51,6 +53,13 @@ const Onboarding = () => {
   const [saving, setSaving] = useState(false);
 
   const [role, setRole] = useState(user?.role && ['student', 'professional'].includes(user.role) ? user.role : '');
+  const firstJob = (user?.experience || []).find((e) => e.current) || {};
+  const firstSchool = (user?.education || [])[0] || {};
+  const [background, setBackground] = useState({
+    title: firstJob.title || '', company: firstJob.company || '', companyPage: firstJob.companyPage || null, selfEmployed: false,
+    school: firstSchool.school || '', field: firstSchool.field || '', gradYear: ''
+  });
+  const setBg = (patch) => setBackground((b) => ({ ...b, ...patch }));
   const [intent, setIntent] = useState(user?.intent || []);
   const [industries, setIndustries] = useState(user?.industries || []);
   const [industriesOther, setIndustriesOther] = useState(user?.industriesOther || '');
@@ -83,10 +92,15 @@ const Onboarding = () => {
     !!domainSuggest.suggestion &&
     (domainSuggest.suggestion.relevant === false || domainSuggest.suggestion.changed || domainSuggest.suggestion.alternatives?.length > 0);
 
+  const isStudent = role === 'student';
+  const backgroundDone = isStudent
+    ? !!background.school.trim() && !!background.field.trim()
+    : !!background.title.trim();
+
   const canContinue =
     ((step === 0 && !!role) ||
-      (step === 1 && intent.some((v) => intentsFor({ role }).some((i) => i.value === v))) ||
-      (step === 2 && industries.length > 0) ||
+      (step === 1 && backgroundDone) ||
+      (step === 2 && intent.some((v) => intentsFor({ role }).some((i) => i.value === v)) && industries.length > 0) ||
       step === 3) &&
     !industryOtherUnresolved;
 
@@ -105,6 +119,7 @@ const Onboarding = () => {
       if (unresolved) return;
     }
     setStep((s) => s + 1);
+    window.scrollTo({ top: 0 });
   };
 
   const back = () => setStep((s) => Math.max(0, s - 1));
@@ -112,7 +127,10 @@ const Onboarding = () => {
   const finish = async () => {
     setSaving(true);
     try {
-      await updateOnboarding({ role, intent: intent.filter((v) => intentsFor({ role }).some((i) => i.value === v)), industries, industriesOther, bio, location, skills, profilePic, name, complete: true });
+      const bg = isStudent
+        ? { school: background.school.trim(), field: background.field.trim(), gradYear: background.gradYear }
+        : { title: background.title.trim(), company: background.company.trim(), companyPage: background.companyPage || undefined, selfEmployed: background.selfEmployed };
+      await updateOnboarding({ role, background: bg, intent: intent.filter((v) => intentsFor({ role }).some((i) => i.value === v)), industries, industriesOther, bio, location, skills, profilePic, name, complete: true });
       toast.success("You're all set!");
       navigate('/dashboard', { replace: true });
     } catch (error) {
@@ -123,72 +141,131 @@ const Onboarding = () => {
   };
 
   const STEP_META = [
-    { title: 'What best describes you?', subtitle: 'This personalizes your BeeBark experience.' },
-    { title: 'What brings you to BeeBark?', subtitle: 'Select all that apply.' },
-    { title: 'Your industry focus', subtitle: 'Choose the fields you work in or care about.' },
-    { title: 'Complete your profile', subtitle: 'Help others recognize you — you can skip this for now.' }
+    { title: 'What best describes you?', subtitle: "We'll tailor BeeBark to your journey." },
+    isStudent
+      ? { title: 'Where are you studying?', subtitle: 'Connect with people in your field.' }
+      : { title: 'Tell us about your work', subtitle: 'Start with your current or most recent role.' },
+    { title: 'What brings you here?', subtitle: 'Pick your goals and the fields you work in.' },
+    { title: 'Complete your profile', subtitle: 'Help others recognise you. You can skip this for now.' }
   ];
-
   const meta = STEP_META[step];
+  const thisYear = new Date().getFullYear();
+  const fieldClass = 'w-full h-12 rounded-xl border border-gray-300 bg-white px-4 text-[15px] focus:border-[#7A6450] focus:outline-none focus:ring-2 focus:ring-[#7A6450]/20';
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      {/* Top progress bar */}
-      <div className="w-full px-5 pt-8">
-        <div className="mx-auto max-w-3xl">
-          <div className="h-2 w-full rounded-full bg-gray-100 overflow-hidden">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 transition-all duration-500 ease-out"
-              style={{ width: `${((step + 1) / TOTAL_STEPS) * 100}%` }}
-            />
+    <div className="min-h-screen bg-[#F6F4F1] sm:py-8 flex flex-col items-center" data-testid="onboarding">
+      <div className="w-full sm:max-w-xl bg-white sm:rounded-3xl sm:shadow-[0_20px_60px_-30px_rgba(50,40,31,0.35)] sm:border sm:border-[#E8E3DD] flex flex-col min-h-screen sm:min-h-0">
+        {/* Header: back, logo, step */}
+        <div className="px-5 sm:px-8 pt-6">
+          <div className="grid grid-cols-[2.5rem_1fr_auto] items-center">
+            {step > 0 ? (
+              <button type="button" onClick={back} className="p-1 -ml-1 text-[#32281F] hover:opacity-70" aria-label="Back" data-testid="onboarding-back"><FiArrowLeft className="w-6 h-6" /></button>
+            ) : <span />}
+            <span className="flex items-center justify-center gap-2">
+              <img src="/image.png" alt="" className="h-9 w-9 object-contain" />
+              <span className="text-2xl font-black tracking-tight text-[#1C1712]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>BeeBark</span>
+            </span>
+            <span className="text-sm text-[#6B625A] whitespace-nowrap" data-testid="onboarding-step">Step {step + 1} of {TOTAL_STEPS}</span>
+          </div>
+          <div className="mt-5 h-2 w-full rounded-full bg-[#EFECE8] overflow-hidden">
+            <div className="h-full rounded-full bg-[#F4C430] transition-all duration-500 ease-out" style={{ width: `${((step + 1) / TOTAL_STEPS) * 100}%` }} />
           </div>
         </div>
-      </div>
 
-      {/* Centered content */}
-      <div className="flex-1 flex items-center justify-center px-5 py-10">
-        <div className="w-full max-w-3xl animate-fadeIn" key={step}>
-          <h1 className="text-center text-3xl sm:text-4xl font-bold text-black">{meta.title}</h1>
-          <p className="mt-3 text-center text-gray-500">{meta.subtitle}</p>
+        <div className="flex-1 px-5 sm:px-8 py-8 animate-fadeIn" key={step}>
+          <h1 className="text-center text-[28px] sm:text-[32px] font-bold leading-tight text-[#1C1712]">{meta.title}</h1>
+          <p className="mt-2 text-center text-[#6B625A]">{meta.subtitle}</p>
 
-          <div className="mt-10">
-            {/* Step 1 — Role (single select) */}
+          <div className="mt-8">
+            {/* Step 1: who you are */}
             {step === 0 && (
-              <div className="grid sm:grid-cols-2 gap-4" data-testid="onboarding-role">
-                {ROLES.map((r) => (
-                  <OptionCard
-                    key={r.value}
-                    active={role === r.value}
-                    onClick={() => setRole(r.value)}
-                    title={r.label}
-                    description={r.tagline}
-                    icon={r.icon}
-                    testId={`role-${r.value}`}
-                  />
-                ))}
+              <div data-testid="onboarding-role">
+                <div className="space-y-3" role="radiogroup">
+                  {ROLES.map((r) => {
+                    const active = role === r.value;
+                    return (
+                      <button key={r.value} type="button" role="radio" aria-checked={active} onClick={() => setRole(r.value)} data-testid={`role-${r.value}`}
+                        className={`flex w-full items-center gap-4 rounded-2xl border px-5 py-4 text-left transition ${active ? 'border-[#F4C430] bg-[#FFF9E6] ring-1 ring-[#F4C430]' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
+                        <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${active ? 'border-[#F4C430] bg-[#F4C430]' : 'border-gray-300'}`}>
+                          {active && <span className="h-2.5 w-2.5 rounded-full bg-[#1C1712]" />}
+                        </span>
+                        <span>
+                          <span className="block text-base font-semibold text-[#1C1712]">{r.label}</span>
+                          <span className="block text-sm text-[#6B625A]">{r.value === 'student' ? 'Studying or preparing for your career.' : 'Working, freelancing or running a business.'}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-4 text-sm text-[#6B625A]">Business owners join as professionals, then create a company page.</p>
               </div>
             )}
 
-            {/* Step 2 — Intent (multi select) */}
+            {/* Step 2: background */}
             {step === 1 && (
-              <div className="grid sm:grid-cols-2 gap-4" data-testid="onboarding-intent">
-                {intentsFor({ role }).map((it) => (
-                  <OptionCard
-                    key={it.value}
-                    active={intent.includes(it.value)}
-                    onClick={() => setIntent(toggle(intent, it.value))}
-                    title={it.label}
-                    description={it.tagline}
-                    icon={it.icon}
-                    testId={`intent-${it.value}`}
-                  />
-                ))}
+              <div className="space-y-5" data-testid="onboarding-background">
+                <div className="flex justify-center">
+                  <span className="inline-flex items-center gap-3 rounded-full border border-gray-200 bg-[#FAF8F5] px-4 py-2 text-sm">
+                    <span className={`h-3.5 w-3.5 rounded-full ${isStudent ? 'border-2 border-gray-400' : 'bg-[#F4C430]'}`} />
+                    <span className="font-medium text-[#1C1712]">{isStudent ? 'Student' : 'Professional'}</span>
+                    <span className="h-4 w-px bg-gray-300" />
+                    <button type="button" onClick={() => setStep(0)} className="font-medium text-[#7A6450] hover:underline" data-testid="onboarding-change-role">Change</button>
+                  </span>
+                </div>
+                {isStudent ? (
+                  <>
+                    <div>
+                      <label className="block text-sm font-semibold text-[#1C1712] mb-1.5">School, college or university</label>
+                      <AutocompleteInput field="school" value={background.school} onChange={(v) => setBg({ school: v })} placeholder="Enter your institution" className={fieldClass} data-testid="onboarding-school" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-[#1C1712] mb-1.5">Course or field of study</label>
+                      <AutocompleteInput field="field" value={background.field} onChange={(v) => setBg({ field: v })} placeholder="e.g. Architecture, interior design, civil engineering" className={fieldClass} data-testid="onboarding-field" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-[#1C1712] mb-1.5">Expected graduation year <span className="font-normal text-[#6B625A]">(optional)</span></label>
+                      <select value={background.gradYear} onChange={(e) => setBg({ gradYear: e.target.value })} className={fieldClass} data-testid="onboarding-grad-year">
+                        <option value="">Select year</option>
+                        {Array.from({ length: 9 }, (_, i) => thisYear - 1 + i).map((y) => <option key={y} value={y}>{y}</option>)}
+                      </select>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-sm font-semibold text-[#1C1712] mb-1.5">Job title or professional role</label>
+                      <AutocompleteInput field="title" value={background.title} onChange={(v) => setBg({ title: v })} placeholder="e.g. Architect, contractor, property consultant" className={fieldClass} data-testid="onboarding-title" />
+                    </div>
+                    <div className={background.selfEmployed ? 'opacity-50 pointer-events-none' : ''}>
+                      <label className="block text-sm font-semibold text-[#1C1712] mb-1.5">Company or studio <span className="font-normal text-[#6B625A]">(optional)</span></label>
+                      <CompanyInput value={background.company} pageId={background.companyPage} onChange={(n, id) => setBg({ company: n, companyPage: id })} placeholder="Where you work" testId="onboarding-company" canCreatePage={false} />
+                    </div>
+                    <label className="flex items-center gap-3 text-[15px] text-[#1C1712] cursor-pointer">
+                      <input type="checkbox" checked={background.selfEmployed} onChange={(e) => setBg({ selfEmployed: e.target.checked })} className="h-5 w-5 rounded accent-[#32281F]" data-testid="onboarding-self-employed" />
+                      I'm self-employed
+                    </label>
+                  </>
+                )}
+                <p className="text-sm text-[#6B625A]">You can update this later.</p>
               </div>
             )}
 
-            {/* Step 3 — Industry (multi select) */}
+            {/* Step 3: goals and field */}
             {step === 2 && (
-              <div data-testid="onboarding-industry">
+              <div className="space-y-8">
+                <div data-testid="onboarding-intent">
+                  <p className="text-sm font-semibold text-[#1C1712] mb-3">Your goals <span className="font-normal text-[#6B625A]">(pick any)</span></p>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    {intentsFor({ role }).map((it) => (
+                      <OptionCard key={it.value} active={intent.includes(it.value)} onClick={() => setIntent(toggle(intent, it.value))}
+                        title={it.label} description={it.tagline} icon={it.icon} testId={`intent-${it.value}`} />
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-[#1C1712] mb-3">Your field</p>
+            {/* Industry */}
+                <div data-testid="onboarding-industry">
                 <div className="grid sm:grid-cols-2 gap-4">
                   {INDUSTRIES.map((ind) => (
                     <OptionCard
@@ -226,14 +303,17 @@ const Onboarding = () => {
                     />
                   </div>
                 )}
+                </div>
+
+                </div>
               </div>
             )}
 
-            {/* Step 4 — Profile */}
+            {/* Step 4: profile */}
             {step === 3 && (
               <div className="mx-auto max-w-xl space-y-6" data-testid="onboarding-profile">
                 <div className="rounded-xl bg-yellow-50 border border-yellow-200 p-4">
-                  <p className="text-sm font-medium text-black mb-2">Have a résumé? Skip the typing.</p>
+                  <p className="text-sm font-medium text-black mb-2">Have a resume? Skip the typing.</p>
                   <ResumeImport
                     onImported={(data) => {
                       if (Array.isArray(data?.skills)) setSkills(data.skills);
@@ -255,7 +335,7 @@ const Onboarding = () => {
                 {nameMismatch && (
                   <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm" data-testid="resume-name-mismatch">
                     <p className="text-black">
-                      Your résumé says <strong>{nameMismatch.detectedName}</strong>, but your account is registered as <strong>{nameMismatch.currentName}</strong>. Is this your résumé?
+                      Your resume says <strong>{nameMismatch.detectedName}</strong>, but your account is registered as <strong>{nameMismatch.currentName}</strong>. Is this your resume?
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <button
@@ -304,7 +384,7 @@ const Onboarding = () => {
                   <p className="mt-1 text-xs text-gray-400 text-right">{bio.length}/500</p>
                   {bioSuggestions.length > 0 && (
                     <div className="mt-2 space-y-2" data-testid="bio-suggestions">
-                      <p className="text-xs font-medium text-gray-500">AI suggestions from your résumé — pick one, or keep editing yours</p>
+                      <p className="text-xs font-medium text-gray-500">AI suggestions from your resume — pick one, or keep editing yours</p>
                       {bioSuggestions.map((s, i) => (
                         <button
                           key={i}
@@ -334,7 +414,7 @@ const Onboarding = () => {
                     data-testid="location-input"
                   />
                   {detectedLocation && location === detectedLocation && (
-                    <p className="mt-1 text-xs text-gray-400">Detected from your résumé — edit if this isn't right.</p>
+                    <p className="mt-1 text-xs text-gray-400">Detected from your resume — edit if this isn't right.</p>
                   )}
                 </div>
 
@@ -358,54 +438,28 @@ const Onboarding = () => {
             )}
           </div>
         </div>
-      </div>
 
-      {/* Bottom action bar */}
-      <div className="sticky bottom-0 w-full border-t border-gray-100 bg-white/90 backdrop-blur px-5 py-5">
-        {industryOtherUnresolved && (
-          <p className="mx-auto max-w-3xl mb-2 text-xs font-medium text-red-600" data-testid="onboarding-blocked-reason">
-            {domainSuggest.suggestion?.relevant === false
-              ? "Not matching with our domain. If you're looking for this industry to connect with people, you can join as a customer instead."
-              : "Not matching with our domain — confirm or dismiss the suggestion above to continue."}
-          </p>
-        )}
-        <div className="mx-auto max-w-3xl flex items-center gap-4">
-          {step > 0 ? (
-            <button type="button" onClick={back} className="flex items-center gap-2 text-sm text-gray-500 hover:text-black px-2 shrink-0">
-              <FaArrowLeft className="text-xs" /> Back
-            </button>
-          ) : (
-            <span className="w-12" />
+        {/* Actions */}
+        <div className="sticky bottom-0 w-full border-t border-gray-100 bg-white/95 backdrop-blur px-5 sm:px-8 py-5 sm:rounded-b-3xl">
+          {industryOtherUnresolved && (
+            <p className="mb-2 text-xs font-medium text-red-600" data-testid="onboarding-blocked-reason">
+              {domainSuggest.suggestion?.relevant === false
+                ? "Not matching with our domain. If you're looking for this industry to connect with people, you can join as a customer instead."
+                : 'Not matching with our domain — confirm or dismiss the suggestion above to continue.'}
+            </p>
           )}
-
-          {step === 3 && (
-            <button type="button" onClick={finish} disabled={saving} className="text-sm text-gray-500 hover:text-black disabled:opacity-50 shrink-0">
-              Skip for now
-            </button>
-          )}
-
-          <div className="flex-1" />
-
           {step < TOTAL_STEPS - 1 ? (
-            <button
-              type="button"
-              onClick={next}
-              disabled={!canContinue || checkingField}
-              className="w-full max-w-xs rounded-full bg-[#32281F] py-3.5 font-semibold text-white transition-all hover:bg-[#221A14] disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
-              data-testid="onboarding-next"
-            >
+            <button type="button" onClick={next} disabled={!canContinue || checkingField}
+              className="auth-yellow-btn disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400" data-testid="onboarding-next">
               {checkingField ? 'Checking...' : 'Continue'}
             </button>
           ) : (
-            <button
-              type="button"
-              onClick={finish}
-              disabled={saving}
-              className="w-full max-w-xs rounded-full bg-[#32281F] py-3.5 font-semibold text-white transition-all hover:bg-[#221A14] disabled:opacity-50"
-              data-testid="onboarding-finish"
-            >
-              {saving ? 'Saving...' : 'Finish'}
-            </button>
+            <div className="flex items-center gap-4">
+              <button type="button" onClick={finish} disabled={saving} className="text-sm text-[#6B625A] hover:text-black disabled:opacity-50 shrink-0">Skip for now</button>
+              <button type="button" onClick={finish} disabled={saving} className="auth-yellow-btn disabled:opacity-50" data-testid="onboarding-finish">
+                {saving ? 'Saving...' : 'Finish'}
+              </button>
+            </div>
           )}
         </div>
       </div>

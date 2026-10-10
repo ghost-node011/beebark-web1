@@ -166,7 +166,7 @@ const Dashboard = () => {
             <div className="mt-5 flex flex-wrap gap-2">
               <Link to="/portfolio" className="inline-flex items-center gap-2 rounded-xl bg-[#32281F] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#221A14]" data-testid="hero-add-project"><Plus className="h-4 w-4" />Add project</Link>
               <a href="#dashboard-resume" onClick={(e) => { e.preventDefault(); document.querySelector('[data-testid="dashboard-resume"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }}
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-black hover:bg-slate-50"><Upload className="h-4 w-4" />{user?.resume?.url ? 'Update résumé' : 'Upload résumé'}</a>
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-black hover:bg-slate-50"><Upload className="h-4 w-4" />{user?.resume?.url ? 'Update resume' : 'Upload resume'}</a>
               <Link to="/jobs" className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-black hover:bg-slate-50"><Search className="h-4 w-4" />Find jobs</Link>
             </div>
           </div>
@@ -254,14 +254,14 @@ const Dashboard = () => {
           </div>
         </section>
 
-        {/* Résumé: see it, open it, replace it */}
+        {/* Resume: see it, open it, replace it */}
         <section className="mt-6 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center" data-testid="dashboard-resume">
           <div className="flex min-w-0 flex-1 items-center gap-4">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-yellow-50"><FileText className="h-6 w-6 text-[#32281F]" /></div>
             {user?.resume?.url ? (
               <div className="min-w-0">
-                <p className="text-xs uppercase tracking-widest text-slate-500">Your résumé</p>
-                <p className="truncate font-semibold text-black">{user.resume.fileName || 'Résumé'}</p>
+                <p className="text-xs uppercase tracking-widest text-slate-500">Your resume</p>
+                <p className="truncate font-semibold text-black">{user.resume.fileName || 'Resume'}</p>
                 <p className="text-xs text-slate-500">
                   {user.resume.uploadedAt ? `Updated ${new Date(user.resume.uploadedAt).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}` : 'Uploaded'}
                   {typeof user.resume.score === 'number' ? ` · Score ${user.resume.score}/100` : ''}
@@ -270,7 +270,7 @@ const Dashboard = () => {
               </div>
             ) : (
               <div className="min-w-0">
-                <p className="font-semibold text-black">Add your résumé</p>
+                <p className="font-semibold text-black">Add your resume</p>
                 <p className="text-sm text-slate-500">Fill your skills automatically and apply to jobs faster. Only you can see it.</p>
               </div>
             )}

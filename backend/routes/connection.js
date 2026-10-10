@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const router = express.Router();
 const User = require('../models/User');
 const Notification = require('../models/Notification');
+const { withCovers } = require('../utils/covers');
 const auth = require('../middleware/auth');
 const { PERSON_FIELDS, isBlockedBetween, uniqueIds } = require('../utils/userRelations');
 
@@ -20,7 +21,7 @@ function withFollow(person, viewerId) {
 router.get('/suggestions', auth, async (req, res) => {
   try {
     const { getConnectionSuggestions } = require('../utils/recommendationEngine');
-    const suggestions = await getConnectionSuggestions(req.userId, 10);
+    const suggestions = await withCovers(await getConnectionSuggestions(req.userId, 24));
     // Each suggestion already carries isFollowing/followerCount (no follower ids)
     res.json({ suggestions });
   } catch (error) {
@@ -183,7 +184,7 @@ router.get('/pending', auth, async (req, res) => {
 
     const people = uniqueIds(user.pendingRequests).filter((u) => u && u.accountStatus !== 'deactivated');
     const times = await requestTimes({ recipient: user._id });
-    res.json({ requests: people.map((p) => ({ ...withFollow(p, req.userId), requestedAt: times.get(String(p._id)) || null })) });
+    res.json({ requests: await withCovers(people.map((p) => ({ ...withFollow(p, req.userId), requestedAt: times.get(String(p._id)) || null }))) });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch requests', message: error.message });
   }
@@ -197,7 +198,7 @@ router.get('/sent', auth, async (req, res) => {
 
     const people = uniqueIds(user.sentRequests).filter((u) => u && u.accountStatus !== 'deactivated');
     const times = await requestTimes({ actor: user._id });
-    res.json({ sent: people.map((p) => ({ ...withFollow(p, req.userId), requestedAt: times.get(String(p._id)) || null })) });
+    res.json({ sent: await withCovers(people.map((p) => ({ ...withFollow(p, req.userId), requestedAt: times.get(String(p._id)) || null }))) });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch sent requests', message: error.message });
   }
@@ -215,7 +216,7 @@ router.get('/list', auth, async (req, res) => {
       await User.updateOne({ _id: user._id }, { $set: { connections: unique.map((c) => c._id) } });
     }
 
-    res.json({ connections: unique.filter((c) => c && c.accountStatus !== 'deactivated').map((c) => withFollow(c, req.userId)) });
+    res.json({ connections: await withCovers(unique.filter((c) => c && c.accountStatus !== 'deactivated').map((c) => withFollow(c, req.userId))) });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch connections', message: error.message });
   }

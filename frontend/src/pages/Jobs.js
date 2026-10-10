@@ -720,7 +720,7 @@ const Jobs = () => {
           )}
         </div>
 
-        {/* Résumé + auto-apply */}
+        {/* Resume + auto-apply */}
         {!isRecruiter && (
           <div className="rounded-2xl border border-[#E6E1DB] bg-white p-4 sm:p-5 mb-6" data-testid="auto-apply-card">
             <div className="flex flex-col lg:flex-row lg:items-center gap-4">
@@ -746,7 +746,7 @@ const Jobs = () => {
                 <label className="cursor-pointer">
                   <input type="file" accept=".pdf,.docx" onChange={handleUploadResume} className="hidden" data-testid="resume-upload-input" />
                   <span className="inline-flex items-center gap-2 rounded-full bg-[#32281F] hover:bg-[#e0a312] text-white font-semibold px-4 py-1.5 text-sm transition">
-                    <FiUpload className="w-4 h-4" />{uploadingResume ? 'Uploading...' : resumeReview ? 'Update résumé' : 'Upload résumé'}
+                    <FiUpload className="w-4 h-4" />{uploadingResume ? 'Uploading...' : resumeReview ? 'Update resume' : 'Upload resume'}
                   </span>
                 </label>
               </div>
@@ -757,7 +757,7 @@ const Jobs = () => {
                 <button type="button" onClick={() => setShowReview((v) => !v)} className="w-full flex items-center gap-3 text-left" aria-expanded={showReview}>
                   <span className={`${getMatchColor(resumeReview.score)} w-11 h-11 rounded-full flex items-center justify-center text-white font-bold shrink-0`}>{resumeReview.score}</span>
                   <span className="flex-1 min-w-0">
-                    <span className="block font-semibold text-[#32281F]">Your résumé score</span>
+                    <span className="block font-semibold text-[#32281F]">Your resume score</span>
                     <span className="block text-xs text-[#6B625A]">AI-reviewed · {showReview ? 'hide' : 'see'} the review</span>
                   </span>
                   <FiChevronDown className={`text-[#6B625A] transition ${showReview ? 'rotate-180' : ''}`} />
@@ -882,7 +882,7 @@ const Jobs = () => {
               <span className="hidden sm:inline"> · also in Settings</span>
             </p>
             {!recLoading && recommendedJobs.length === 0 && !resumeReview && !isRecruiter && (
-              <p className="text-center text-sm text-[#6B625A] mt-4">Tip: upload your résumé above to get AI-matched jobs here.</p>
+              <p className="text-center text-sm text-[#6B625A] mt-4">Tip: upload your resume above to get AI-matched jobs here.</p>
             )}
           </>
         )}

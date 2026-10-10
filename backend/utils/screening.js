@@ -124,7 +124,7 @@ const profileFacts = (user) => ({
 
 /**
  * Fill a job's questions for a student: saved answers first, then the AI from
- * their profile and résumé. Personal decisions (salary, notice period,
+ * their profile and resume. Personal decisions (salary, notice period,
  * relocation, motivation...) are left for the student.
  * Returns [{ questionId, answer, source: 'saved'|'ai'|'', needsYou, reason }].
  */

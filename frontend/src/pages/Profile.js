@@ -434,15 +434,15 @@ const Profile = () => {
   };
 
   const removeResume = async () => {
-    if (!window.confirm('Remove your résumé from your profile? Your skills stay.')) return;
+    if (!window.confirm('Remove your resume from your profile? Your skills stay.')) return;
     setRemovingResume(true);
     try {
       await axios.delete(`${API_URL}/api/profile/resume`);
       const me = await axios.get(`${API_URL}/api/profile/me`);
       setUser(me.data.user);
-      toast.success('Résumé removed');
+      toast.success('Resume removed');
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Could not remove résumé');
+      toast.error(error.response?.data?.error || 'Could not remove resume');
     } finally {
       setRemovingResume(false);
     }
@@ -1046,14 +1046,14 @@ const Profile = () => {
 
               <Card className="p-5 sm:p-8 rounded-2xl border-black/5 shadow-sm" data-testid="resume-section">
                 <div className="flex items-center justify-between mb-4 gap-3">
-                  <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 font-serif flex items-center gap-2"><FiFileText className="w-4 h-4" />Résumé</h3>
+                  <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 font-serif flex items-center gap-2"><FiFileText className="w-4 h-4" />Resume</h3>
                   <span className="text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-700">Only you</span>
                 </div>
                 {user?.resume?.url ? (
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-lg bg-gray-50 p-4">
                     <FiFileText className="w-8 h-8 text-yellow-500 shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-black truncate">{user.resume.fileName || 'Résumé'}</p>
+                      <p className="text-sm font-medium text-black truncate">{user.resume.fileName || 'Resume'}</p>
                       <p className="text-xs text-gray-500">
                         {user.resume.uploadedAt ? `Uploaded ${new Date(user.resume.uploadedAt).toLocaleDateString()}` : 'Uploaded'}
                         {typeof user.resume.score === 'number' ? ` · Score ${user.resume.score}/100` : ''}
@@ -1069,7 +1069,7 @@ const Profile = () => {
                     </div>
                   </div>
                 ) : (
-                  <p className="text-slate-500 mb-3">Upload your résumé to fill your skills and apply to jobs faster. Only you can see it.</p>
+                  <p className="text-slate-500 mb-3">Upload your resume to fill your skills and apply to jobs faster. Only you can see it.</p>
                 )}
                 <div className="mt-3">
                   <ResumeImport onImported={handleResumeImported} />
@@ -1160,9 +1160,9 @@ const Profile = () => {
             <DialogTitle>Name doesn't match</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-gray-600">
-            Your résumé says <span className="font-semibold text-black">{nameMismatch?.detectedName}</span>, but
+            Your resume says <span className="font-semibold text-black">{nameMismatch?.detectedName}</span>, but
             your account name is <span className="font-semibold text-black">{nameMismatch?.currentName}</span>.
-            Update your name everywhere on BeeBark to match your résumé?
+            Update your name everywhere on BeeBark to match your resume?
           </p>
           <div className="flex gap-2 mt-2">
             <Button onClick={() => confirmNameChange(true)} className="flex-1 bg-[#32281F] text-white">
@@ -1178,7 +1178,7 @@ const Profile = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><FiZap className="text-yellow-500" />Pick a bio</DialogTitle>
           </DialogHeader>
-          <p className="text-xs text-gray-500 -mt-2">Generated from your résumé — we've filled in the first one, pick a different one if you'd rather.</p>
+          <p className="text-xs text-gray-500 -mt-2">Generated from your resume — we've filled in the first one, pick a different one if you'd rather.</p>
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {bioSuggestions?.map((bio, i) => (
               <button

@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 // Fields shown wherever another person appears in a list (connections,
 // requests, search), enough to build a "title @ company" headline.
-const PERSON_FIELDS = 'name username email profilePic bio role careerStage specialization industries location experience';
+const PERSON_FIELDS = 'name username email profilePic headline availability bio role careerStage specialization industries location experience';
 
 // True when either person has blocked the other
 const isBlockedBetween = (a, b) => {

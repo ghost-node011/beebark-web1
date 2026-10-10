@@ -97,7 +97,7 @@ const computeProfileCompletion = (user) => {
     { key: 'skills', label: 'Add at least one skill', done: (user.skills || []).length > 0 },
     { key: 'experience', label: 'Add work experience', done: (user.experience || []).length > 0 },
     { key: 'industries', label: 'Pick an industry focus', done: (user.industries || []).length > 0 },
-    { key: 'resume', label: 'Upload your résumé', done: !!user.resume?.url }
+    { key: 'resume', label: 'Upload your resume', done: !!user.resume?.url }
   ];
   const doneCount = checks.filter((c) => c.done).length;
   return {

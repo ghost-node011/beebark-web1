@@ -202,7 +202,7 @@ const Settings = () => {
                   <Switch id={`privacy-${p.field}`} checked={!!user?.[p.field]} onCheckedChange={(v) => togglePrivacy(p.field, v)} />
                 </div>
               ))}
-              <p className="text-xs text-gray-400">Your résumé is always private.</p>
+              <p className="text-xs text-gray-400">Your resume is always private.</p>
             </div>
           </Section>
 

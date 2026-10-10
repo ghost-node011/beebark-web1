@@ -523,15 +523,15 @@ router.get('/suggest', auth, async (req, res) => {
   }
 });
 
-// Remove the uploaded résumé (the profile's skills stay)
+// Remove the uploaded resume (the profile's skills stay)
 router.delete('/resume', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId).select('resume');
-    if (!user?.resume?.url) return res.status(404).json({ error: 'No résumé to remove' });
+    if (!user?.resume?.url) return res.status(404).json({ error: 'No resume to remove' });
     await User.updateOne({ _id: req.userId }, { $unset: { resume: 1 } });
-    res.json({ message: 'Résumé removed' });
+    res.json({ message: 'Resume removed' });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to remove résumé', message: error.message });
+    res.status(500).json({ error: 'Failed to remove resume', message: error.message });
   }
 });
 
@@ -642,7 +642,7 @@ router.put('/update', auth, async (req, res) => {
 // Partial saves are allowed (per-step), completion is set on the final step.
 router.put('/onboarding', auth, async (req, res) => {
   try {
-    const { role, intent, industries, industriesOther, bio, location, skills, profilePic, complete, name } = req.body;
+    const { role, intent, industries, industriesOther, bio, location, skills, profilePic, complete, name, background } = req.body;
 
     const VALID_ROLES = ['student', 'professional'];
     const VALID_INTENT = ['learn', 'network', 'hire', 'get_hired'];
@@ -664,9 +664,43 @@ router.put('/onboarding', auth, async (req, res) => {
     if (profilePic !== undefined) update.profilePic = profilePic;
     if (complete === true) update.onboardingCompleted = true;
 
+    // Step 2: current role (professionals) or school (students) becomes the
+    // first Experience / Education entry and the headline
+    const push = {};
+    if (background && typeof background === 'object') {
+      const current = await User.findById(req.userId).select('experience education headline role').lean();
+      const asRole = update.role || current.role;
+      if (asRole === 'student') {
+        const school = clip(background.school, 160);
+        const field = clip(background.field, 120);
+        if (!school || !field) return res.status(400).json({ error: 'Add your school and course' });
+        const gradYear = /^\d{4}$/.test(String(background.gradYear || '')) ? String(background.gradYear) : '';
+        const thisYear = new Date().getFullYear();
+        if (gradYear && (Number(gradYear) < thisYear - 1 || Number(gradYear) > thisYear + 8)) return res.status(400).json({ error: 'Choose a valid graduation year' });
+        const exists = (current.education || []).some((e) => (e.school || '').toLowerCase() === school.toLowerCase());
+        if (!exists) push.education = { school, degree: '', field, duration: gradYear ? `Expected ${gradYear}` : '' };
+        update.careerStage = 'studying';
+        if (!current.headline) update.headline = `${field} student at ${school}`.slice(0, 160);
+      } else {
+        const title = clip(background.title, 120);
+        if (!title) return res.status(400).json({ error: 'Add your job title' });
+        const selfEmployed = background.selfEmployed === true;
+        let company = selfEmployed ? 'Self-employed' : clip(background.company, 120);
+        let companyPage;
+        if (!selfEmployed && mongoose.isValidObjectId(background.companyPage)) {
+          const page = await Company.findById(background.companyPage).select('name').lean();
+          if (page) { companyPage = page._id; company = page.name; }
+        }
+        const exists = (current.experience || []).some((e) => e.current && (e.title || '').toLowerCase() === title.toLowerCase());
+        if (!exists) push.experience = { title, company, current: true, employmentType: selfEmployed ? 'freelance' : '', ...(companyPage ? { companyPage } : {}) };
+        update.careerStage = selfEmployed ? 'freelance' : 'employed';
+        if (!current.headline) update.headline = (company && !selfEmployed ? `${title} at ${company}` : title).slice(0, 160);
+      }
+    }
+
     const user = await User.findByIdAndUpdate(
       req.userId,
-      update,
+      { $set: update, ...(Object.keys(push).length ? { $push: push } : {}) },
       { new: true, runValidators: true }
     ).select('-password');
 
@@ -676,12 +710,12 @@ router.put('/onboarding', auth, async (req, res) => {
   }
 });
 
-// Import a résumé/CV (PDF/DOCX): parse it, merge extracted skills into the
+// Import a resume/CV (PDF/DOCX): parse it, merge extracted skills into the
 // profile, and store the file + parsed data so users don't have to refill.
 router.post('/import-resume', auth, (req, res) => {
   uploadDocument.single('resume')(req, res, async (err) => {
     if (err) return res.status(400).json({ error: err.message || 'Upload failed' });
-    if (!req.file) return res.status(400).json({ error: 'No résumé file provided' });
+    if (!req.file) return res.status(400).json({ error: 'No resume file provided' });
 
     try {
       const ext = path.extname(req.file.originalname).toLowerCase();
@@ -690,11 +724,11 @@ router.post('/import-resume', auth, (req, res) => {
 
       const user = await User.findById(req.userId);
 
-      // AI check: is this actually a résumé? Skip (don't block) if Groq is unavailable.
+      // AI check: is this actually a resume? Skip (don't block) if Groq is unavailable.
       const analysis = await analyzeResumeForProfile(parsed.rawText, user.name);
       if (analysis && analysis.isResume === false) {
         return res.status(400).json({
-          error: "This doesn't look like a résumé",
+          error: "This doesn't look like a resume",
           reason: analysis.reason
         });
       }
@@ -710,7 +744,7 @@ router.post('/import-resume', auth, (req, res) => {
       }
       user.skills = merged.slice(0, 30);
 
-      // Auto-fill intent/industries from the résumé — only where the user
+      // Auto-fill intent/industries from the resume — only where the user
       // hasn't already made an explicit choice, never overwriting one.
       if (analysis) {
         if ((user.intent || []).length === 0 && analysis.suggestedIntent.length > 0) {
@@ -746,7 +780,7 @@ router.post('/import-resume', auth, (req, res) => {
       await user.save();
 
       res.json({
-        message: 'Résumé imported',
+        message: 'Resume imported',
         skills: user.skills,
         intent: user.intent,
         industries: user.industries,
@@ -764,7 +798,7 @@ router.post('/import-resume', auth, (req, res) => {
       });
     } catch (e) {
       console.error('Resume import error:', e);
-      res.status(500).json({ error: 'Failed to import résumé', message: e.message });
+      res.status(500).json({ error: 'Failed to import resume', message: e.message });
     }
   });
 });

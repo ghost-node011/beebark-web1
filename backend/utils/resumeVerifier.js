@@ -12,8 +12,8 @@ const namesLikelyDiffer = (resumeName, currentName) => {
 };
 
 /**
- * One combined Groq pass over an uploaded résumé: is this actually a
- * résumé, what name does it contain, and — if so — a bio to suggest and
+ * One combined Groq pass over an uploaded resume: is this actually a
+ * resume, what name does it contain, and — if so — a bio to suggest and
  * likely intent/industry tags. Returns null (never throws) if Groq is
  * unavailable; the caller should then skip verification/auto-fill entirely
  * rather than block the upload.
@@ -21,7 +21,7 @@ const namesLikelyDiffer = (resumeName, currentName) => {
 const analyzeResumeForProfile = async (rawText, currentName) => {
   if (!rawText?.trim()) return null;
 
-  const prompt = `You are checking a file someone uploaded as their résumé/CV on a professional
+  const prompt = `You are checking a file someone uploaded as their resume/CV on a professional
 networking app (architecture, real estate, construction, or general professional work).
 
 File text:
@@ -29,16 +29,16 @@ File text:
 ${rawText.slice(0, 8000)}
 """
 
-First, decide if this text is actually a résumé/CV (a document about one person's work history,
+First, decide if this text is actually a resume/CV (a document about one person's work history,
 skills, and education) — not a project brief, a book, an invoice, or unrelated text.
 
-If it IS a résumé, also extract the person's full name as written, their current city/country if the
-résumé states one (else null), and write 5 short (1-2 sentence) professional bio options for their
+If it IS a resume, also extract the person's full name as written, their current city/country if the
+resume states one (else null), and write 5 short (1-2 sentence) professional bio options for their
 profile, each with a slightly different angle (achievement-focused, personality-focused,
 concise/punchy, etc) — order them best-first, since the first one will be offered as the
 recommended default. Also suggest which of these platform intents apply —
 ${VALID_INTENT.join(', ')} — and which industries apply — ${VALID_INDUSTRY.join(', ')} — based only
-on what the résumé actually shows.
+on what the resume actually shows.
 
 Respond ONLY with a JSON object in this exact shape:
 {
@@ -50,7 +50,7 @@ Respond ONLY with a JSON object in this exact shape:
   "suggestedIntent": ["learn"],
   "suggestedIndustries": ["architecture"]
 }
-If it is NOT a résumé, respond with:
+If it is NOT a resume, respond with:
 { "isResume": false, "reason": "one short sentence explaining what it looks like instead", "detectedName": null, "detectedLocation": null, "bios": [], "suggestedIntent": [], "suggestedIndustries": [] }`;
 
   try {

@@ -41,7 +41,7 @@ const upload = multer({
   }
 });
 
-// Separate uploader for résumé/CV documents (PDF / DOCX)
+// Separate uploader for resume/CV documents (PDF / DOCX)
 const uploadDocument = multer({
   storage: storage,
   limits: { fileSize: 5 * 1024 * 1024 },

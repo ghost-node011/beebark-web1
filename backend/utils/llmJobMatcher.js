@@ -206,7 +206,7 @@ function fallbackMatching(job, candidates) {
 }
 
 // Without the AI: score jobs by how many of the job's skills appear anywhere in
-// the person's profile (skills, résumé skills, headline, job titles,
+// the person's profile (skills, resume skills, headline, job titles,
 // specialisation), plus a bonus for the same industry and a level that fits.
 function fallbackRecommendations(user, allJobs) {
   const profileText = [

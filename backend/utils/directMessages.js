@@ -46,7 +46,7 @@ async function sendDirectMessage({ senderId, receiverId, text, attachments, io, 
   if (!body && !files.length) throw new Error('Message is empty');
   if (body.length > 5000) throw new Error('Message is too long');
 
-  // Only the fields the checks need; full profiles (résumé text etc.) are large
+  // Only the fields the checks need; full profiles (resume text etc.) are large
   const [sender, receiver] = await Promise.all([
     User.findById(senderId).select(RELATION_FIELDS).lean(),
     User.findById(receiverId).select(RELATION_FIELDS).lean()

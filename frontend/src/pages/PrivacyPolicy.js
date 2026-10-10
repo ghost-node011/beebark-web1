@@ -37,7 +37,7 @@ const PrivacyPolicy = () => (
           <li><strong>Account information</strong> — your name, email address, and password (stored only as a secure hash).</li>
           <li><strong>Profile information</strong> — role, intent, industry, location, bio, skills, experience, and profile photo you provide.</li>
           <li><strong>Sign-in providers</strong> — if you sign in with Google or LinkedIn, we receive your name, email address, and profile photo from that provider.</li>
-          <li><strong>Résumé/CV</strong> — if you upload a résumé, we store the file and the details we extract from it (such as skills) to fill in your profile.</li>
+          <li><strong>Resume/CV</strong> — if you upload a resume, we store the file and the details we extract from it (such as skills) to fill in your profile.</li>
           <li><strong>Content</strong> — posts, messages, connections, job postings/applications, and meeting activity you create on the platform.</li>
           <li><strong>Technical data</strong> — basic log and device information needed to operate and secure the service.</li>
         </ul>

@@ -273,7 +273,7 @@ const SwipeDeck = ({ jobs, appliedIds, loading, onApplied, onDetails, onBrowseAl
       ) : (
         <div className="rounded-3xl border border-[#E6E1DB] bg-white text-center px-6 py-14" data-testid="swipe-empty">
           <p className="pf-serif text-2xl text-[#32281F]">You're all caught up</p>
-          <p className="text-sm text-[#6B625A] mt-2">New matches appear here as jobs are posted. Upload or update your résumé to sharpen them.</p>
+          <p className="text-sm text-[#6B625A] mt-2">New matches appear here as jobs are posted. Upload or update your resume to sharpen them.</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2 mt-6">
             <button type="button" onClick={onBrowseAll} className="rounded-full bg-[#32281F] text-white px-5 py-2 text-sm font-semibold" data-testid="swipe-browse-all">Browse all jobs</button>
             {history.length > 0 && (

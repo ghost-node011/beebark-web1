@@ -17,7 +17,7 @@ const skillsDatabase = [
   'Real Estate', 'Facade Design', 'Lighting Design', 'Furniture Design',
   // General professional
   'Leadership', 'Communication', 'Teamwork', 'Client Management', 'Agile', 'Scrum',
-  // Tech (kept for cross-domain résumés)
+  // Tech (kept for cross-domain resumes)
   'JavaScript', 'Python', 'Java', 'React', 'Node.js', 'SQL', 'AWS', 'Excel'
 ];
 
