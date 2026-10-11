@@ -14,9 +14,10 @@ import CompanyInput from '../components/company/CompanyInput';
 import ProfessionPicker from '../components/ProfessionPicker';
 import { groupOfProfession } from '../config/professions';
 import SkillPicker from '../components/SkillPicker';
-import { SuggestChip, useSuggestChip } from '../components/ai/SuggestChip';
 
 const TOTAL_STEPS = 4;
+// BeeBark is for these four fields only
+const FIELD_OPTIONS = INDUSTRIES.filter((i) => i.value !== 'related');
 
 const toggle = (list, value) =>
   list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
@@ -68,9 +69,7 @@ const Onboarding = () => {
   });
   const setBg = (patch) => setBackground((b) => ({ ...b, ...patch }));
   const [intent, setIntent] = useState(user?.intent || []);
-  const [industries, setIndustries] = useState(user?.industries || []);
-  const [industriesOther, setIndustriesOther] = useState(user?.industriesOther || '');
-  const domainSuggest = useSuggestChip('professional industry/domain');
+  const [industries, setIndustries] = useState((user?.industries || []).filter((v) => v !== 'related'));
   const [profilePic, setProfilePic] = useState(user?.profilePic || '');
   const [name, setName] = useState(user?.name || '');
   const [bio, setBio] = useState(user?.bio || '');
@@ -79,7 +78,6 @@ const Onboarding = () => {
   const [detectedLocation, setDetectedLocation] = useState('');
   const [nameMismatch, setNameMismatch] = useState(null);
   const [skills, setSkills] = useState(user?.skills || []);
-  const [checkingField, setCheckingField] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   // Profile photos go through the same checked upload as the profile page
@@ -102,23 +100,7 @@ const Onboarding = () => {
     }
   };
 
-  const selectIndustry = (value) => {
-    if (value === 'related') {
-      setIndustries((prev) => (prev.includes('related') ? [] : ['related']));
-    } else {
-      setIndustries((prev) => toggle(prev.filter((v) => v !== 'related'), value));
-    }
-  };
-
-  // True while the "What field?" suggestion chip is showing something the
-  // user hasn't acted on yet (accept, accept an alternative, or dismiss).
-  const industryOtherUnresolved =
-    current === 'goals' &&
-    industries.includes('related') &&
-    !!industriesOther.trim() &&
-    domainSuggest.original === industriesOther &&
-    !!domainSuggest.suggestion &&
-    (domainSuggest.suggestion.relevant === false || domainSuggest.suggestion.changed || domainSuggest.suggestion.alternatives?.length > 0);
+  const selectIndustry = (value) => setIndustries((prev) => toggle(prev, value));
 
   const backgroundDone = isStudent
     ? !!background.school.trim() && !!background.field.trim()
@@ -127,26 +109,11 @@ const Onboarding = () => {
   const canContinue =
     ((current === 'role' && !!role) ||
       (current === 'background' && backgroundDone) ||
-      (current === 'goals' && intent.some((v) => intentsFor({ role }).some((i) => i.value === v)) && industries.length > 0
-        && (!industries.includes('related') || !!industriesOther.trim())) ||
-      current === 'profile') &&
-    !industryOtherUnresolved;
+      (current === 'goals' && intent.some((v) => intentsFor({ role }).some((i) => i.value === v)) && industries.length > 0) ||
+      current === 'profile');
 
-  const next = async () => {
+  const next = () => {
     if (!canContinue) return;
-    // A profession picked from the list is known; only typed-in fields get checked
-    if (current === 'goals' && industries.includes('related') && industriesOther.trim() && !groupOfProfession(industriesOther)) {
-      let result = domainSuggest.suggestion;
-      if (domainSuggest.original !== industriesOther) {
-        setCheckingField(true);
-        result = await domainSuggest.check(industriesOther);
-        setCheckingField(false);
-      }
-      // Block Continue until the user acts on a pending suggestion — either
-      // accept it (which clears it) or dismiss it to keep their own text.
-      const unresolved = !!result && (result.relevant === false || result.changed || result.alternatives?.length > 0);
-      if (unresolved) return;
-    }
     setStep((s) => s + 1);
     window.scrollTo({ top: 0 });
   };
@@ -159,7 +126,7 @@ const Onboarding = () => {
       const bg = isStudent
         ? { school: background.school.trim(), field: background.field.trim(), gradYear: background.gradYear }
         : { title: background.title.trim(), company: background.company.trim(), companyPage: background.companyPage || undefined, selfEmployed: background.selfEmployed };
-      await updateOnboarding({ role, background: bg, intent: intent.filter((v) => intentsFor({ role }).some((i) => i.value === v)), industries, industriesOther, bio, location, skills, profilePic, name, complete: true });
+      await updateOnboarding({ role, background: bg, intent: intent.filter((v) => intentsFor({ role }).some((i) => i.value === v)), industries, industriesOther: '', bio, location, skills, profilePic, name, complete: true });
       toast.success("You're all set!");
       navigate('/dashboard', { replace: true });
     } catch (error) {
@@ -274,7 +241,6 @@ const Onboarding = () => {
                           // Pre-pick the matching field for the next step
                           const g = groupOfProfession(v);
                           if (g && !industries.length) setIndustries([g.industry]);
-                          if (g?.industry === 'related' && !industriesOther) setIndustriesOther(v);
                         }} />
                     </div>
                     <div className={background.selfEmployed ? 'opacity-50 pointer-events-none' : ''}>
@@ -308,35 +274,16 @@ const Onboarding = () => {
             {/* Industry */}
                 <div data-testid="onboarding-industry">
                 <div className="grid sm:grid-cols-2 gap-4">
-                  {INDUSTRIES.map((ind) => (
+                  {FIELD_OPTIONS.map((ind) => (
                     <OptionCard
                       key={ind.value}
                       active={industries.includes(ind.value)}
                       onClick={() => selectIndustry(ind.value)}
                       title={ind.label}
-                      description={ind.value === 'related' ? "None of the above? Choose this instead" : undefined}
                       testId={`industry-${ind.value}`}
                     />
                   ))}
                 </div>
-                {industries.includes('related') && (
-                  <div className="mt-4">
-                    <label className="block text-sm font-semibold text-[#1C1712] mb-1.5">What field?</label>
-                    <ProfessionPicker value={industriesOther} testId="industry-other-input" placeholder="Search professions, e.g. Drone operator, Vastu consultant"
-                      onChange={(v) => { setIndustriesOther(v); if (domainSuggest.suggestion) domainSuggest.dismiss(); if (!groupOfProfession(v)) domainSuggest.check(v); }} />
-                    {domainSuggest.suggestion?.relevant === false && domainSuggest.original === industriesOther && (
-                      <div className="mt-2 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700" data-testid="industry-other-warning">
-                        {domainSuggest.suggestion.relevantReason || "This doesn't look like a real professional field. BeeBark is built for architecture, interiors, construction, real estate and closely adjacent fields — please enter one to continue."}
-                      </div>
-                    )}
-                    <SuggestChip
-                      suggestion={domainSuggest.suggestion}
-                      onAccept={(corrected) => { setIndustriesOther(corrected); domainSuggest.dismiss(); }}
-                      onAcceptAlternative={(alt) => { setIndustriesOther(alt); domainSuggest.dismiss(); }}
-                      onDismiss={domainSuggest.dismiss}
-                    />
-                  </div>
-                )}
                 </div>
 
                 </div>
@@ -460,17 +407,10 @@ const Onboarding = () => {
 
         {/* Actions */}
         <div className="sticky bottom-0 w-full border-t border-gray-100 bg-white/95 backdrop-blur px-5 sm:px-8 py-5 sm:rounded-b-3xl">
-          {industryOtherUnresolved && (
-            <p className="mb-2 text-xs font-medium text-red-600" data-testid="onboarding-blocked-reason">
-              {domainSuggest.suggestion?.relevant === false
-                ? "Not matching with our domain. If you're looking for this industry to connect with people, you can join as a customer instead."
-                : 'Not matching with our domain — confirm or dismiss the suggestion above to continue.'}
-            </p>
-          )}
           {step < TOTAL_STEPS - 1 ? (
-            <button type="button" onClick={next} disabled={!canContinue || checkingField}
+            <button type="button" onClick={next} disabled={!canContinue}
               className="auth-yellow-btn disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400" data-testid="onboarding-next">
-              {checkingField ? 'Checking...' : 'Continue'}
+              Continue
             </button>
           ) : (
             <button type="button" onClick={finish} disabled={saving} className="auth-yellow-btn inline-flex items-center justify-center gap-2 disabled:opacity-50" data-testid="onboarding-finish">

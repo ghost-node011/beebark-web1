@@ -4,9 +4,8 @@ import { PROFESSION_GROUPS, generalOf, groupOfProfession } from '../config/profe
 
 /**
  * A field that opens "Select profession": a search box over professions grouped
- * by field (open one group at a time, like an accordion). Typing something that
- * isn't listed offers to use it as typed. A bottom sheet on phones, a dialog on
- * larger screens.
+ * by field (open one group at a time, like an accordion). Only BeeBark's four
+ * fields are listed. A bottom sheet on phones, a dialog on larger screens.
  */
 const ProfessionPicker = ({ value, onChange, placeholder = 'Select your profession', title = 'Select profession', testId = 'profession-picker', allowGeneral = true }) => {
   const [open, setOpen] = useState(false);
@@ -36,7 +35,6 @@ const ProfessionPicker = ({ value, onChange, placeholder = 'Select your professi
     }
     return out.slice(0, 40);
   }, [term, allowGeneral]);
-  const exact = matches.some((m) => m.item.toLowerCase() === term);
 
   const pick = (v) => { onChange(v); setOpen(false); };
 
@@ -81,14 +79,7 @@ const ProfessionPicker = ({ value, onChange, placeholder = 'Select your professi
               {term ? (
                 <>
                   {matches.map((m) => <Row key={m.item} item={m.item} sub={m.group} />)}
-                  {!exact && q.trim().length > 1 && (
-                    <button type="button" onClick={() => pick(q.trim().replace(/\s+/g, ' ').slice(0, 80))} data-testid={`${testId}-custom`}
-                      className="flex w-full items-center gap-3 px-5 py-3 text-left text-[15px] text-[#1C1712] hover:bg-[#F7F4F1]">
-                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#F2EFEC] text-sm">+</span>
-                      Use “{q.trim()}”
-                    </button>
-                  )}
-                  {matches.length === 0 && q.trim().length <= 1 && <p className="px-5 py-6 text-sm text-[#857B71]">Keep typing…</p>}
+                  {matches.length === 0 && <p className="px-5 py-6 text-sm text-[#857B71]" data-testid="profession-none">No match. BeeBark is for architecture, interiors, construction and real estate professionals.</p>}
                 </>
               ) : (
                 <>
@@ -110,9 +101,6 @@ const ProfessionPicker = ({ value, onChange, placeholder = 'Select your professi
                       </div>
                     );
                   })}
-                  <button type="button" onClick={() => { setExpanded(null); searchRef.current?.focus(); }} className="flex w-full items-center px-5 py-4 text-left text-[17px] text-[#1C1712] border-b border-[#EFEBE6]">
-                    Other <span className="ml-2 text-sm text-[#857B71]">(type it in the search above)</span>
-                  </button>
                 </>
               )}
             </div>
