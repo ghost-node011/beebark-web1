@@ -193,7 +193,7 @@ const meResponse = (user) => ({
       publicProfile: user.settings?.publicProfile !== false,
       followerCount: (user.followers || []).length,
       followingCount: (user.following || []).length,
-      badges: { verified: Boolean(user.badges?.verified), pro: Boolean(user.badges?.pro) },
+      badges: { verified: Boolean(user.badges?.verified), pro: Boolean(user.badges?.pro), top50: Boolean(user.badges?.top50) },
       profileViews: user.profileViews || 0,
       resume: user.resume?.url ? {
         url: user.resume.url,
@@ -370,7 +370,7 @@ async function buildProfile(username, viewerId, { visitor = '', countView = true
       languages: user.languages || [],
       availability: user.availability || [],
       business: user.business?.name ? user.business : null,
-      badges: { verified: Boolean(user.badges?.verified), pro: Boolean(user.badges?.pro) },
+      badges: { verified: Boolean(user.badges?.verified), pro: Boolean(user.badges?.pro), top50: Boolean(user.badges?.top50) },
       connectionCount: active(user.connections).length,
       followerCount: (user.followers || []).length,
       followingCount: (user.following || []).length,

@@ -142,7 +142,9 @@ const userSchema = new mongoose.Schema({
   // Set by the BeeBark team only (identity checked / paid plan)
   badges: {
     verified: { type: Boolean, default: false },
-    pro: { type: Boolean, default: false }
+    pro: { type: Boolean, default: false },
+    // First 50 people on the pre-launch waitlist
+    top50: { type: Boolean, default: false }
   },
   // One line under the name, e.g. "Real Estate Developer | Architect"
   headline: { type: String, default: '', trim: true, maxlength: 140 },
@@ -318,6 +320,22 @@ const userSchema = new mongoose.Schema({
   resetPasswordExpires: Date
 }, {
   timestamps: true
+});
+
+// New accounts from the pre-launch waitlist get its badges (verified, Top 50)
+userSchema.pre('save', async function(next) {
+  if (!this.isNew) return next();
+  try {
+    const found = await require('../utils/waitlistBadges').waitlistBadgesFor(this.email);
+    if (found) {
+      this.badges = this.badges || {};
+      this.badges.verified = true;
+      if (found.top50) this.badges.top50 = true;
+    }
+  } catch (err) {
+    console.error('Waitlist badges:', err.message);
+  }
+  next();
 });
 
 userSchema.pre('save', async function(next) {
