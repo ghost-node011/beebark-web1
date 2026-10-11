@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
+const { noteSignIn } = require('../utils/signIn');
 const axios = require('axios');
 const { body, validationResult } = require('express-validator');
 
@@ -18,7 +19,6 @@ const {
 } = require('../utils/otp');
 const {
   sendOtpEmail,
-  sendWelcomeEmail,
   sendPasswordResetOtpEmail
 } = require('../utils/email');
 
@@ -32,6 +32,12 @@ const signToken = (user) =>
     process.env.JWT_SECRET,
     { expiresIn: '7d' }
   );
+
+// A token for a completed sign-in; also remembers the device and alerts on new ones
+const signInToken = (req, user, method) => {
+  noteSignIn(req, user, method);
+  return signToken(user);
+};
 
 const publicUser = (user) => ({
   id: user._id,
@@ -229,14 +235,11 @@ router.post(
       user.emailVerification = undefined;
       await user.save();
 
-      // Welcome email is best-effort; don't block verification on it
-      sendWelcomeEmail(user.email, user.name).catch((e) =>
-        console.error('Failed to send welcome email:', e.message)
-      );
+      // The welcome email goes out when onboarding is finished (routes/profile.js)
 
       res.json({
         message: 'Email verified successfully',
-        token: signToken(user),
+        token: signInToken(req, user, 'signup'),
         user: publicUser(user)
       });
     } catch (error) {
@@ -328,7 +331,7 @@ router.post(
 
       res.json({
         message: 'Login successful',
-        token: signToken(user),
+        token: signInToken(req, user, 'password'),
         user: publicUser(user)
       });
     } catch (error) {
@@ -397,14 +400,11 @@ router.post(
           profilePic: payload.picture || ''
         });
         await user.save();
-        sendWelcomeEmail(user.email, user.name).catch((e) =>
-          console.error('Failed to send welcome email:', e.message)
-        );
       }
 
       res.json({
         message: 'Google sign-in successful',
-        token: signToken(user),
+        token: signInToken(req, user, 'google'),
         user: publicUser(user),
         isNewUser
       });
@@ -493,14 +493,11 @@ router.post(
           profilePic: profile.picture || ''
         });
         await user.save();
-        sendWelcomeEmail(user.email, user.name).catch((e) =>
-          console.error('Failed to send welcome email:', e.message)
-        );
       }
 
       res.json({
         message: 'LinkedIn sign-in successful',
-        token: signToken(user),
+        token: signInToken(req, user, 'linkedin'),
         user: publicUser(user),
         isNewUser
       });
@@ -577,7 +574,7 @@ router.post(
 
       res.json({
         message: 'Phone sign-in successful',
-        token: signToken(user),
+        token: signInToken(req, user, 'phone'),
         user: publicUser(user),
         isNewUser
       });

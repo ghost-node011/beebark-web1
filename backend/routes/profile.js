@@ -5,6 +5,7 @@ const User = require('../models/User');
 const mongoose = require('mongoose');
 const Company = require('../models/Company');
 const { firmToPage } = require('../utils/firmToPage');
+const { sendWelcomeEmail } = require('../utils/email');
 const auth = require('../middleware/auth');
 const { uploadDocument, uploadToCloudinary } = require('../config/cloudinary');
 const { parseResume } = require('../utils/resumeParser');
@@ -538,7 +539,7 @@ router.delete('/resume', auth, async (req, res) => {
 router.get('/:userId', auth, async (req, res) => {
   try {
     const user = await User.findById(req.params.userId)
-      .select('-password -resetPasswordToken -resetPasswordExpires')
+      .select('-password -resetPasswordToken -resetPasswordExpires -knownDevices -answerBank')
       .populate('connections', 'name email profilePic');
     
     if (!user) {
@@ -663,6 +664,9 @@ router.put('/onboarding', auth, async (req, res) => {
     if (Array.isArray(skills)) update.skills = skills.map((s) => String(s).trim()).filter(Boolean).slice(0, 30);
     if (profilePic !== undefined) update.profilePic = profilePic;
     if (complete === true) update.onboardingCompleted = true;
+    // First time onboarding is finished: send the welcome email after saving
+    const firstFinish = complete === true
+      && !(await User.findById(req.userId).select('onboardingCompleted').lean())?.onboardingCompleted;
 
     // Step 2: current role (professionals) or school (students) becomes the
     // first Experience / Education entry and the headline
@@ -703,6 +707,10 @@ router.put('/onboarding', auth, async (req, res) => {
       { $set: update, ...(Object.keys(push).length ? { $push: push } : {}) },
       { new: true, runValidators: true }
     ).select('-password');
+
+    if (firstFinish && user?.email && !/@phone\.beebark\.local$/i.test(user.email)) {
+      sendWelcomeEmail(user.email, user.name).catch((e) => console.error('Failed to send welcome email:', e.message));
+    }
 
     res.json({ message: 'Onboarding saved', user });
   } catch (error) {

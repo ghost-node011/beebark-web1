@@ -651,7 +651,7 @@ router.get('/:jobId/matched-candidates', auth, async (req, res) => {
     }
 
     const applicantIds = job.applicants.map(app => app.user);
-    const candidates = await User.find({ _id: { $in: applicantIds } }).select('-password');
+    const candidates = await User.find({ _id: { $in: applicantIds } }).select('-password -knownDevices -answerBank');
 
     const matchedCandidates = await matchCandidatesWithJobLLM(job, candidates);
 

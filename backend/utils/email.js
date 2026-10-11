@@ -1,5 +1,7 @@
 const nodemailer = require('nodemailer');
 const axios = require('axios');
+const { SESv2Client, SendEmailCommand } = require('@aws-sdk/client-sesv2');
+const EmailLog = require('../models/EmailLog');
 const { pickTemplate, renderWaitlistEmail } = require('./waitlistEmails');
 
 // Brand palette
@@ -23,6 +25,40 @@ const LOGO_URL = 'https://www.thebeebark.com/bbark.png';
 // Set MAIL_SERVICE_URL (and MAIL_SHARED_SECRET) only to route mail through the
 // Vercel relay instead, e.g. when the host blocks outbound SMTP.
 const MAIL_SERVICE_URL = (process.env.MAIL_SERVICE_URL || '').trim();
+
+// Amazon SES is used first when SES_REGION is set (on EC2 the credentials come
+// from the instance's IAM role). If SES rejects a message — e.g. while the
+// account is still in the SES sandbox — it falls back to SMTP when configured.
+const SES_REGION = (process.env.SES_REGION || '').trim();
+const ses = SES_REGION ? new SESv2Client({ region: SES_REGION }) : null;
+const smtpConfigured = () => !!(process.env.EMAIL_HOST && process.env.EMAIL_PASSWORD);
+
+// SES configuration sets publish each email's events (delivered, opened,
+// clicked, bounced...) to SNS → /api/email-events. Codes and password resets
+// use a set without open/click tracking: tracking adds nothing there and click
+// tracking would rewrite their links.
+const TRACKED_SET = (process.env.SES_CONFIGURATION_SET || '').trim();
+const UNTRACKED_SET = (process.env.SES_CONFIGURATION_SET_NO_TRACKING || '').trim();
+const UNTRACKED_TYPES = new Set(['otp', 'password_reset', 'login_alert']);
+// With SES set up, all mail goes through SES only. EMAIL_FALLBACK=1 lets a
+// rejected message fall back to the relay / SMTP (only for emergencies).
+const FALLBACK_ALLOWED = process.env.EMAIL_FALLBACK === '1';
+
+// Record every send for the email dashboard. Never let logging break sending.
+// SES rows are upserted by messageId, since an event can occasionally arrive first.
+const logEmail = (fields) => {
+  const write = fields.messageId
+    ? EmailLog.updateOne(
+      { messageId: fields.messageId },
+      {
+        $set: { to: fields.to, subject: fields.subject, type: fields.type, via: fields.via, tracked: !!fields.tracked },
+        $setOnInsert: { sentAt: new Date() }
+      },
+      { upsert: true }
+    )
+    : EmailLog.create(fields);
+  return write.catch((err) => console.error('Email log write failed:', err.message));
+};
 
 let cachedTransporter = null;
 const getTransporter = () => {
@@ -117,11 +153,43 @@ const button = (label, href) => `
     </tr>
   </table>`;
 
-const send = async ({ to, subject, html }) => {
+const send = async ({ to, subject, html, type = 'other' }) => {
   const started = Date.now();
-  // If a mail relay is configured (e.g. a Vercel function whose network allows
-  // outbound SMTP), send through it over HTTPS — useful when the backend host
-  // blocks SMTP (Render free tier). Otherwise send via SMTP directly.
+  const from = process.env.EMAIL_FROM || 'BeeBark <noreply@thebeebark.com>';
+  const replyTo = process.env.EMAIL_REPLY_TO || undefined;
+  const log = { to, subject, type };
+
+  // 1. Amazon SES, when configured
+  if (ses) {
+    const untracked = UNTRACKED_TYPES.has(type);
+    const configurationSet = (untracked ? UNTRACKED_SET : TRACKED_SET) || undefined;
+    try {
+      const result = await ses.send(new SendEmailCommand({
+        ConfigurationSetName: configurationSet,
+        FromEmailAddress: from,
+        Destination: { ToAddresses: [to] },
+        ReplyToAddresses: replyTo ? [replyTo] : undefined,
+        Content: {
+          Simple: {
+            Subject: { Data: subject, Charset: 'UTF-8' },
+            Body: { Html: { Data: html, Charset: 'UTF-8' } }
+          }
+        }
+      }));
+      console.log(`📧 Mail sent to ${to} via SES in ${Date.now() - started}ms`);
+      logEmail({ ...log, via: 'ses', messageId: result.MessageId, tracked: !!configurationSet && !untracked });
+      return;
+    } catch (err) {
+      if (!FALLBACK_ALLOWED || (!MAIL_SERVICE_URL && !smtpConfigured())) {
+        logEmail({ ...log, via: 'ses', status: 'failed', error: `${err.name}: ${err.message}` });
+        throw new Error(`SES error: ${err.name}: ${err.message}`);
+      }
+      console.error(`SES send failed (${err.name}: ${err.message}); trying the fallback`);
+    }
+  }
+
+  // 2. The mail relay (e.g. a Vercel function), for hosts that block outbound
+  // SMTP such as Render's free tier
   if (MAIL_SERVICE_URL) {
     const base = MAIL_SERVICE_URL.replace(/\/+$/, '');
     try {
@@ -134,6 +202,7 @@ const send = async ({ to, subject, html }) => {
         }
       );
       console.log(`📧 Mail sent to ${to} via relay in ${Date.now() - started}ms`);
+      logEmail({ ...log, via: 'relay' });
     } catch (err) {
       // Surface the relay's real reason (e.g. "535 Authentication Failed")
       const status = err.response?.status;
@@ -142,14 +211,25 @@ const send = async ({ to, subject, html }) => {
         err.response?.data?.error ||
         err.code ||
         err.message;
-      throw new Error(`mail relay error${status ? ` (HTTP ${status})` : ''}: ${detail}`);
+      const message = `mail relay error${status ? ` (HTTP ${status})` : ''}: ${detail}`;
+      logEmail({ ...log, via: 'relay', status: 'failed', error: message });
+      throw new Error(message);
     }
     return;
   }
 
-  const from = process.env.EMAIL_FROM || 'BeeBark <noreply@thebeebark.com>';
-  await getTransporter().sendMail({ from, to, subject, html });
+  // 3. Direct SMTP. GoDaddy and most SMTP hosts reject a From that isn't the
+  // signed-in mailbox, so keep the sender name but use EMAIL_USER's address
+  const smtpUser = process.env.EMAIL_USER;
+  const smtpFrom = smtpUser ? from.replace(/<[^>]*>|^[^<\s]+@[^\s>]+$/, (m) => (m.startsWith('<') ? `<${smtpUser}>` : smtpUser)) : from;
+  try {
+    await getTransporter().sendMail({ from: smtpFrom, to, subject, html, replyTo });
+  } catch (err) {
+    logEmail({ ...log, via: 'smtp', status: 'failed', error: err.message });
+    throw err;
+  }
   console.log(`📧 Mail sent to ${to} via SMTP in ${Date.now() - started}ms`);
+  logEmail({ ...log, via: 'smtp' });
 };
 
 // --- OTP verification email ---
@@ -171,6 +251,7 @@ const sendOtpEmail = async (toEmail, name, otp) => {
   `;
 
   await send({
+    type: 'otp',
     to: toEmail,
     subject: `${otp} is your BeeBark verification code`,
     html: layout({
@@ -182,18 +263,18 @@ const sendOtpEmail = async (toEmail, name, otp) => {
   });
 };
 
-// --- Welcome email (after successful verification) ---
+// --- Welcome email (sent once, when someone finishes onboarding) ---
 const sendWelcomeEmail = async (toEmail, name) => {
   const firstName = (name || '').split(' ')[0] || 'there';
   const body = `
     <p style="margin:0 0 16px 0;font-size:15px;color:${BRAND.ink};line-height:1.6;">Hi ${firstName},</p>
     <p style="margin:0 0 16px 0;font-size:15px;color:${BRAND.ink};line-height:1.6;">
-      Your email is verified and your account is live. Welcome to <strong>BeeBark</strong> — a growing
+      Your profile is set up and your account is live. Welcome to <strong>BeeBark</strong>, a growing
       ecosystem designed to connect people, ideas, and possibilities in the built environment.
     </p>
     <p style="margin:0 0 4px 0;font-size:15px;color:${BRAND.black};font-weight:700;">A few ways to get started:</p>
     <ul style="margin:0 0 8px 0;padding-left:20px;font-size:15px;color:${BRAND.ink};line-height:1.8;">
-      <li>Complete your profile so the right people can find you</li>
+      <li>Add your projects to your portfolio so the right people can find you</li>
       <li>Connect with professionals, firms, and students in your field</li>
       <li>Explore jobs and opportunities tailored to your skills</li>
     </ul>
@@ -201,6 +282,7 @@ const sendWelcomeEmail = async (toEmail, name) => {
   `;
 
   await send({
+    type: 'welcome',
     to: toEmail,
     subject: 'Welcome to BeeBark',
     html: layout({
@@ -208,6 +290,36 @@ const sendWelcomeEmail = async (toEmail, name) => {
       heading: 'Welcome aboard!',
       body,
       footerNote: 'Need help? Just reply to this email and our team will get back to you.'
+    })
+  });
+};
+
+// --- New sign-in alert (a device this account hasn't used before) ---
+// details: { device: "Chrome on macOS", ip, at: Date, method: "password" | "google" | ... }
+const sendLoginAlertEmail = async (toEmail, name, { device, ip, at = new Date(), method = '' } = {}) => {
+  const firstName = (name || '').split(' ')[0] || 'there';
+  const esc = (v) => String(v || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const when = new Date(at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+  const how = { password: 'Email and password', google: 'Google', linkedin: 'LinkedIn', phone: 'Phone number' }[method] || '';
+  const row = (label, value) => (value ? `<tr><td style="padding:6px 16px 6px 0;color:${BRAND.muted};font-size:14px;">${label}</td><td style="padding:6px 0;font-size:14px;color:${BRAND.ink};font-weight:600;">${esc(value)}</td></tr>` : '');
+  const body = `
+    <p style="margin:0 0 16px 0;font-size:15px;color:${BRAND.ink};line-height:1.6;">Hi ${esc(firstName)},</p>
+    <p style="margin:0 0 16px 0;font-size:15px;color:${BRAND.ink};line-height:1.6;">Your BeeBark account was just signed in on a new device.</p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px 0;">
+      ${row('Device', device)}${row('When', `${when} IST`)}${row('Signed in with', how)}${row('IP address', ip)}
+    </table>
+    <p style="margin:0 0 8px 0;font-size:15px;color:${BRAND.ink};line-height:1.6;">If this was you, there's nothing to do.</p>
+    <p style="margin:0 0 8px 0;font-size:15px;color:${BRAND.ink};line-height:1.6;"><strong>Not you?</strong> Reset your password now and sign out of all devices from Settings.</p>
+    ${button('Reset my password', `${APP_URL()}/forgot-password`)}`;
+  await send({
+    type: 'login_alert',
+    to: toEmail,
+    subject: `New sign-in to your BeeBark account${device ? ` (${device})` : ''}`,
+    html: layout({
+      preheader: `Signed in on ${device || 'a new device'} at ${when} IST`,
+      heading: 'New sign-in',
+      body,
+      footerNote: "We send this whenever your account is used on a device we haven't seen before."
     })
   });
 };
@@ -222,6 +334,7 @@ const sendPasswordResetEmail = async (toEmail, resetUrl) => {
   `;
 
   await send({
+    type: 'password_reset',
     to: toEmail,
     subject: 'Reset your BeeBark password',
     html: layout({
@@ -252,6 +365,7 @@ const sendPasswordResetOtpEmail = async (toEmail, name, otp) => {
   `;
 
   await send({
+    type: 'password_reset',
     to: toEmail,
     subject: `${otp} is your BeeBark password reset code`,
     html: layout({
@@ -267,7 +381,7 @@ const sendPasswordResetOtpEmail = async (toEmail, name, otp) => {
 // Picks one of six audience-specific welcome emails (utils/waitlistEmails.js)
 const sendWaitlistEmail = async (toEmail, name, profile = {}) => {
   const { subject, html } = renderWaitlistEmail(pickTemplate(profile), name);
-  await send({ to: toEmail, subject, html });
+  await send({ to: toEmail, subject, html, type: 'waitlist' });
 };
 
 // --- Job applications waiting for the student's answers ---
@@ -285,6 +399,7 @@ const sendNeedsAnswersEmail = async (toEmail, name, jobs) => {
     <p style="margin:0 0 24px 0;font-size:15px;line-height:1.6;color:${BRAND.ink};">Answer once and we'll send the application. We'll remember your answer for similar questions.</p>
     <p style="margin:0 0 8px 0;"><a href="${url}" style="display:inline-block;background:${BRAND.black};color:#fff;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:10px;font-size:15px;">Answer and apply</a></p>`;
   await send({
+    type: 'needs_answers',
     to: toEmail,
     subject: jobs.length === 1 ? `Quick question before we apply to ${jobs[0].title}` : `${jobs.length} applications are waiting for your answers`,
     html: layout({
@@ -310,10 +425,11 @@ const sendQuoteRequestEmail = async (toEmail, ownerName, { buyer, product, quant
     ${message ? `<p style="margin:0 0 16px 0;padding:12px 14px;background:#f6f5f2;border-radius:10px;font-size:15px;line-height:1.6;color:${BRAND.ink};white-space:pre-line;">${esc(message)}</p>` : ''}
     ${button('See their profile', profileUrl)}`;
   await send({
+    type: 'quote_request',
     to: toEmail,
     subject: `Quote request${product ? ` for ${product}` : ''} from ${buyer.name}`,
     html: layout({ preheader: `${buyer.name} would like a quote`, heading: 'New quote request', body, footerNote: 'Reply to this email or connect with them on BeeBark to chat.' })
   });
 };
 
-module.exports = { sendOtpEmail, sendWelcomeEmail, sendPasswordResetEmail, sendPasswordResetOtpEmail, sendWaitlistEmail, sendNeedsAnswersEmail, sendQuoteRequestEmail, send };
+module.exports = { sendOtpEmail, sendWelcomeEmail, sendPasswordResetEmail, sendPasswordResetOtpEmail, sendWaitlistEmail, sendNeedsAnswersEmail, sendQuoteRequestEmail, sendLoginAlertEmail, send };

@@ -219,6 +219,14 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  // Browsers/systems this account has signed in from (for "New sign-in" alerts)
+  knownDevices: [{
+    key: String,
+    label: String,
+    ip: String,
+    firstSeen: Date,
+    lastSeen: Date
+  }],
   emailVerification: {
     otpHash: String,
     expiresAt: Date,
