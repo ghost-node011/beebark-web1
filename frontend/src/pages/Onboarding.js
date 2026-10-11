@@ -3,13 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 import { FaCheck, FaTimes } from 'react-icons/fa';
-import { FiArrowLeft } from 'react-icons/fi';
-import ImageUpload from '../components/ImageUpload';
+import { FiArrowLeft, FiArrowRight, FiUser, FiPlus } from 'react-icons/fi';
+import axios from 'axios';
+import { API_URL } from '../config/api';
 import ResumeImport from '../components/ResumeImport';
 import { ROLES } from '../config/roles';
 import { intentsFor, INDUSTRIES } from '../config/onboarding';
 import { AutocompleteInput, LocationInput } from '../components/AutocompleteInput';
 import CompanyInput from '../components/company/CompanyInput';
+import ProfessionPicker from '../components/ProfessionPicker';
+import { groupOfProfession } from '../config/professions';
 import SkillPicker from '../components/SkillPicker';
 import { SuggestChip, useSuggestChip } from '../components/ai/SuggestChip';
 
@@ -53,6 +56,10 @@ const Onboarding = () => {
   const [saving, setSaving] = useState(false);
 
   const [role, setRole] = useState(user?.role && ['student', 'professional'].includes(user.role) ? user.role : '');
+  const isStudent = role === 'student';
+  // Students pick their goals and field before their school; professionals describe their work first
+  const ORDER = isStudent ? ['role', 'goals', 'background', 'profile'] : ['role', 'background', 'goals', 'profile'];
+  const current = ORDER[step];
   const firstJob = (user?.experience || []).find((e) => e.current) || {};
   const firstSchool = (user?.education || [])[0] || {};
   const [background, setBackground] = useState({
@@ -73,6 +80,27 @@ const Onboarding = () => {
   const [nameMismatch, setNameMismatch] = useState(null);
   const [skills, setSkills] = useState(user?.skills || []);
   const [checkingField, setCheckingField] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  // Profile photos go through the same checked upload as the profile page
+  const choosePhoto = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!/^image\/(jpeg|png|webp|gif)$/.test(file.type)) { toast.error('Please choose a JPG, PNG or WebP image'); return; }
+    if (file.size > 18 * 1024 * 1024) { toast.error('That image is too large. Please choose one under 18 MB.'); return; }
+    setUploadingPhoto(true);
+    try {
+      const body = new FormData();
+      body.append('image', file);
+      const res = await axios.post(`${API_URL}/api/upload/profile-photo`, body, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setProfilePic(res.data.url);
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Could not upload that photo');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
 
   const selectIndustry = (value) => {
     if (value === 'related') {
@@ -85,28 +113,29 @@ const Onboarding = () => {
   // True while the "What field?" suggestion chip is showing something the
   // user hasn't acted on yet (accept, accept an alternative, or dismiss).
   const industryOtherUnresolved =
-    step === 2 &&
+    current === 'goals' &&
     industries.includes('related') &&
     !!industriesOther.trim() &&
     domainSuggest.original === industriesOther &&
     !!domainSuggest.suggestion &&
     (domainSuggest.suggestion.relevant === false || domainSuggest.suggestion.changed || domainSuggest.suggestion.alternatives?.length > 0);
 
-  const isStudent = role === 'student';
   const backgroundDone = isStudent
     ? !!background.school.trim() && !!background.field.trim()
     : !!background.title.trim();
 
   const canContinue =
-    ((step === 0 && !!role) ||
-      (step === 1 && backgroundDone) ||
-      (step === 2 && intent.some((v) => intentsFor({ role }).some((i) => i.value === v)) && industries.length > 0) ||
-      step === 3) &&
+    ((current === 'role' && !!role) ||
+      (current === 'background' && backgroundDone) ||
+      (current === 'goals' && intent.some((v) => intentsFor({ role }).some((i) => i.value === v)) && industries.length > 0
+        && (!industries.includes('related') || !!industriesOther.trim())) ||
+      current === 'profile') &&
     !industryOtherUnresolved;
 
   const next = async () => {
     if (!canContinue) return;
-    if (step === 2 && industries.includes('related') && industriesOther.trim()) {
+    // A profession picked from the list is known; only typed-in fields get checked
+    if (current === 'goals' && industries.includes('related') && industriesOther.trim() && !groupOfProfession(industriesOther)) {
       let result = domainSuggest.suggestion;
       if (domainSuggest.original !== industriesOther) {
         setCheckingField(true);
@@ -140,15 +169,15 @@ const Onboarding = () => {
     }
   };
 
-  const STEP_META = [
-    { title: 'What best describes you?', subtitle: "We'll tailor BeeBark to your journey." },
-    isStudent
+  const STEP_META = {
+    role: { title: 'What best describes you?', subtitle: "We'll tailor BeeBark to your journey." },
+    background: isStudent
       ? { title: 'Where are you studying?', subtitle: 'Connect with people in your field.' }
       : { title: 'Tell us about your work', subtitle: 'Start with your current or most recent role.' },
-    { title: 'What brings you here?', subtitle: 'Pick your goals and the fields you work in.' },
-    { title: 'Complete your profile', subtitle: 'Help others recognise you. You can skip this for now.' }
-  ];
-  const meta = STEP_META[step];
+    goals: { title: 'What brings you here?', subtitle: 'Pick your goals and the fields you work in.' },
+    profile: { eyebrow: 'YOUR PROFESSIONAL IDENTITY', title: 'Make it yours.', subtitle: 'A face. A few words. Your next connection.', left: true }
+  };
+  const meta = STEP_META[current];
   const thisYear = new Date().getFullYear();
   const fieldClass = 'w-full h-12 rounded-xl border border-gray-300 bg-white px-4 text-[15px] focus:border-[#7A6450] focus:outline-none focus:ring-2 focus:ring-[#7A6450]/20';
 
@@ -165,7 +194,11 @@ const Onboarding = () => {
               <img src="/image.png" alt="" className="h-9 w-9 object-contain" />
               <span className="text-2xl font-black tracking-tight text-[#1C1712]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>BeeBark</span>
             </span>
-            <span className="text-sm text-[#6B625A] whitespace-nowrap" data-testid="onboarding-step">Step {step + 1} of {TOTAL_STEPS}</span>
+            {current === 'profile' ? (
+              <button type="button" onClick={finish} disabled={saving} className="text-[15px] text-[#6B625A] hover:text-black disabled:opacity-50" data-testid="onboarding-skip">Skip</button>
+            ) : (
+              <span className="text-sm text-[#6B625A] whitespace-nowrap" data-testid="onboarding-step">Step {step + 1} of {TOTAL_STEPS}</span>
+            )}
           </div>
           <div className="mt-5 h-2 w-full rounded-full bg-[#EFECE8] overflow-hidden">
             <div className="h-full rounded-full bg-[#F4C430] transition-all duration-500 ease-out" style={{ width: `${((step + 1) / TOTAL_STEPS) * 100}%` }} />
@@ -173,12 +206,13 @@ const Onboarding = () => {
         </div>
 
         <div className="flex-1 px-5 sm:px-8 py-8 animate-fadeIn" key={step}>
-          <h1 className="text-center text-[28px] sm:text-[32px] font-bold leading-tight text-[#1C1712]">{meta.title}</h1>
-          <p className="mt-2 text-center text-[#6B625A]">{meta.subtitle}</p>
+          {meta.eyebrow && <p className="text-xs font-semibold tracking-[0.25em] text-[#6B625A]">{meta.eyebrow}</p>}
+          <h1 className={`${meta.left ? 'mt-2 text-[36px] sm:text-[44px]' : 'text-center text-[28px] sm:text-[32px]'} font-bold leading-tight tracking-tight text-[#1C1712]`}>{meta.title}</h1>
+          <p className={`mt-2 ${meta.left ? 'text-lg' : 'text-center'} text-[#6B625A]`}>{meta.subtitle}</p>
 
           <div className="mt-8">
             {/* Step 1: who you are */}
-            {step === 0 && (
+            {current === 'role' && (
               <div data-testid="onboarding-role">
                 <div className="space-y-3" role="radiogroup">
                   {ROLES.map((r) => {
@@ -202,7 +236,7 @@ const Onboarding = () => {
             )}
 
             {/* Step 2: background */}
-            {step === 1 && (
+            {current === 'background' && (
               <div className="space-y-5" data-testid="onboarding-background">
                 <div className="flex justify-center">
                   <span className="inline-flex items-center gap-3 rounded-full border border-gray-200 bg-[#FAF8F5] px-4 py-2 text-sm">
@@ -234,7 +268,14 @@ const Onboarding = () => {
                   <>
                     <div>
                       <label className="block text-sm font-semibold text-[#1C1712] mb-1.5">Job title or professional role</label>
-                      <AutocompleteInput field="title" value={background.title} onChange={(v) => setBg({ title: v })} placeholder="e.g. Architect, contractor, property consultant" className={fieldClass} data-testid="onboarding-title" />
+                      <ProfessionPicker value={background.title} allowGeneral={false} testId="onboarding-title" placeholder="e.g. Architect, contractor, property consultant"
+                        onChange={(v) => {
+                          setBg({ title: v });
+                          // Pre-pick the matching field for the next step
+                          const g = groupOfProfession(v);
+                          if (g && !industries.length) setIndustries([g.industry]);
+                          if (g?.industry === 'related' && !industriesOther) setIndustriesOther(v);
+                        }} />
                     </div>
                     <div className={background.selfEmployed ? 'opacity-50 pointer-events-none' : ''}>
                       <label className="block text-sm font-semibold text-[#1C1712] mb-1.5">Company or studio <span className="font-normal text-[#6B625A]">(optional)</span></label>
@@ -251,7 +292,7 @@ const Onboarding = () => {
             )}
 
             {/* Step 3: goals and field */}
-            {step === 2 && (
+            {current === 'goals' && (
               <div className="space-y-8">
                 <div data-testid="onboarding-intent">
                   <p className="text-sm font-semibold text-[#1C1712] mb-3">Your goals <span className="font-normal text-[#6B625A]">(pick any)</span></p>
@@ -280,16 +321,9 @@ const Onboarding = () => {
                 </div>
                 {industries.includes('related') && (
                   <div className="mt-4">
-                    <label className="block text-sm font-medium text-black mb-1">What field?</label>
-                    <input
-                      type="text"
-                      value={industriesOther}
-                      onChange={(e) => { setIndustriesOther(e.target.value); if (domainSuggest.suggestion) domainSuggest.dismiss(); }}
-                      onBlur={(e) => domainSuggest.check(e.target.value)}
-                      placeholder="e.g. Product Design, Quantity Surveying, Facilities Management"
-                      className="w-full rounded-xl border-2 border-gray-200 p-3 text-sm focus:border-[#7A6450] focus:outline-none"
-                      data-testid="industry-other-input"
-                    />
+                    <label className="block text-sm font-semibold text-[#1C1712] mb-1.5">What field?</label>
+                    <ProfessionPicker value={industriesOther} testId="industry-other-input" placeholder="Search professions, e.g. Drone operator, Vastu consultant"
+                      onChange={(v) => { setIndustriesOther(v); if (domainSuggest.suggestion) domainSuggest.dismiss(); if (!groupOfProfession(v)) domainSuggest.check(v); }} />
                     {domainSuggest.suggestion?.relevant === false && domainSuggest.original === industriesOther && (
                       <div className="mt-2 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700" data-testid="industry-other-warning">
                         {domainSuggest.suggestion.relevantReason || "This doesn't look like a real professional field. BeeBark is built for architecture, interiors, construction, real estate and closely adjacent fields — please enter one to continue."}
@@ -309,28 +343,48 @@ const Onboarding = () => {
               </div>
             )}
 
-            {/* Step 4: profile */}
-            {step === 3 && (
-              <div className="mx-auto max-w-xl space-y-6" data-testid="onboarding-profile">
-                <div className="rounded-xl bg-yellow-50 border border-yellow-200 p-4">
-                  <p className="text-sm font-medium text-black mb-2">Have a resume? Skip the typing.</p>
-                  <ResumeImport
-                    onImported={(data) => {
-                      if (Array.isArray(data?.skills)) setSkills(data.skills);
-                      if (Array.isArray(data?.bios) && data.bios.length > 0) {
-                        setBioSuggestions(data.bios);
-                        if (!bio.trim()) setBio(data.bios[0]);
-                      }
-                      if (data?.detectedLocation) {
-                        setDetectedLocation(data.detectedLocation);
-                        if (!location.trim()) setLocation(data.detectedLocation);
-                      }
-                      if (data?.nameMismatch && data?.detectedName) {
-                        setNameMismatch({ detectedName: data.detectedName, currentName: data.currentName || user?.name || '' });
-                      }
-                    }}
-                  />
+            {/* Step 4: profile ("Make it yours.") */}
+            {current === 'profile' && (
+              <div className="space-y-6" data-testid="onboarding-profile">
+                {/* Photo */}
+                <div className="flex items-center gap-5">
+                  <label className="relative shrink-0 cursor-pointer" data-testid="onboarding-photo">
+                    {profilePic
+                      ? <img src={profilePic} alt="" className="h-24 w-24 sm:h-28 sm:w-28 rounded-full object-cover" />
+                      : <span className="flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center rounded-full bg-[#ECEAE7] text-[#B5AEA6]"><FiUser className="h-12 w-12" /></span>}
+                    <span className="absolute bottom-0.5 right-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-[#F4C430] text-[#1C1712] ring-4 ring-white">
+                      {uploadingPhoto ? <span className="h-3.5 w-3.5 rounded-full border-2 border-[#1C1712] border-t-transparent animate-spin" /> : <FiPlus className="h-4 w-4" />}
+                    </span>
+                    <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={choosePhoto} disabled={uploadingPhoto} data-testid="onboarding-photo-input" />
+                  </label>
+                  <div className="min-w-0">
+                    <p className="text-lg font-semibold text-[#1C1712]">{profilePic ? 'Looking good' : 'Add a profile photo'}</p>
+                    <p className="text-[#6B625A]">Help people recognise you.</p>
+                    <label className="mt-1 inline-block cursor-pointer font-semibold text-[#C99A06] hover:underline">
+                      {profilePic ? 'Change photo' : 'Choose photo'}
+                      <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={choosePhoto} disabled={uploadingPhoto} />
+                    </label>
+                    {profilePic && <button type="button" onClick={() => setProfilePic('')} className="ml-3 text-sm text-[#857B71] hover:text-black">Remove</button>}
+                  </div>
                 </div>
+
+                <ResumeImport
+                  variant="card"
+                  onImported={(data) => {
+                    if (Array.isArray(data?.skills)) setSkills(data.skills);
+                    if (Array.isArray(data?.bios) && data.bios.length > 0) {
+                      setBioSuggestions(data.bios);
+                      if (!bio.trim()) setBio(data.bios[0]);
+                    }
+                    if (data?.detectedLocation) {
+                      setDetectedLocation(data.detectedLocation);
+                      if (!location.trim()) setLocation(data.detectedLocation);
+                    }
+                    if (data?.nameMismatch && data?.detectedName) {
+                      setNameMismatch({ detectedName: data.detectedName, currentName: data.currentName || user?.name || '' });
+                    }
+                  }}
+                />
 
                 {nameMismatch && (
                   <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm" data-testid="resume-name-mismatch">
@@ -338,102 +392,67 @@ const Onboarding = () => {
                       Your resume says <strong>{nameMismatch.detectedName}</strong>, but your account is registered as <strong>{nameMismatch.currentName}</strong>. Is this your resume?
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => { setName(nameMismatch.detectedName); setNameMismatch(null); }}
-                        className="btn-black rounded-full px-3 py-1.5 text-xs font-medium"
-                      >
+                      <button type="button" onClick={() => { setName(nameMismatch.detectedName); setNameMismatch(null); }} className="btn-black rounded-full px-3 py-1.5 text-xs font-medium">
                         Use "{nameMismatch.detectedName}"
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => setNameMismatch(null)}
-                        className="rounded-full border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:border-black"
-                      >
+                      <button type="button" onClick={() => setNameMismatch(null)} className="rounded-full border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:border-black">
                         Keep "{nameMismatch.currentName}"
                       </button>
                     </div>
                   </div>
                 )}
 
+                {/* About */}
                 <div>
-                  <label className="block text-sm font-medium text-black mb-2">Profile photo</label>
-                  {profilePic ? (
-                    <div className="flex items-center gap-4">
-                      <img src={profilePic} alt="Profile" className="h-20 w-20 rounded-full object-cover border" />
-                      <button type="button" onClick={() => setProfilePic('')} className="text-sm text-gray-500 hover:text-black">
-                        Remove
-                      </button>
-                    </div>
-                  ) : (
-                    <ImageUpload onUploadComplete={(url) => setProfilePic(url)} endpoint="/api/upload/profile-photo" />
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-black mb-1">Bio</label>
-                  <textarea
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    rows={3}
-                    maxLength={500}
-                    placeholder="A short line about what you do"
-                    className="w-full rounded-xl border-2 border-gray-200 p-3 text-sm focus:border-[#7A6450] focus:outline-none resize-none"
-                    data-testid="bio-input"
-                  />
-                  <p className="mt-1 text-xs text-gray-400 text-right">{bio.length}/500</p>
+                  <div className="mb-2 flex items-baseline justify-between">
+                    <label htmlFor="onb-bio" className="text-lg font-semibold text-[#1C1712]">About you</label>
+                    <span className="text-sm text-[#857B71]">Optional</span>
+                  </div>
+                  <div className="relative">
+                    <textarea id="onb-bio" value={bio} onChange={(e) => setBio(e.target.value)} rows={5} maxLength={500}
+                      placeholder="What do you do, and what inspires your work?" data-testid="bio-input"
+                      className="w-full resize-none rounded-xl border border-gray-300 bg-white p-4 pb-8 text-[15px] focus:border-[#7A6450] focus:outline-none focus:ring-2 focus:ring-[#7A6450]/20" />
+                    <span className="pointer-events-none absolute bottom-3 right-4 text-sm text-[#857B71]">{bio.length}/500</span>
+                  </div>
+                  <p className="mt-2 text-sm text-[#6B625A]">Example: {isStudent ? 'Architecture student who loves sketching and sustainable homes.' : 'Interior designer creating thoughtful, everyday spaces.'}</p>
                   {bioSuggestions.length > 0 && (
-                    <div className="mt-2 space-y-2" data-testid="bio-suggestions">
-                      <p className="text-xs font-medium text-gray-500">AI suggestions from your resume — pick one, or keep editing yours</p>
-                      {bioSuggestions.map((s, i) => (
-                        <button
-                          key={i}
-                          type="button"
-                          onClick={() => setBio(s)}
-                          className={`block w-full text-left rounded-xl border-2 p-3 text-xs transition-colors ${bio === s ? 'border-yellow-400 bg-yellow-50' : 'border-gray-200 hover:border-yellow-300'}`}
-                        >
-                          {i === 0 && (
-                            <span className="mb-1 inline-block rounded-full bg-[#32281F] px-2 py-0.5 text-[10px] font-semibold text-white">
-                              Recommended
-                            </span>
-                          )}
-                          <span className="block text-gray-700">{s}</span>
+                    <div className="mt-3 space-y-2" data-testid="bio-suggestions">
+                      <p className="text-xs font-medium text-gray-500">Suggestions from your resume. Pick one, or keep editing yours.</p>
+                      {bioSuggestions.map((sug, i) => (
+                        <button key={i} type="button" onClick={() => setBio(sug)}
+                          className={`block w-full text-left rounded-xl border p-3 text-xs transition-colors ${bio === sug ? 'border-[#F4C430] bg-[#FFF9E6]' : 'border-gray-200 hover:border-[#E0B93C]'}`}>
+                          {i === 0 && <span className="mb-1 inline-block rounded-full bg-[#32281F] px-2 py-0.5 text-[10px] font-semibold text-white">Recommended</span>}
+                          <span className="block text-gray-700">{sug}</span>
                         </button>
                       ))}
                     </div>
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-black mb-1">Location</label>
-                  <LocationInput
-                    value={location}
-                    onChange={setLocation}
-                    placeholder="Start typing your city"
-                    className="w-full rounded-xl border-2 border-gray-200 h-auto p-3 text-sm focus:border-[#7A6450] focus-visible:ring-0"
-                    data-testid="location-input"
-                  />
-                  {detectedLocation && location === detectedLocation && (
-                    <p className="mt-1 text-xs text-gray-400">Detected from your resume — edit if this isn't right.</p>
-                  )}
+                {/* Location and skills: small and optional */}
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-sm font-semibold text-[#1C1712] mb-1.5">City <span className="font-normal text-[#857B71]">(optional)</span></label>
+                    <LocationInput value={location} onChange={setLocation} placeholder="Start typing your city" className={fieldClass} data-testid="location-input" />
+                    {detectedLocation && location === detectedLocation && <p className="mt-1 text-xs text-gray-400">From your resume. Edit it if it isn't right.</p>}
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-semibold text-[#1C1712] mb-1.5">Skills <span className="font-normal text-[#857B71]">(optional)</span></label>
+                    <SkillPicker skills={skills} onAdd={(skill) => setSkills((list) => [...list, skill])} inputClassName="h-12 rounded-xl border-gray-300" />
+                    {skills.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {skills.map((sk) => (
+                          <span key={sk} className="inline-flex items-center gap-1.5 rounded-full bg-[#F2EFEC] px-3 py-1.5 text-xs font-medium text-[#1C1712]">
+                            {sk}
+                            <button type="button" onClick={() => setSkills(skills.filter((x) => x !== sk))} aria-label={`Remove ${sk}`}><FaTimes className="text-[10px]" /></button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-black mb-1">Skills / interests</label>
-                  <SkillPicker skills={skills} onAdd={(skill) => setSkills((list) => [...list, skill])} inputClassName="h-12 rounded-xl border-2 border-gray-200 focus-visible:ring-0 focus-visible:border-yellow-400" />
-                  {skills.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {skills.map((s) => (
-                        <span key={s} className="inline-flex items-center gap-1.5 bg-yellow-100 text-black text-xs font-medium px-3 py-1.5 rounded-full">
-                          {s}
-                          <button type="button" onClick={() => setSkills(skills.filter((x) => x !== s))} aria-label={`Remove ${s}`}>
-                            <FaTimes className="text-[10px]" />
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <p className="border-t border-[#EFEBE6] pt-5 text-sm text-[#6B625A]">You can edit these details anytime.</p>
               </div>
             )}
           </div>
@@ -454,12 +473,9 @@ const Onboarding = () => {
               {checkingField ? 'Checking...' : 'Continue'}
             </button>
           ) : (
-            <div className="flex items-center gap-4">
-              <button type="button" onClick={finish} disabled={saving} className="text-sm text-[#6B625A] hover:text-black disabled:opacity-50 shrink-0">Skip for now</button>
-              <button type="button" onClick={finish} disabled={saving} className="auth-yellow-btn disabled:opacity-50" data-testid="onboarding-finish">
-                {saving ? 'Saving...' : 'Finish'}
-              </button>
-            </div>
+            <button type="button" onClick={finish} disabled={saving} className="auth-yellow-btn inline-flex items-center justify-center gap-2 disabled:opacity-50" data-testid="onboarding-finish">
+              {saving ? 'Saving...' : <>Finish profile <FiArrowRight className="h-5 w-5" /></>}
+            </button>
           )}
         </div>
       </div>

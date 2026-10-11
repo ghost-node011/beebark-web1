@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { FiUploadCloud } from 'react-icons/fi';
+import { FiUploadCloud, FiFileText, FiUpload } from 'react-icons/fi';
 import { API_URL } from '../config/api';
 
 /**
@@ -9,7 +9,7 @@ import { API_URL } from '../config/api';
  * Calls onImported(data) where data = { skills, parsed } so the parent can
  * prefill its fields. A LinkedIn "Save to PDF" export works here too.
  */
-const ResumeImport = ({ onImported }) => {
+const ResumeImport = ({ onImported, variant = 'button' }) => {
   const inputRef = useRef(null);
   const [loading, setLoading] = useState(false);
 
@@ -35,6 +35,28 @@ const ResumeImport = ({ onImported }) => {
       if (inputRef.current) inputRef.current.value = '';
     }
   };
+
+  // Onboarding: a card with the import button on the side
+  if (variant === 'card') {
+    return (
+      <div className="flex items-center gap-4 rounded-2xl border border-[#F3E2A8] bg-[#FFF9E6] p-4 sm:p-5" data-testid="resume-import-card">
+        <input ref={inputRef} type="file" accept=".pdf,.docx" onChange={handleFile} className="hidden" data-testid="resume-import-input" />
+        <span className="hidden sm:flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#FCEFC4] text-[#1C1712]"><FiFileText className="h-6 w-6" /></span>
+        <span className="hidden sm:block h-12 w-px bg-[#F0DFA6]" />
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-[#1C1712]">Have a resume?</p>
+          <p className="text-sm text-[#6B625A]">Save time. Autofill your details.</p>
+        </div>
+        <div className="shrink-0 text-center">
+          <button type="button" onClick={() => inputRef.current?.click()} disabled={loading} data-testid="resume-import-button"
+            className="inline-flex items-center gap-2 rounded-xl border border-[#1C1712] bg-white px-3.5 py-2.5 text-sm font-semibold text-[#1C1712] hover:bg-[#FFFDF5] disabled:opacity-50">
+            <FiUpload className="h-4 w-4" />{loading ? 'Reading…' : 'Import resume'}
+          </button>
+          <p className="mt-1 text-xs text-[#857B71]">PDF or DOCX</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
