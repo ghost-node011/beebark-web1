@@ -10,6 +10,7 @@ import BeeLoader from './components/BeeLoader';
 import TopProgressBar from './components/TopProgressBar';
 import { Pages, warmUp } from './lib/pages';
 import { installAxiosProgress } from './lib/progress';
+import { NEWS_ENABLED } from './config/features';
 import './App.css';
 
 installAxiosProgress();
@@ -104,7 +105,7 @@ function App() {
               <Route path="/connections" element={<Connections />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/jobs" element={<Jobs />} />
-              <Route path="/news" element={<News />} />
+              <Route path="/news" element={NEWS_ENABLED ? <News /> : <Go to="/dashboard" />} />
               <Route path="/official" element={<Official />} />
               <Route path="/meetings" element={<Meetings />} />
               <Route path="/settings" element={<Settings />} />

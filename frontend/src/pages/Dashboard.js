@@ -13,6 +13,7 @@ import TopBar from '../components/TopBar';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config/api';
 import { INDUSTRY_LABEL, getVariant, unsplash } from '../config/dashboardVariants';
+import { NEWS_ENABLED } from '../config/features';
 import FollowButton, { followersLabel } from '../components/FollowButton';
 
 const HERO_IMAGE = {
@@ -347,7 +348,7 @@ const Dashboard = () => {
         </div>
 
         {/* Opportunities, news, official */}
-        <div className="mt-6 grid gap-6 lg:grid-cols-3">
+        <div className={`mt-6 grid gap-6 ${NEWS_ENABLED ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}`}>
           <Panel title={v.opportunitiesTitle} action={<ViewAll to="/jobs" />}>
             {data?.jobs?.length ? (
               <ul className="divide-y divide-slate-100">
@@ -374,7 +375,7 @@ const Dashboard = () => {
             )}
           </Panel>
 
-          <Panel title="Industry News" action={<ViewAll to="/news" />}>
+          {NEWS_ENABLED && <Panel title="Industry News" action={<ViewAll to="/news" />}>
             <ul className="space-y-4">
               {v.news.map((n) => (
                 <li key={n.title}>
@@ -388,7 +389,7 @@ const Dashboard = () => {
                 </li>
               ))}
             </ul>
-          </Panel>
+          </Panel>}
 
           <Panel title="@BeeBark Official" action={<ViewAll to="/official" />}>
             <div className="flex gap-3">

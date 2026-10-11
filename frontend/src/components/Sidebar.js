@@ -13,6 +13,7 @@ import { personHeadline } from '../utils/personHeadline';
 import { preloadPath } from '../lib/pages';
 import useNavBadges from '../hooks/useNavBadges';
 import { usePages } from '../context/PagesContext';
+import { NEWS_ENABLED } from '../config/features';
 import CompanyLogo from './company/CompanyLogo';
 
 const SidebarFrame = () => {
@@ -33,7 +34,7 @@ const SidebarFrame = () => {
     { id: 'messages', path: '/chat', icon: FiMessageCircle, label: 'Messages' },
     { id: 'jobs', path: '/jobs?tab=posted', icon: FiBriefcase, label: 'Hiring' },
     { id: 'portfolio', path: '/portfolio', icon: FiImage, label: acting.type === 'supplier' ? 'Product catalogue' : 'Projects' },
-    { id: 'news', path: '/news', icon: FiFileText, label: 'News' },
+    ...(NEWS_ENABLED ? [{ id: 'news', path: '/news', icon: FiFileText, label: 'News' }] : []),
     { id: 'page-settings', path: `/company/${acting.slug}/admin?tab=edit`, icon: FiSettings, label: 'Page settings' }
   ];
 
@@ -49,7 +50,7 @@ const SidebarFrame = () => {
     // { id: 'reels', path: '/reels', icon: FiFilm, label: 'Reels' },
     // { id: 'projects', path: '/projects', icon: FiTrendingUp, label: 'Projects Center' },
     { id: 'jobs', path: '/jobs', icon: FiBriefcase, label: copy.jobsLabel },
-    { id: 'news', path: '/news', icon: FiFileText, label: 'News' },
+    ...(NEWS_ENABLED ? [{ id: 'news', path: '/news', icon: FiFileText, label: 'News' }] : []),
     { id: 'official', path: '/official', icon: FiSend, label: '@BeeBark Official' },
     // { id: 'store', path: '/store', icon: FiShoppingBag, label: 'Store' },
     // { id: 'rent', path: '/rent', icon: FiDollarSign, label: 'Rent & Sell' },
