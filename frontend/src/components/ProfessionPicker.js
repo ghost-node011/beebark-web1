@@ -7,23 +7,26 @@ import { PROFESSION_GROUPS, generalOf, groupOfProfession } from '../config/profe
  * by field (open one group at a time, like an accordion). Only BeeBark's four
  * fields are listed. A bottom sheet on phones, a dialog on larger screens.
  */
-const ProfessionPicker = ({ value, onChange, placeholder = 'Select your profession', title = 'Select profession', testId = 'profession-picker', allowGeneral = true }) => {
+const ProfessionPicker = ({ value, otherGroup = null, onChange, placeholder = 'Select your profession', title = 'Select profession', testId = 'profession-picker', allowGeneral = true }) => {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
   const [expanded, setExpanded] = useState(null);
+  const [otherFor, setOtherFor] = useState(null); // group id whose "Other" box is open
+  const [otherText, setOtherText] = useState('');
   const searchRef = useRef(null);
 
   useEffect(() => {
     if (!open) return undefined;
     setQ('');
-    setExpanded(groupOfProfession(value)?.id || null);
+    setExpanded(groupOfProfession(value)?.id || otherGroup || null);
+    setOtherFor(null);
     const t = setTimeout(() => searchRef.current?.focus(), 50);
     const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
     document.addEventListener('keydown', onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => { clearTimeout(t); document.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
-  }, [open, value]);
+  }, [open, value, otherGroup]);
 
   const term = q.trim().toLowerCase();
   const matches = useMemo(() => {
@@ -36,7 +39,10 @@ const ProfessionPicker = ({ value, onChange, placeholder = 'Select your professi
     return out.slice(0, 40);
   }, [term, allowGeneral]);
 
-  const pick = (v) => { onChange(v); setOpen(false); };
+  // `group` is passed for typed-in "Other" professions, so the field is still known
+  const pick = (v, group) => { onChange(v, group || groupOfProfession(v) || null); setOpen(false); };
+  const clean = (v) => String(v || '').trim().replace(/\s+/g, ' ').slice(0, 80);
+  const pickOther = (g, text) => { const v = clean(text); if (v.length >= 2) pick(v, g); };
 
   const Row = ({ item, sub, muted }) => {
     const on = value === item;
@@ -79,7 +85,19 @@ const ProfessionPicker = ({ value, onChange, placeholder = 'Select your professi
               {term ? (
                 <>
                   {matches.map((m) => <Row key={m.item} item={m.item} sub={m.group} />)}
-                  {matches.length === 0 && <p className="px-5 py-6 text-sm text-[#857B71]" data-testid="profession-none">No match. BeeBark is for architecture, interiors, construction and real estate professionals.</p>}
+                  {matches.length === 0 && (
+                    <div className="px-5 py-5" data-testid="profession-none">
+                      <p className="text-sm text-[#6B625A]">Not in the list? Add “{clean(q)}” as <b>Other</b> under its field:</p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {PROFESSION_GROUPS.map((g) => (
+                          <button key={g.id} type="button" onClick={() => pickOther(g, q)} disabled={clean(q).length < 2} data-testid={`profession-other-in-${g.id}`}
+                            className="rounded-full border border-[#E6E1DB] bg-white px-3.5 py-1.5 text-sm font-medium text-[#1C1712] hover:border-[#E0B93C] hover:bg-[#FFF9E6] disabled:opacity-50">
+                            {g.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </>
               ) : (
                 <>
@@ -96,6 +114,20 @@ const ProfessionPicker = ({ value, onChange, placeholder = 'Select your professi
                           <div className="mx-5 mb-3 border-l-[3px] border-[#F4C430] bg-[#FAF8F5]">
                             {allowGeneral && <Row item={generalOf(g)} muted />}
                             {g.items.map((item) => <Row key={item} item={item} />)}
+                            {/* Other: a profession in this field that isn't listed */}
+                            {otherFor === g.id ? (
+                              <form className="flex gap-2 px-5 py-3" onSubmit={(e) => { e.preventDefault(); pickOther(g, otherText); }}>
+                                <input autoFocus value={otherText} onChange={(e) => setOtherText(e.target.value)} maxLength={80} placeholder={`Your profession in ${g.label.toLowerCase()}`}
+                                  className="h-10 min-w-0 flex-1 rounded-lg border border-[#E6E1DB] bg-white px-3 text-[15px] outline-none focus:border-[#E0B93C]" data-testid={`profession-other-input-${g.id}`} />
+                                <button type="submit" disabled={clean(otherText).length < 2} className="shrink-0 rounded-lg bg-[#32281F] px-4 text-sm font-semibold text-white disabled:opacity-40" data-testid={`profession-other-save-${g.id}`}>Add</button>
+                              </form>
+                            ) : (
+                              <button type="button" onClick={() => { setOtherFor(g.id); setOtherText(value && !groupOfProfession(value) ? value : ''); }} data-testid={`profession-other-${g.id}`}
+                                className={`flex w-full items-center gap-3 px-5 py-3 text-left text-[15px] hover:bg-[#F7F4F1] ${value && !groupOfProfession(value) && otherGroup === g.id ? 'bg-[#FFF9E6] font-semibold text-[#9A6B00]' : 'text-[#1C1712]'}`}>
+                                <span className="flex-1">Other {value && !groupOfProfession(value) && otherGroup === g.id ? `· ${value}` : <span className="text-[#857B71]">(not listed)</span>}</span>
+                                {value && !groupOfProfession(value) && otherGroup === g.id && <FiCheck className="h-5 w-5 text-[#1C1712]" />}
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>

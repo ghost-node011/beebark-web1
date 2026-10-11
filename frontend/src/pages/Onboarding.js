@@ -12,7 +12,6 @@ import { intentsFor, INDUSTRIES } from '../config/onboarding';
 import { AutocompleteInput, LocationInput } from '../components/AutocompleteInput';
 import CompanyInput from '../components/company/CompanyInput';
 import ProfessionPicker from '../components/ProfessionPicker';
-import { groupOfProfession } from '../config/professions';
 import SkillPicker from '../components/SkillPicker';
 
 const TOTAL_STEPS = 4;
@@ -236,10 +235,10 @@ const Onboarding = () => {
                     <div>
                       <label className="block text-sm font-semibold text-[#1C1712] mb-1.5">Job title or professional role</label>
                       <ProfessionPicker value={background.title} allowGeneral={false} testId="onboarding-title" placeholder="e.g. Architect, contractor, property consultant"
-                        onChange={(v) => {
-                          setBg({ title: v });
+                        otherGroup={background.titleGroup}
+                        onChange={(v, g) => {
+                          setBg({ title: v, titleGroup: g?.id || null });
                           // Pre-pick the matching field for the next step
-                          const g = groupOfProfession(v);
                           if (g && !industries.length) setIndustries([g.industry]);
                         }} />
                     </div>
