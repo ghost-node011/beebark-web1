@@ -6,6 +6,8 @@ const mongoose = require('mongoose');
 const Company = require('../models/Company');
 const { firmToPage } = require('../utils/firmToPage');
 const { sendWelcomeEmail } = require('../utils/email');
+const { WAITLISTED_STATES, waitlistedStateOf } = require('../utils/regions');
+const Waitlist = require('../models/Waitlist');
 const auth = require('../middleware/auth');
 const { uploadDocument, uploadToCloudinary } = require('../config/cloudinary');
 const { parseResume } = require('../utils/resumeParser');
@@ -177,6 +179,7 @@ const meResponse = (user) => ({
       activityPublic: user.settings?.activityPublic || false,
       readReceipts: user.settings?.readReceipts !== false,
       jobsView: user.settings?.jobsView === 'list' ? 'list' : 'swipe',
+      regionWaitlist: user.regionWaitlist?.state ? user.regionWaitlist : null,
       publicProfile: user.settings?.publicProfile !== false,
       followerCount: (user.followers || []).length,
       followingCount: (user.following || []).length,
@@ -564,6 +567,9 @@ router.put('/update', auth, async (req, res) => {
     if (bio !== undefined) updateData.bio = bio;
     if (pronouns !== undefined) updateData.pronouns = String(pronouns).slice(0, 30);
     if (coverPhoto !== undefined) updateData.coverPhoto = coverPhoto;
+    if (location !== undefined && waitlistedStateOf(location)) {
+      return res.status(400).json({ error: `BeeBark isn't open in ${waitlistedStateOf(location)} yet. Choose another city.`, field: 'location' });
+    }
     if (location !== undefined) updateData.location = String(location).slice(0, 120);
     if (profilePic !== undefined) updateData.profilePic = profilePic;
     if (Array.isArray(skills)) updateData.skills = asTagList(skills).slice(0, 30);
@@ -641,6 +647,27 @@ router.put('/update', auth, async (req, res) => {
 
 // Onboarding: save intent / industries / basic profile and mark complete.
 // Partial saves are allowed (per-step), completion is set on the final step.
+// Someone in a state BeeBark hasn't opened in: remember their city and put them
+// on the waitlist (no emails are sent to the waitlist)
+router.post('/region-waitlist', auth, async (req, res) => {
+  try {
+    const city = clip(req.body.city, 80);
+    const state = clip(req.body.state, 60);
+    if (!city || !WAITLISTED_STATES.includes(state)) return res.status(400).json({ error: 'Choose a waitlisted city' });
+    const me = await User.findByIdAndUpdate(req.userId, { $set: { regionWaitlist: { city, state, at: new Date() } } }, { new: true }).select('name email regionWaitlist').lean();
+    if (me?.email && !/@phone\.beebark\.local$/i.test(me.email)) {
+      await Waitlist.updateOne(
+        { email: me.email.toLowerCase() },
+        { $set: { source: `region: ${city}, ${state}`.slice(0, 100) }, $setOnInsert: { name: me.name || city, email: me.email.toLowerCase() } },
+        { upsert: true }
+      ).catch((e) => console.error('Region waitlist save failed:', e.message));
+    }
+    res.json({ regionWaitlist: me.regionWaitlist });
+  } catch (error) {
+    res.status(500).json({ error: 'Could not join the waitlist' });
+  }
+});
+
 router.put('/onboarding', auth, async (req, res) => {
   try {
     const { role, intent, industries, industriesOther, bio, location, skills, profilePic, complete, name, background } = req.body;
@@ -660,7 +687,16 @@ router.put('/onboarding', auth, async (req, res) => {
     }
     if (industriesOther !== undefined) update.industriesOther = String(industriesOther).slice(0, 100);
     if (bio !== undefined) update.bio = String(bio).slice(0, 500);
-    if (location !== undefined) update.location = String(location).slice(0, 120);
+    if (location !== undefined) update.location = String(location).trim().slice(0, 120);
+    // BeeBark isn't open in every state yet
+    const closedRegion = waitlistedStateOf(update.location);
+    if (closedRegion) {
+      return res.status(403).json({ code: 'REGION_WAITLISTED', error: `BeeBark isn't open in ${closedRegion} yet. Join the waitlist for your city and we'll let you know when it opens.` });
+    }
+    if (complete === true && !update.location) {
+      const saved = await User.findById(req.userId).select('location').lean();
+      if (!saved?.location) return res.status(400).json({ error: 'Choose your city' });
+    }
     if (Array.isArray(skills)) update.skills = skills.map((s) => String(s).trim()).filter(Boolean).slice(0, 30);
     if (profilePic !== undefined) update.profilePic = profilePic;
     if (complete === true) update.onboardingCompleted = true;

@@ -3,15 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 import { FaCheck, FaTimes } from 'react-icons/fa';
-import { FiArrowLeft, FiArrowRight, FiUser, FiPlus } from 'react-icons/fi';
+import { FiArrowLeft, FiArrowRight, FiUser, FiPlus, FiClock } from 'react-icons/fi';
 import axios from 'axios';
 import { API_URL } from '../config/api';
 import ResumeImport from '../components/ResumeImport';
 import { ROLES } from '../config/roles';
 import { intentsFor, INDUSTRIES } from '../config/onboarding';
-import { AutocompleteInput, LocationInput } from '../components/AutocompleteInput';
+import { AutocompleteInput } from '../components/AutocompleteInput';
 import CompanyInput from '../components/company/CompanyInput';
 import ProfessionPicker from '../components/ProfessionPicker';
+import CityPicker from '../components/CityPicker';
+import { isWaitlistedLocation } from '../config/cities';
 import SkillPicker from '../components/SkillPicker';
 
 const TOTAL_STEPS = 4;
@@ -50,7 +52,7 @@ const OptionCard = ({ active, onClick, title, description, icon: Icon, testId })
 
 const Onboarding = () => {
   const navigate = useNavigate();
-  const { user, updateOnboarding } = useAuth();
+  const { user, updateOnboarding, logout } = useAuth();
 
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -78,6 +80,17 @@ const Onboarding = () => {
   const [nameMismatch, setNameMismatch] = useState(null);
   const [skills, setSkills] = useState(user?.skills || []);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  // A city in a state BeeBark hasn't opened in: they wait for it instead of joining
+  const [regionWait, setRegionWait] = useState(user?.regionWaitlist?.state && !user?.location ? user.regionWaitlist : null);
+  const joinRegionWaitlist = async (c) => {
+    try {
+      const res = await axios.post(`${API_URL}/api/profile/region-waitlist`, { city: c.city, state: c.state });
+      setRegionWait(res.data.regionWaitlist);
+      setLocation('');
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Could not join the waitlist');
+    }
+  };
 
   // Profile photos go through the same checked upload as the profile page
   const choosePhoto = async (e) => {
@@ -101,9 +114,9 @@ const Onboarding = () => {
 
   const selectIndustry = (value) => setIndustries((prev) => toggle(prev, value));
 
-  const backgroundDone = isStudent
+  const backgroundDone = (isStudent
     ? !!background.school.trim() && !!background.field.trim()
-    : !!background.title.trim();
+    : !!background.title.trim()) && !!location.trim() && !isWaitlistedLocation(location);
 
   const canContinue =
     ((current === 'role' && !!role) ||
@@ -171,6 +184,18 @@ const Onboarding = () => {
           </div>
         </div>
 
+        {regionWait ? (
+          <div className="flex-1 px-5 sm:px-8 py-12 text-center" data-testid="onboarding-region-waitlisted">
+            <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#FFF4CC] text-[#1C1712]"><FiClock className="h-7 w-7" /></span>
+            <p className="mt-6 text-xs font-semibold tracking-[0.25em] text-[#6B625A]">WAITLISTED</p>
+            <h1 className="mt-2 text-[28px] sm:text-[34px] font-bold leading-tight text-[#1C1712]">You're on the list for {regionWait.city}</h1>
+            <p className="mx-auto mt-3 max-w-sm text-[#6B625A]">BeeBark isn't open in {regionWait.state} yet. We'll let you know as soon as it opens there.</p>
+            <div className="mx-auto mt-8 flex max-w-xs flex-col gap-3">
+              <button type="button" onClick={() => setRegionWait(null)} className="auth-yellow-btn" data-testid="onboarding-change-city">I'm in a different city</button>
+              <button type="button" onClick={() => { logout(); navigate('/login', { replace: true }); }} className="text-sm text-[#6B625A] hover:text-black">Log out</button>
+            </div>
+          </div>
+        ) : (
         <div className="flex-1 px-5 sm:px-8 py-8 animate-fadeIn" key={step}>
           {meta.eyebrow && <p className="text-xs font-semibold tracking-[0.25em] text-[#6B625A]">{meta.eyebrow}</p>}
           <h1 className={`${meta.left ? 'mt-2 text-[36px] sm:text-[44px]' : 'text-center text-[28px] sm:text-[32px]'} font-bold leading-tight tracking-tight text-[#1C1712]`}>{meta.title}</h1>
@@ -252,6 +277,11 @@ const Onboarding = () => {
                     </label>
                   </>
                 )}
+                <div>
+                  <label className="block text-sm font-semibold text-[#1C1712] mb-1.5">City</label>
+                  <CityPicker value={location} testId="onboarding-city" onChange={(label) => setLocation(label)} onWaitlisted={joinRegionWaitlist} />
+                  {detectedLocation && location === detectedLocation && <p className="mt-1 text-xs text-gray-400">From your resume. Edit it if it isn't right.</p>}
+                </div>
                 <p className="text-sm text-[#6B625A]">You can update this later.</p>
               </div>
             )}
@@ -375,14 +405,9 @@ const Onboarding = () => {
                   )}
                 </div>
 
-                {/* Location and skills: small and optional */}
-                <div className="grid gap-5 sm:grid-cols-2">
+                {/* Skills: optional */}
+                <div className="grid gap-5">
                   <div>
-                    <label className="block text-sm font-semibold text-[#1C1712] mb-1.5">City <span className="font-normal text-[#857B71]">(optional)</span></label>
-                    <LocationInput value={location} onChange={setLocation} placeholder="Start typing your city" className={fieldClass} data-testid="location-input" />
-                    {detectedLocation && location === detectedLocation && <p className="mt-1 text-xs text-gray-400">From your resume. Edit it if it isn't right.</p>}
-                  </div>
-                  <div className="sm:col-span-2">
                     <label className="block text-sm font-semibold text-[#1C1712] mb-1.5">Skills <span className="font-normal text-[#857B71]">(optional)</span></label>
                     <SkillPicker skills={skills} onAdd={(skill) => setSkills((list) => [...list, skill])} inputClassName="h-12 rounded-xl border-gray-300" />
                     {skills.length > 0 && (
@@ -404,8 +429,10 @@ const Onboarding = () => {
           </div>
         </div>
 
+        )}
+
         {/* Actions */}
-        <div className="sticky bottom-0 w-full border-t border-gray-100 bg-white/95 backdrop-blur px-5 sm:px-8 py-5 sm:rounded-b-3xl">
+        {!regionWait && <div className="sticky bottom-0 w-full border-t border-gray-100 bg-white/95 backdrop-blur px-5 sm:px-8 py-5 sm:rounded-b-3xl">
           {step < TOTAL_STEPS - 1 ? (
             <button type="button" onClick={next} disabled={!canContinue}
               className="auth-yellow-btn disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400" data-testid="onboarding-next">
@@ -416,7 +443,7 @@ const Onboarding = () => {
               {saving ? 'Saving...' : <>Finish profile <FiArrowRight className="h-5 w-5" /></>}
             </button>
           )}
-        </div>
+        </div>}
       </div>
     </div>
   );

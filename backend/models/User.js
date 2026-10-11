@@ -219,6 +219,12 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  // City in a state BeeBark hasn't opened in yet (they're on the waitlist)
+  regionWaitlist: {
+    city: String,
+    state: String,
+    at: Date
+  },
   // Browsers/systems this account has signed in from (for "New sign-in" alerts)
   knownDevices: [{
     key: String,
