@@ -80,6 +80,19 @@ const DEFAULT_ACCENTS = ['#F5C518', '#D4F547'];
 const pickAccent = (accentColor, theme) => (
   HEX.test(accentColor || '') && !DEFAULT_ACCENTS.includes(accentColor.toUpperCase()) ? accentColor : BOOK_PALETTE_DEFAULTS[theme].accent
 );
+// Luminance contrast between two colours (1 = same, 21 = black on white)
+const lum = (hex) => {
+  const n = parseInt(hex.slice(1), 16);
+  const c = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => { const x = v / 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; });
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+};
+const contrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+// For designs that layer the accent with the text (blocks behind letters, script
+// over words): an accent too close to the text colour falls back to the design's own
+const accentAgainst = (accentColor, theme, fg) => {
+  const accent = pickAccent(accentColor, theme);
+  return HEX.test(fg || '') && contrast(accent, fg) < 2.2 ? BOOK_PALETTE_DEFAULTS[theme].accent : accent;
+};
 const pad = (n) => String(n).padStart(2, '0');
 const photosOf = (item) => (Array.isArray(item?.images) ? item.images.filter(Boolean) : []);
 const captionOf = (item, n) => (Array.isArray(item?.captions) && typeof item.captions[n] === 'string' ? item.captions[n].trim() : '');
@@ -977,8 +990,8 @@ const SideLabel = ({ children, color }) => (
 
 const Huge = ({ children, accent, block = 'left', size = 'clamp(2.75rem, 10cqw, 7.5rem)', className = '' }) => (
   <h2 className={`relative inline-block max-w-full break-words uppercase leading-[0.88] ${className}`} style={{ fontFamily: GROTESK, fontSize: size, letterSpacing: '-0.02em' }}>
-    <span className={`absolute ${block === 'left' ? '-left-2 bottom-1 w-2/5' : '-right-2 top-1 w-1/3'} h-1/2`} style={{ backgroundColor: accent }} aria-hidden="true" />
-    <span className="relative">{children}</span>
+    <span className={`absolute z-0 ${block === 'left' ? '-left-2 bottom-1 w-2/5' : '-right-2 top-1 w-1/3'} h-1/2`} style={{ backgroundColor: accent }} aria-hidden="true" />
+    <span className="relative z-10">{children}</span>
   </h2>
 );
 
@@ -986,7 +999,7 @@ const BW = 'grayscale transition duration-300 hover:grayscale-0';
 
 export const ManualTemplate = ({ items = [], user, headline, editable, onEdit, onDelete, onAdd, onOpen, font = 'playfair', accentColor, look }) => {
   const L = resolveLook('manual', look);
-  const accent = pickAccent(accentColor, 'manual');
+  const accent = accentAgainst(accentColor, 'manual', L.fg);
   const onAccent = isLight(accent) ? '#1A1A1A' : '#FFFFFF';
   const titleFont = { fontFamily: font === 'playfair' ? GROTESK : fontStack(font) };
   const hero = items.find((i) => photosOf(i).length);
@@ -1006,7 +1019,7 @@ export const ManualTemplate = ({ items = [], user, headline, editable, onEdit, o
           </div>
           <div className="mt-10 grid gap-8 lg:grid-cols-[1.3fr_1fr] lg:items-end">
             <div className="min-w-0">
-              <Huge accent={accent} size="clamp(3rem, 13cqw, 10rem)">My<br />Portfolio</Huge>
+              <Huge accent={accent} size="min(12cqw, max(2.75rem, 6.6cqw))">My<br />Portfolio</Huge>
               <p className="mt-6 max-w-md text-lg" style={{ color: L.muted }} data-testid="pf-tagline">{L.tagline || headline || [user?.role, user?.location].filter(Boolean).join(' · ')}</p>
             </div>
             {portrait && <img src={portrait} alt="" className={`h-[300px] w-full object-cover sm:h-[420px] ${BW}`} />}
@@ -1287,12 +1300,17 @@ export const CleanbookTemplate = ({ items = [], user, headline, editable, onEdit
 // ======================================================================
 // 6. CREATIVE BOLD
 // ======================================================================
-const Display = ({ word, script, accent, scriptColor, size = 'clamp(3.5rem, 15cqw, 11rem)', align = 'left' }) => (
+const Display = ({ word, script, accent, scriptColor, halo, size = 'clamp(3.5rem, 15cqw, 11rem)', align = 'left' }) => (
   <div className={`relative ${align === 'center' ? 'text-center' : ''}`}>
-    <h2 className="break-words uppercase leading-[0.85]" style={{ fontFamily: CONDENSED, fontSize: size, color: accent, letterSpacing: '0.01em' }}>{word}</h2>
+    <h2 className="relative z-0 break-words uppercase leading-[0.85]" style={{ fontFamily: CONDENSED, fontSize: size, color: accent, letterSpacing: '0.01em' }}>{word}</h2>
     {script && (
-      <span className={`absolute bottom-[8%] ${align === 'center' ? 'left-1/2' : 'left-[12%]'} whitespace-nowrap leading-none`}
-        style={{ ...SERIF_ITALIC, fontSize: `calc(${size} * 0.42)`, color: scriptColor, transform: `${align === 'center' ? 'translateX(-50%) ' : ''}rotate(-6deg)` }}>
+      <span className={`absolute z-10 bottom-[2%] ${align === 'center' ? 'left-1/2' : 'left-[12%]'} whitespace-nowrap leading-none`}
+        style={{
+          ...SERIF_ITALIC, fontSize: `calc(${size} * 0.42)`, color: scriptColor,
+          // A soft outline in the page colour keeps the script readable over the big letters
+          ...(halo ? { textShadow: `0 0 0.06em ${halo}, 0 0 0.12em ${halo}, 0 0 0.2em ${halo}` } : {}),
+          transform: `${align === 'center' ? 'translateX(-50%) ' : ''}rotate(-6deg)`
+        }}>
         {script}
       </span>
     )}
@@ -1301,7 +1319,7 @@ const Display = ({ word, script, accent, scriptColor, size = 'clamp(3.5rem, 15cq
 
 export const CreativeTemplate = ({ items = [], user, headline, editable, onEdit, onDelete, onAdd, onOpen, font = 'playfair', accentColor, look }) => {
   const L = resolveLook('creative', look);
-  const accent = pickAccent(accentColor, 'creative');
+  const accent = accentAgainst(accentColor, 'creative', L.fg);
   const titleFont = { fontFamily: font === 'playfair' ? CONDENSED : fontStack(font) };
   const hero = items.find((i) => photosOf(i).length);
   const portrait = user?.profilePic || photosOf(hero)[0];
@@ -1330,7 +1348,7 @@ export const CreativeTemplate = ({ items = [], user, headline, editable, onEdit,
       {/* Cover */}
       <header className={`${spreadCls} grid gap-10 lg:grid-cols-[1.4fr_1fr] lg:items-end`} style={{ backgroundColor: cover.bg, color: cover.fg }}>
         <div className="min-w-0">
-          <Display word="Portfolio" script="Creative" accent={acc(cover)} scriptColor={cover.fg} size="clamp(4rem, 19cqw, 13rem)" />
+          <Display word="Portfolio" script="Creative" accent={acc(cover)} scriptColor={cover.fg} halo={cover.bg} size="clamp(3.25rem, 10.5cqw, 9.5rem)" />
           <p className="mt-8 text-2xl font-semibold">{user?.name}</p>
           <p className="max-w-md" style={{ color: cover.muted }} data-testid="pf-tagline">{L.tagline || headline || [user?.role, user?.location].filter(Boolean).join(' · ')}</p>
         </div>
@@ -1341,7 +1359,7 @@ export const CreativeTemplate = ({ items = [], user, headline, editable, onEdit,
       <section className={`${spreadCls} grid gap-10 lg:grid-cols-[1fr_1.3fr] lg:items-center`} style={{ backgroundColor: aboutTone.bg, color: aboutTone.fg }}>
         {user?.profilePic ? <img src={user.profilePic} alt={user?.name || ''} className={`h-[300px] w-full object-cover sm:h-[420px] ${BW}`} /> : <div className="hidden lg:block" />}
         <div className="min-w-0">
-          <Display word="About me" script="Introduction" accent={acc(aboutTone)} scriptColor={aboutTone.fg} size="clamp(3.25rem, 12cqw, 8rem)" />
+          <Display word="About me" script="Introduction" accent={acc(aboutTone)} scriptColor={aboutTone.fg} halo={aboutTone.bg} size="clamp(3.25rem, 12cqw, 8rem)" />
           {about && <p className="mt-8 whitespace-pre-line text-lg leading-relaxed" style={{ color: aboutTone.muted }} data-testid="pf-about">{about}</p>}
           <p className="mt-6 text-sm uppercase tracking-[0.25em]" style={{ color: aboutTone.faint }}>{[user?.location, contact].filter(Boolean).join(' · ')}</p>
         </div>
@@ -1355,7 +1373,7 @@ export const CreativeTemplate = ({ items = [], user, headline, editable, onEdit,
         const story = storyOrDescription(item);
         return (
           <article key={item._id} className={`${spreadCls} ${onOpen ? 'cursor-pointer' : ''}`} style={{ backgroundColor: t.bg, color: t.fg }} onClick={openOnClick(onOpen, item)} data-testid={`project-tile-${item._id}`}>
-            <Display word={`Project ${num(i)}`} script={item.section || item.category || 'Work'} accent={acc(t)} scriptColor={t.fg} size="clamp(3.25rem, 13cqw, 9rem)" />
+            <Display word={`Project ${num(i)}`} script={item.section || item.category || 'Work'} accent={acc(t)} scriptColor={t.fg} halo={t.bg} size="clamp(3.25rem, 13cqw, 9rem)" />
             <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_1.5fr]">
               <div className="min-w-0">
                 <h3 className="break-words text-3xl uppercase leading-none sm:text-5xl" style={titleFont}><OpenTitle item={item} onOpen={onOpen} /></h3>
@@ -1389,7 +1407,7 @@ export const CreativeTemplate = ({ items = [], user, headline, editable, onEdit,
         const t = nextTone();
         return (
           <section className={spreadCls} style={{ backgroundColor: t.bg, color: t.fg }}>
-            <Display word="Experience" script="Career" accent={acc(t)} scriptColor={t.fg} size="clamp(3.25rem, 13cqw, 9rem)" />
+            <Display word="Experience" script="Career" accent={acc(t)} scriptColor={t.fg} halo={t.bg} size="clamp(3.25rem, 13cqw, 9rem)" />
             <ol className="mt-10 grid gap-6 sm:grid-cols-2">
               {user.experience.map((exp, n) => (
                 <li key={n} className="min-w-0 border-t pt-4" style={{ borderColor: t.line }}>
@@ -1407,7 +1425,7 @@ export const CreativeTemplate = ({ items = [], user, headline, editable, onEdit,
         const t = nextTone();
         return (
           <section className={spreadCls} style={{ backgroundColor: t.bg, color: t.fg }}>
-            <Display word="Strengths" script="Brand" accent={acc(t)} scriptColor={t.fg} size="clamp(3.25rem, 13cqw, 9rem)" />
+            <Display word="Strengths" script="Brand" accent={acc(t)} scriptColor={t.fg} halo={t.bg} size="clamp(3.25rem, 13cqw, 9rem)" />
             <ol className="mt-10 grid grid-cols-2 gap-x-6 gap-y-4 lg:grid-cols-4">
               {skills.map((s, n) => (
                 <li key={s} className="min-w-0 border-t pt-3" style={{ borderColor: t.line }}>

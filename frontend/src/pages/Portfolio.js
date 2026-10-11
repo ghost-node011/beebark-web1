@@ -269,6 +269,8 @@ const Portfolio = () => {
     }
   };
 
+  const previewTopRef = useRef(null);
+
   const saveSetting = async (payload, label) => {
     try {
       await axios.put(`${API_URL}/api/portfolio/theme`, payload);
@@ -280,6 +282,10 @@ const Portfolio = () => {
   // A new template starts from its own colours
   const handleThemeChange = (next) => {
     setTheme(next);
+    // Show the new design from its top instead of wherever the old one was scrolled
+    if (window.matchMedia?.('(min-width: 1024px)').matches && previewTopRef.current && previewTopRef.current.getBoundingClientRect().top < 0) {
+      requestAnimationFrame(() => previewTopRef.current?.scrollIntoView({ block: 'start' }));
+    }
     setLook((l) => ({ ...l, background: '', textColor: '' }));
     setSavedLook((l) => ({ ...l, background: '', textColor: '' }));
     saveSetting({ theme: next, background: '', textColor: '' }, 'template');
@@ -649,11 +655,12 @@ const Portfolio = () => {
         </div>
 
         <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-          <aside className={`min-w-0 rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 lg:sticky lg:top-24 lg:block lg:self-start ${mobileTab === 'preview' ? 'hidden' : ''}`}>
+          {/* The side panel scrolls on its own, so it never waits for the preview */}
+          <aside className={`min-w-0 rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 lg:sticky lg:top-24 lg:block lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:overscroll-contain ${mobileTab === 'preview' ? 'hidden' : ''}`} data-testid="portfolio-side-panel">
             <div className={mobileTab === 'projects' ? 'hidden lg:block' : ''}>{designPanel}</div>
             <div className={mobileTab === 'design' ? 'hidden lg:block lg:mt-8' : 'lg:mt-8'}>{projectsPanel}</div>
           </aside>
-          <div className={`min-w-0 ${mobileTab === 'preview' ? '' : 'hidden lg:block'}`}>{previewPanel}</div>
+          <div ref={previewTopRef} className={`min-w-0 scroll-mt-24 [overflow-anchor:none] ${mobileTab === 'preview' ? '' : 'hidden lg:block'}`}>{previewPanel}</div>
         </div>
       </div>
 
