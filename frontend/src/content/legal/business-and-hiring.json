@@ -1,0 +1,400 @@
+{
+ "title": "BUSINESS ACCOUNTS, AUTHORISED HIRERS AND RECRUITMENT",
+ "meta": {},
+ "blocks": [
+  {
+   "type": "p",
+   "text": "This Schedule forms an integral part of the BeeBark User Agreement (“User Agreement”) and shall be read together with the BeeBark Privacy Policy (“Privacy Policy”), Community Standards and other applicable Platform policies. Capitalised terms not defined in this Schedule shall have the meanings assigned to them in the User Agreement."
+  },
+  {
+   "type": "section",
+   "num": "1",
+   "title": "Scope and Application",
+   "body": [
+    {
+     "type": "p",
+     "text": "This Schedule governs the creation, administration and transfer of Business Accounts and the use of BeeBark’s hiring and recruitment functionality, including the access to, use, disclosure, withdrawal and retention of candidate information."
+    },
+    {
+     "type": "p",
+     "text": "This Schedule applies to Business Account holders, business representatives, account administrators, authorised hirers, employers, recruiters and candidates using the relevant Platform functionality."
+    },
+    {
+     "type": "p",
+     "text": "This Schedule supplements, and does not replace, the User Agreement or Privacy Policy. Personal data shall be collected, accessed, used, disclosed, retained and deleted in accordance with the Privacy Policy, applicable Platform functionality and applicable law."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "2",
+   "title": "Business Accounts and Authorised Representatives",
+   "body": [
+    {
+     "type": "p",
+     "text": "A Business Account may be created or operated on behalf of a business or organisation only by a person authorised to do so."
+    },
+    {
+     "type": "p",
+     "text": "The person creating or operating a Business Account represents that they have the authority to establish and manage the account, provide the relevant business information, and appoint or authorise other persons to perform permitted activities on the business’s behalf."
+    },
+    {
+     "type": "p",
+     "text": "The Business Account holder shall ensure that the business information and representations made through the account are accurate, not materially misleading, and updated where reasonably necessary."
+    },
+    {
+     "type": "p",
+     "text": "Where BeeBark reasonably requires verification of a person’s authority, business identity or entitlement to control an account, it may request appropriate supporting information or documentation. Any information collected for verification shall be handled in accordance with the Privacy Policy."
+    },
+    {
+     "type": "p",
+     "text": "The creation or verification of a Business Account does not, by itself, constitute independent verification by BeeBark of every business, professional, ownership or employment-related representation made through that account."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "3",
+   "title": "Administrators and Authorised Hirers",
+   "body": [
+    {
+     "type": "p",
+     "text": "A Business Account may be accessed by its owner and by administrators, recruiters or other representatives authorised by the business, subject to the access controls and functionality made available by BeeBark."
+    },
+    {
+     "type": "p",
+     "text": "The Business Account holder is responsible for determining who is authorised to access the account and for ensuring that each person’s access is appropriate to their assigned responsibilities."
+    },
+    {
+     "type": "p",
+     "text": "An administrator or authorised hirer shall:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "access the account only within the scope of their authority;",
+      "use business and candidate information only for legitimate, authorised purposes;",
+      "protect account credentials and access mechanisms against unauthorised use;",
+      "comply with the User Agreement, Privacy Policy and applicable Platform policies; and",
+      "promptly cease accessing the account and its information when their authority expires or is withdrawn."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "The business shall take reasonable steps to remove or restrict access when an administrator, employee, recruiter, consultant or other representative leaves the organisation or no longer requires access."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark may restrict, suspend or remove an individual’s access where reasonably necessary to address suspected unauthorised access, fraud, impersonation, misuse of personal data, an account-control dispute, a security risk or a legal or regulatory requirement."
+    },
+    {
+     "type": "p",
+     "text": "The business remains responsible, to the extent permitted by applicable law, for the activities undertaken through its Business Account by persons it authorises. This does not exclude any independent liability of an individual user for their own conduct."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "4",
+   "title": "Transfer, Control and Recovery of Business Accounts",
+   "body": [
+    {
+     "type": "p",
+     "text": "A Business Account or its administrative control may be transferred only by a person with sufficient authority to make that transfer and through a mechanism made available or approved by BeeBark."
+    },
+    {
+     "type": "p",
+     "text": "A transfer of business ownership, account administration or hiring responsibility does not automatically transfer an individual’s personal profile, personal portfolio, individually owned content or personal account credentials."
+    },
+    {
+     "type": "p",
+     "text": "A person must not sell, assign, take over, transfer or otherwise interfere with a Business Account without proper authority."
+    },
+    {
+     "type": "p",
+     "text": "Where competing claims arise concerning ownership, authority or administration, BeeBark may request supporting evidence and temporarily restrict relevant account or hiring functions while the matter is reviewed."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark may implement reasonable account-recovery measures to protect against unauthorised changes. It does not undertake to adjudicate private ownership, employment or corporate-control disputes between competing claimants."
+    },
+    {
+     "type": "p",
+     "text": "Business Account transfers and recovery processes shall be subject to the technical functionality available on the Platform. No particular transfer, delegation or recovery feature is promised unless BeeBark expressly makes it available."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "5",
+   "title": "Hiring Eligibility and Opportunity Listings",
+   "body": [
+    {
+     "type": "p",
+     "text": "Hiring functionality may be used by eligible businesses, employers, recruiters and other persons or entities authorised to publish or manage opportunities, subject to the eligibility requirements communicated by BeeBark."
+    },
+    {
+     "type": "p",
+     "text": "An authorised hirer shall ensure that each opportunity is genuine, accurately described and lawfully offered. Material information concerning the role, engagement type, compensation, location, qualifications and other relevant conditions must not be deliberately concealed or misrepresented."
+    },
+    {
+     "type": "p",
+     "text": "Employers and hirers must not publish fraudulent, fictitious, discriminatory or otherwise unlawful opportunities, impersonate another organisation, or use recruitment functionality to facilitate scams, phishing, identity theft or other deceptive conduct."
+    },
+    {
+     "type": "p",
+     "text": "Employers and hirers are responsible for their recruitment processes, selection decisions, employment conditions, communications with applicants and compliance with applicable employment, labour, anti-discrimination and other laws."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark facilitates access to hiring functionality but does not, merely by providing that functionality, become the employer, recruiter, staffing agency, placement agency or party to any resulting employment or other engagement."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "6",
+   "title": "Candidate Information and Application Materials",
+   "body": [
+    {
+     "type": "p",
+     "text": "Depending on the features used and information submitted by a candidate, hiring functionality may involve the processing of candidate profiles, CVs, portfolios, application information, professional details, communications and hiring-status information, as described in the Privacy Policy."
+    },
+    {
+     "type": "p",
+     "text": "When a candidate applies for an opportunity, relevant application information may be shared with the employer or recruiter concerned to the extent necessary to facilitate the application and associated recruitment process."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark’s processing of personal data for operating the Platform shall be governed by the Privacy Policy and applicable law. Employers and recruiters are responsible for their own processing of candidate information after receiving it, including their compliance with applicable data-protection, employment and other legal obligations."
+    },
+    {
+     "type": "p",
+     "text": "Employers and authorised hirers shall use candidate information only for legitimate recruitment, evaluation, selection, candidate communication and related purposes reasonably connected with the relevant opportunity, subject to applicable law and the Privacy Policy."
+    },
+    {
+     "type": "p",
+     "text": "Employers and hirers must not:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "sell, trade or commercially exploit candidate information;",
+      "disclose candidate information to unrelated persons or entities without an appropriate lawful basis or authority;",
+      "use candidate information for unrelated marketing, advertising, solicitation or profiling;",
+      "collect, request or retain unnecessary personal information without an appropriate lawful purpose;",
+      "use candidate information to facilitate fraud, discrimination, harassment, identity theft or other unlawful conduct; or",
+      "circumvent Platform access controls or use candidate information in a manner inconsistent with the Privacy Policy or applicable law."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "A candidate’s submission of an application does not transfer ownership of their CV, portfolio or other application materials to BeeBark, the employer or the recruiter. Any use of those materials remains subject to the applicable rights, permissions, terms and law."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "7",
+   "title": "Candidate Access, Downloads and Safeguarding",
+   "body": [
+    {
+     "type": "p",
+     "text": "The ability of an employer or authorised hirer to view, access, save or download candidate information depends on the relevant functionality made available by BeeBark."
+    },
+    {
+     "type": "p",
+     "text": "Access to candidate information through BeeBark does not grant a general right to reproduce, distribute, publish, sell or otherwise commercially exploit that information or the underlying application materials."
+    },
+    {
+     "type": "p",
+     "text": "Where an employer or hirer lawfully obtains a copy of candidate information, that recipient is responsible for protecting the copy against unauthorised access, disclosure or use and for retaining or deleting it in accordance with applicable law and its lawful purposes."
+    },
+    {
+     "type": "p",
+     "text": "An employer or hirer must not use downloaded information to build or sell an unrelated candidate database, circumvent access restrictions, or contact candidates for unrelated commercial purposes."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark’s technical ability to revoke access to information within the Platform does not necessarily extend to copies already lawfully downloaded, exported, received or independently retained by a recipient. Such copies remain subject to the recipient’s legal obligations and the restrictions in this Schedule."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "8",
+   "title": "Applicant Fees and Recruitment-Related Payments",
+   "body": [
+    {
+     "type": "p",
+     "text": "Employers, recruiters and authorised hirers must not demand, solicit, collect or impose any unlawful or prohibited fee, deposit, payment or other financial consideration on an applicant as a condition of applying for, being considered for, or obtaining an opportunity."
+    },
+    {
+     "type": "p",
+     "text": "No opportunity may be used to facilitate fraudulent recruitment payments, deceptive registration or processing charges, fictitious refundable deposits, or other financial scams."
+    },
+    {
+     "type": "p",
+     "text": "Any fee or payment associated with an opportunity must be accurately disclosed and lawful. Nothing in this Schedule permits a charge that is prohibited by applicable law."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark may restrict or remove an opportunity and take appropriate account-level action where it reasonably believes that hiring functionality is being used for prohibited applicant fees, fraudulent recruitment or related misconduct."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "9",
+   "title": "Application Withdrawal",
+   "body": [
+    {
+     "type": "p",
+     "text": "Where BeeBark provides an application-withdrawal feature, a candidate may use that feature in accordance with the functionality and instructions made available on the Platform."
+    },
+    {
+     "type": "p",
+     "text": "Following withdrawal, BeeBark may update the application’s status or restrict further access through the relevant Platform functionality, as technically supported and subject to applicable law."
+    },
+    {
+     "type": "p",
+     "text": "Withdrawal does not necessarily erase information already lawfully disclosed to an employer or recruiter, require the deletion of copies already lawfully obtained, or reverse processing carried out before withdrawal. Any continued retention or use by a recipient must nevertheless comply with applicable law, the recipient’s lawful purposes and any applicable restriction on further use."
+    },
+    {
+     "type": "p",
+     "text": "Withdrawal of an application is distinct from withdrawal of consent to personal-data processing under the Privacy Policy. Where processing is based on consent, a request to withdraw that consent shall be handled through the applicable privacy mechanism and subject to the consequences explained in the Privacy Policy and applicable law."
+    },
+    {
+     "type": "p",
+     "text": "Neither application withdrawal nor consent withdrawal shall be interpreted as automatically requiring the deletion of information that must or may lawfully be retained for legal compliance, security, fraud prevention, dispute resolution or other lawful purposes."
+    },
+    {
+     "type": "p",
+     "text": "Withdrawal of an application does not, by itself, terminate a separate employment, contractual or other relationship or guarantee that the employer will discontinue every recruitment-related activity. Any further processing remains subject to applicable law."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "10",
+   "title": "Data Protection and Retention Responsibilities",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark and users shall handle personal data in accordance with the Privacy Policy and applicable law, including the Digital Personal Data Protection Act, 2023 and the Digital Personal Data Protection Rules, 2025, to the extent the relevant provisions are operative and applicable."
+    },
+    {
+     "type": "p",
+     "text": "Employers and recruiters shall determine and undertake their own lawful processing of candidate information after receipt, including appropriate access controls, security, retention, disclosure and deletion."
+    },
+    {
+     "type": "p",
+     "text": "Employers and hirers must not retain candidate information indefinitely or for unrelated purposes. They shall retain it only for as long as reasonably necessary for a lawful purpose or as otherwise required or permitted by applicable law."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark may retain personal data in accordance with the Privacy Policy for legitimate Platform purposes, including account administration, security, fraud prevention, dispute resolution, legal compliance and the exercise or defence of legal claims."
+    },
+    {
+     "type": "p",
+     "text": "Account closure, application withdrawal or removal of information from public view does not necessarily result in the immediate deletion of every record or copy. Applicable retention requirements, technical limitations and lawful exceptions shall be governed by the Privacy Policy and applicable law."
+    },
+    {
+     "type": "p",
+     "text": "Nothing in this Schedule authorises BeeBark or any user to process personal data where the required legal basis, notice, consent or other authority is absent."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "11",
+   "title": "Reporting, Restrictions and Enforcement",
+   "body": [
+    {
+     "type": "p",
+     "text": "Users may report suspected recruitment fraud, impersonation, prohibited applicant fees, unauthorised access, misuse of candidate information or other violations through the reporting and grievance mechanisms identified in the User Agreement and applicable Platform policies."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark may investigate reports and take measures permitted under the User Agreement and applicable law, including requesting clarification, restricting visibility or access, removing an opportunity or content, suspending or terminating an account, and referring matters to an appropriate authority where required or appropriate."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark may take immediate protective action where reasonably necessary to address suspected fraud, serious misuse of personal data, security risks, unlawful conduct or a legal or regulatory requirement."
+    },
+    {
+     "type": "p",
+     "text": "Any privacy-related request or complaint shall be handled through the relevant mechanism set out in the Privacy Policy. This Schedule does not replace or limit applicable data-protection rights or grievance mechanisms."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "12",
+   "title": "No Guarantee of Recruitment Outcomes",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark does not guarantee the authenticity of every user-provided representation, the availability or suitability of any opportunity, the accuracy of every candidate’s qualifications, or any offer, interview, selection or employment outcome."
+    },
+    {
+     "type": "p",
+     "text": "Users must exercise appropriate care when interacting with employers, recruiters and candidates and must independently undertake any verification reasonably necessary for their decisions."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "13",
+   "title": "Relationship with Other Terms",
+   "body": [
+    {
+     "type": "p",
+     "text": "This Schedule shall be read with the User Agreement, Privacy Policy and Community Standards."
+    },
+    {
+     "type": "p",
+     "text": "The Privacy Policy governs the privacy-related explanations and arrangements for BeeBark’s processing of personal data. This Schedule governs the contractual rules for Business Accounts and hiring functionality. Both shall be interpreted consistently wherever reasonably possible."
+    },
+    {
+     "type": "p",
+     "text": "In the event of an inconsistency concerning a matter expressly addressed by the Privacy Policy, the relevant privacy provisions shall govern the description of BeeBark’s data-processing practices, subject to applicable law. The User Agreement shall otherwise govern the contractual relationship, unless it expressly provides otherwise."
+    },
+    {
+     "type": "p",
+     "text": "Nothing in this Schedule creates an employment, agency, partnership or other representative relationship between BeeBark and a Business Account holder, employer, recruiter or candidate."
+    },
+    {
+     "type": "p",
+     "text": "Features not expressly made available by BeeBark—including any automated ranking, automated applications, talent-pool reuse or specific transfer or withdrawal functionality—shall not be treated as available or authorised merely because they are contemplated in this Schedule."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "14",
+   "title": "Amendments and Governing Law",
+   "body": [
+    {
+     "type": "p",
+     "text": "This Schedule may be updated in accordance with the amendment provisions of the User Agreement. Material changes shall be communicated where required by the User Agreement or applicable law."
+    },
+    {
+     "type": "p",
+     "text": "This Schedule shall be governed by the governing-law and dispute-resolution provisions of the User Agreement."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "15",
+   "title": "Acceptance",
+   "body": [
+    {
+     "type": "p",
+     "text": "By creating, administering or using a Business Account, acting as an authorised hirer, publishing an opportunity or applying for an opportunity through BeeBark, the relevant user agrees to comply with the provisions of this Schedule applicable to their use of the Platform."
+    }
+   ]
+  }
+ ]
+}

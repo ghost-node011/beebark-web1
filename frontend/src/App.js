@@ -15,7 +15,7 @@ import './App.css';
 installAxiosProgress();
 
 const {
-  Login, Register, VerifyEmail, Onboarding, ForgotPassword, LinkedInCallback, PrivacyPolicy, PhoneLogin,
+  Login, Register, VerifyEmail, Onboarding, ForgotPassword, LinkedInCallback, LegalPage, PhoneLogin,
   Dashboard, Feed, Portfolio, PublicPortfolio, PortfolioCv, Profile, PublicProfile, Connections, Chat, Jobs, News,
   Official, Meetings, MeetingRoom, Settings, Notifications, Listings, ListingDetail, Search, CompanyPage, CompanyNew, CompanyAdmin
 } = Pages;
@@ -81,8 +81,14 @@ function App() {
             <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
             <Route path="/auth/linkedin/callback" element={<LinkedInCallback />} />
             <Route path="/phone-login" element={<PublicRoute><PhoneLogin /></PublicRoute>} />
-            <Route path="/privacy" element={<PrivacyPolicy />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/privacy" element={<LegalPage doc="privacy" />} />
+            <Route path="/privacy-policy" element={<Go to="/privacy" />} />
+            <Route path="/terms" element={<LegalPage doc="user-agreement" />} />
+            <Route path="/user-agreement" element={<Go to="/terms" />} />
+            <Route path="/community-standards" element={<LegalPage doc="community-standards" />} />
+            <Route path="/business-and-hiring" element={<LegalPage doc="business-and-hiring" />} />
+            <Route path="/ai-policy" element={<LegalPage doc="ai-policy" />} />
+            <Route path="/legal" element={<Go to="/terms" />} />
             <Route path="/portfolio/:username" element={<PublicPortfolio />} />
             <Route path="/portfolio/:username/cv" element={<PortfolioCv />} />
             {/* Public profile anyone can open (shared on LinkedIn etc.); signed-in people get the in-app one */}

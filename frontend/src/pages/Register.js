@@ -138,6 +138,12 @@ const Register = () => {
             <button type="submit" disabled={loading} className="auth-yellow-btn disabled:opacity-50 disabled:cursor-not-allowed" data-testid="register-submit-button">
               {loading ? 'Sending code...' : 'Create account'}
             </button>
+            <p className="text-center text-xs leading-relaxed text-[#857B71]" data-testid="register-consent">
+              By creating an account you confirm you're 18 or older and agree to BeeBark's{' '}
+              <a href="/terms" target="_blank" rel="noreferrer" className="font-medium text-[#32281F] underline">User Agreement</a>,{' '}
+              <a href="/privacy" target="_blank" rel="noreferrer" className="font-medium text-[#32281F] underline">Privacy Policy</a> and{' '}
+              <a href="/community-standards" target="_blank" rel="noreferrer" className="font-medium text-[#32281F] underline">Community Standards</a>.
+            </p>
           </form>
 
           <SocialAuth onGoogleCredential={handleGoogle} text="signup_with" />

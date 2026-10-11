@@ -78,7 +78,8 @@ const CompanyNew = () => {
               <PageForm form={form} setForm={setForm} showErrors={showErrors} />
               <label className="mt-6 flex items-start gap-3 rounded-xl bg-[#F2EFEC] p-4 text-sm text-[#2A221C] cursor-pointer">
                 <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} className="mt-0.5 accent-[#32281F]" data-testid="page-confirm" />
-                <span>I confirm that I work at or represent this company and may create and manage its page on BeeBark.</span>
+                <span>I confirm that I work at or represent this company and may create and manage its page on BeeBark, and that the page and its jobs will follow the{' '}
+                  <a href="/business-and-hiring" target="_blank" rel="noreferrer" className="font-medium underline" onClick={(e) => e.stopPropagation()}>Business Accounts &amp; Hiring</a> terms.</span>
               </label>
               <div className="mt-6 flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => navigate(-1)}>Cancel</Button>

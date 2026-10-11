@@ -713,6 +713,10 @@ const Jobs = () => {
               <DialogContent className="w-[calc(100%-1.5rem)] max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
                 <DialogHeader>
                   <DialogTitle className="pf-serif text-2xl">Post a New Job</DialogTitle>
+                  <p className="text-xs text-[#6B625A]" data-testid="post-job-policy">
+                    Jobs must be genuine and accurately described, and applicants can't be charged any fee. See the{' '}
+                    <a href="/business-and-hiring" target="_blank" rel="noreferrer" className="font-medium text-[#32281F] underline">Business Accounts &amp; Hiring</a> terms.
+                  </p>
                 </DialogHeader>
                 {showPostDialog && <JobForm key={postAsDefault?._id || "me"} submitLabel="Post Job" onSubmit={handlePostJob} pages={myPages} defaultPage={postAsDefault} />}
               </DialogContent>
@@ -735,7 +739,8 @@ const Jobs = () => {
                     <span className="text-xs text-[#6B625A]">{autoApplyEnabled ? 'On' : 'Off'}</span>
                   </div>
                   <p className="text-sm text-[#6B625A] mt-1">
-                    Auto-apply: our AI applies to strong matches for you using your profile and saved answers. If a job asks something only you can answer, we'll email you and keep it under Needs your answers.
+                    Auto-apply: our AI applies to strong matches for you using your profile and saved answers. If a job asks something only you can answer, we'll email you and keep it under Needs your answers.{' '}
+                    <a href="/ai-policy" target="_blank" rel="noreferrer" className="underline hover:text-[#32281F]">AI Policy</a>
                   </p>
                 </div>
               </div>

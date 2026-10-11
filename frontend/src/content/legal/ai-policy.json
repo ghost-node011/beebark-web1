@@ -1,0 +1,1567 @@
+{
+ "title": "BEEBARK AI POLICY & AI TERMS OF USE",
+ "meta": {
+  "effective": "",
+  "updated": ""
+ },
+ "blocks": [
+  {
+   "type": "p",
+   "text": "This AI Policy and AI Terms of Use (“AI Terms” or “Policy”) govern the use of artificial intelligence, machine-learning, generative-AI and related automated technologies made available through the BeeBark platform, website, application and related services (“Platform”)."
+  },
+  {
+   "type": "p",
+   "text": "These AI Terms form an integral part of the BeeBark User Agreement (“User Agreement”). By accessing or using any BeeBark AI feature, you agree to these AI Terms in addition to the User Agreement and BeeBark Privacy Policy."
+  },
+  {
+   "type": "p",
+   "text": "If you do not agree to these AI Terms, you must not use BeeBark’s AI-enabled features."
+  },
+  {
+   "type": "p",
+   "text": "Beebark Tech LLP, having its registered office at 249, First Floor, Kandle Kashan Fatehpuri, Chandni Chowk, Chandni Chowk Police Station, Delhi, North Delhi – 110006, India, is referred to as “BeeBark”, “we”, “us” or “our”."
+  },
+  {
+   "type": "p",
+   "text": "The person using an AI feature is referred to as “User”, “you” or “your”."
+  },
+  {
+   "type": "section",
+   "num": "1",
+   "title": "Purpose and Scope",
+   "body": [
+    {
+     "type": "p",
+     "num": "1.1",
+     "text": "BeeBark uses AI technologies to assist Users in creating, organising, improving and presenting professional information and portfolio material."
+    },
+    {
+     "type": "p",
+     "num": "1.2",
+     "text": "BeeBark’s current AI functionality may include:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "organising information supplied by the User;",
+      "generating or improving project descriptions;",
+      "identifying keywords;",
+      "generating summaries;",
+      "structuring portfolio information;",
+      "assisting with professional presentation; and",
+      "other AI-assisted functionality introduced by BeeBark from time to time."
+     ]
+    },
+    {
+     "type": "p",
+     "num": "1.3",
+     "text": "BeeBark may introduce additional AI-enabled functionality in the future, including functionality involving professional discovery, recommendations, matching, business services or other Platform features."
+    },
+    {
+     "type": "p",
+     "num": "1.4",
+     "text": "The specific AI features available to a User may vary depending on the Platform, account type, geography, technical availability and applicable terms."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "2",
+   "title": "AI is an Assistive Technology",
+   "body": [
+    {
+     "type": "p",
+     "num": "2.1",
+     "text": "BeeBark’s AI features are designed to assist the User and not replace the User’s professional judgement."
+    },
+    {
+     "type": "p",
+     "num": "2.2",
+     "text": "AI-generated or AI-assisted information may contain:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "factual inaccuracies;",
+      "omissions;",
+      "hallucinations;",
+      "inappropriate wording;",
+      "incorrect assumptions;",
+      "misleading summaries;",
+      "unintended similarities to existing content; or",
+      "other errors."
+     ]
+    },
+    {
+     "type": "p",
+     "num": "2.3",
+     "text": "AI output must therefore be treated as a draft or assistive output unless expressly stated otherwise."
+    },
+    {
+     "type": "p",
+     "num": "2.4",
+     "text": "Users must independently review, verify and, where necessary, correct AI-generated output before publishing, submitting, relying upon or communicating such output."
+    },
+    {
+     "type": "p",
+     "num": "2.5",
+     "text": "BeeBark does not represent that AI-generated output is accurate, complete, suitable for a particular purpose, legally compliant or professionally appropriate."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "3",
+   "title": "Human Review and Responsibility",
+   "body": [
+    {
+     "type": "p",
+     "num": "3.1",
+     "text": "BeeBark’s intended AI workflow permits the User to review and edit AI-generated content before publication."
+    },
+    {
+     "type": "p",
+     "num": "3.2",
+     "text": "The User remains responsible for the final content published through their account."
+    },
+    {
+     "type": "p",
+     "num": "3.3",
+     "text": "By publishing AI-assisted content, the User represents that, to the best of their knowledge:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "the content is materially accurate;",
+      "the content does not knowingly contain fraudulent information;",
+      "the content does not knowingly infringe another person’s rights;",
+      "the content does not knowingly disclose confidential information without authority; and",
+      "the content complies with applicable law and the User Agreement."
+     ]
+    },
+    {
+     "type": "p",
+     "num": "3.4",
+     "text": "BeeBark does not assume professional responsibility for information published by a User merely because the information was generated or assisted by BeeBark’s AI functionality."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "4",
+   "title": "User Inputs",
+   "body": [
+    {
+     "type": "p",
+     "num": "4.1",
+     "text": "Users may provide information, instructions, prompts, project details, professional information and other materials to an AI feature (“AI Input”)."
+    },
+    {
+     "type": "p",
+     "num": "4.2",
+     "text": "AI Input may include:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "project facts;",
+      "project descriptions;",
+      "professional experience;",
+      "skills;",
+      "qualifications;",
+      "portfolio information;",
+      "text;",
+      "other information necessary to provide the requested AI functionality."
+     ]
+    },
+    {
+     "type": "p",
+     "num": "4.3",
+     "text": "Users must ensure that they have the legal right and authority to submit AI Input to BeeBark and to permit its processing for the requested purpose."
+    },
+    {
+     "type": "p",
+     "num": "4.4",
+     "text": "Users must not submit information to an AI feature merely because the Platform technically permits the submission."
+    },
+    {
+     "type": "p",
+     "num": "4.5",
+     "text": "Users should consider whether information is confidential, proprietary, privileged, commercially sensitive or subject to contractual restrictions before submitting it."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "5",
+   "title": "Prohibited AI Inputs",
+   "body": [
+    {
+     "type": "p",
+     "text": "Unless expressly authorised and lawfully permitted, Users must not submit:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "another person’s personal data without a lawful basis or necessary authority;",
+      "confidential client information;",
+      "confidential employer information;",
+      "trade secrets;",
+      "privileged information;",
+      "passwords, authentication credentials or security keys;",
+      "financial-account credentials;",
+      "highly sensitive personal information where unnecessary;",
+      "unpublished proprietary designs where the User lacks authority to disclose them;",
+      "material subject to contractual restrictions prohibiting such processing;",
+      "information obtained unlawfully; or",
+      "information that the User is otherwise prohibited from sharing."
+     ]
+    },
+    {
+     "type": "p",
+     "num": "5.2",
+     "text": "Where project information belongs to or concerns a client, employer, collaborator or other third party, the User is responsible for determining whether the information may lawfully be submitted to the AI feature."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "6",
+   "title": "Third-Party AI Providers",
+   "body": [
+    {
+     "type": "p",
+     "num": "6.1",
+     "text": "BeeBark may use third-party AI, cloud, infrastructure and technology providers to deliver AI functionality."
+    },
+    {
+     "type": "p",
+     "num": "6.2",
+     "text": "Where technically necessary, AI Input may be transmitted to the relevant provider for processing."
+    },
+    {
+     "type": "p",
+     "num": "6.3",
+     "text": "Such providers may include providers of:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "generative-AI models;",
+      "machine-learning infrastructure;",
+      "cloud computing;",
+      "storage;",
+      "content moderation;",
+      "security; and",
+      "related technology."
+     ]
+    },
+    {
+     "type": "p",
+     "num": "6.4",
+     "text": "BeeBark shall manage relevant third-party providers through appropriate contractual, technical and organisational measures consistent with applicable law."
+    },
+    {
+     "type": "p",
+     "num": "6.5",
+     "text": "BeeBark may change, replace or add AI providers where reasonably necessary for:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "functionality;",
+      "security;",
+      "reliability;",
+      "compliance;",
+      "performance;",
+      "availability; or",
+      "commercial or operational reasons."
+     ]
+    },
+    {
+     "type": "p",
+     "num": "6.6",
+     "text": "The identity of current material AI processors/providers may be disclosed through BeeBark’s applicable privacy notices, processor list or other documentation where appropriate."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "7",
+   "title": "AI Data Processing",
+   "body": [
+    {
+     "type": "p",
+     "num": "7.1",
+     "text": "AI processing may involve the collection, transmission, storage, analysis, transformation and return of AI Input and AI Output."
+    },
+    {
+     "type": "p",
+     "num": "7.2",
+     "text": "BeeBark shall process personal data in connection with AI functionality in accordance with its Privacy Policy and applicable Indian data-protection law."
+    },
+    {
+     "type": "p",
+     "num": "7.3",
+     "text": "Where BeeBark determines the purpose and means of processing personal data, it shall act as a Data Fiduciary to the extent applicable."
+    },
+    {
+     "type": "p",
+     "num": "7.4",
+     "text": "Where a third-party AI provider processes personal data on BeeBark’s behalf, BeeBark shall manage the relationship as required by applicable law."
+    },
+    {
+     "type": "p",
+     "num": "7.5",
+     "text": "BeeBark shall seek to ensure that AI providers process information only for authorised purposes under the relevant service arrangement."
+    },
+    {
+     "type": "p",
+     "num": "7.6",
+     "text": "AI providers may process information outside India where technically or operationally necessary, subject to applicable Indian law concerning transfer, storage and processing of personal data."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "8",
+   "title": "AI Input Retention",
+   "body": [
+    {
+     "type": "p",
+     "num": "8.1",
+     "text": "BeeBark may retain AI Inputs and associated technical information for as long as reasonably necessary to:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "provide the requested feature;",
+      "maintain account functionality;",
+      "preserve relevant user history;",
+      "troubleshoot errors;",
+      "prevent abuse;",
+      "maintain security;",
+      "investigate incidents;",
+      "resolve disputes;",
+      "comply with applicable law; or",
+      "fulfil another disclosed and lawful purpose."
+     ]
+    },
+    {
+     "type": "p",
+     "num": "8.2",
+     "text": "Retention periods may differ depending on the AI feature."
+    },
+    {
+     "type": "p",
+     "num": "8.3",
+     "text": "BeeBark shall apply its applicable data-retention and deletion practices as described in the Privacy Policy."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "9",
+   "title": "AI Provider Training",
+   "body": [
+    {
+     "type": "p",
+     "num": "9.1",
+     "text": "BeeBark shall determine, through its contractual arrangements and technical configuration, whether and how AI providers may use information submitted through BeeBark for model training or related purposes."
+    },
+    {
+     "type": "p",
+     "num": "9.2",
+     "text": "BeeBark shall seek to ensure that User-provided information is not used for purposes inconsistent with BeeBark’s disclosed processing arrangements or applicable law."
+    },
+    {
+     "type": "p",
+     "num": "9.3",
+     "text": "Where a particular AI feature involves materially different processing, BeeBark may provide an additional notice before the User activates or uses that feature."
+    },
+    {
+     "type": "p",
+     "num": "9.4",
+     "text": "BeeBark shall not represent that every third-party AI provider operates identically."
+    },
+    {
+     "type": "p",
+     "num": "9.5",
+     "text": "Users should consult the applicable feature-specific notice where BeeBark identifies a particular provider or processing arrangement."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "10",
+   "title": "AI Output",
+   "body": [
+    {
+     "type": "p",
+     "num": "10.1",
+     "text": "“AI Output” means text, summaries, descriptions, keywords, recommendations, classifications or other material generated or assisted by an AI system in response to AI Input."
+    },
+    {
+     "type": "p",
+     "num": "10.2",
+     "text": "AI Output may be:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "inaccurate;",
+      "incomplete;",
+      "factually incorrect;",
+      "repetitive;",
+      "similar to output provided to another User;",
+      "unsuitable for a particular context; or",
+      "subject to third-party rights."
+     ]
+    },
+    {
+     "type": "p",
+     "num": "10.3",
+     "text": "Users must independently assess AI Output before using it."
+    },
+    {
+     "type": "p",
+     "num": "10.4",
+     "text": "AI Output must not be treated as a statement, representation, certification or endorsement by BeeBark."
+    },
+    {
+     "type": "p",
+     "num": "10.5",
+     "text": "BeeBark does not guarantee that AI Output is original or does not resemble third-party material."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "11",
+   "title": "Professional Credentials and Representations",
+   "body": [
+    {
+     "type": "p",
+     "num": "11.1",
+     "text": "BeeBark’s AI functionality must not be used to fabricate or materially misrepresent:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "educational qualifications;",
+      "degrees;",
+      "professional licences;",
+      "statutory registrations;",
+      "certifications;",
+      "employment history;",
+      "professional experience;",
+      "project participation;",
+      "project authorship;",
+      "awards;",
+      "client relationships;",
+      "professional designations; or",
+      "other professional credentials."
+     ]
+    },
+    {
+     "type": "p",
+     "num": "11.2",
+     "text": "Users must not instruct an AI system to invent professional experience or credentials and publish the resulting content as fact."
+    },
+    {
+     "type": "p",
+     "num": "11.3",
+     "text": "AI assistance does not constitute verification by BeeBark."
+    },
+    {
+     "type": "p",
+     "num": "11.4",
+     "text": "Any future BeeBark verification system shall operate separately from the AI generation process."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "12",
+   "title": "Project and Portfolio Content",
+   "body": [
+    {
+     "type": "p",
+     "num": "12.1",
+     "text": "BeeBark’s AI functionality may process project and portfolio information submitted by Users."
+    },
+    {
+     "type": "p",
+     "num": "12.2",
+     "text": "Users acknowledge that professional projects may involve rights belonging to multiple persons."
+    },
+    {
+     "type": "p",
+     "num": "12.3",
+     "text": "Before submitting project information to an AI feature, Users should consider rights belonging to:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "employers;",
+      "clients;",
+      "architects;",
+      "designers;",
+      "engineers;",
+      "photographers;",
+      "contractors;",
+      "consultants;",
+      "collaborators; and",
+      "other rights holders."
+     ]
+    },
+    {
+     "type": "p",
+     "num": "12.4",
+     "text": "A User must not use BeeBark’s AI functionality to circumvent confidentiality obligations or intellectual-property restrictions."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "13",
+   "title": "Intellectual Property in AI Input",
+   "body": [
+    {
+     "type": "p",
+     "num": "13.1",
+     "text": "As between BeeBark and the User, the User retains ownership of AI Input to the extent the User owns the underlying rights."
+    },
+    {
+     "type": "p",
+     "num": "13.2",
+     "text": "Nothing in these AI Terms transfers ownership of the User’s pre-existing intellectual property to BeeBark."
+    },
+    {
+     "type": "p",
+     "num": "13.3",
+     "text": "The User grants BeeBark the rights necessary to process AI Input for the relevant AI functionality, consistent with the licence granted under the User Agreement."
+    },
+    {
+     "type": "p",
+     "num": "13.4",
+     "text": "Users are responsible for obtaining any third-party permissions required for such processing."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "14",
+   "title": "Intellectual Property in AI Output",
+   "body": [
+    {
+     "type": "p",
+     "num": "14.1",
+     "text": "To the extent legally permissible, BeeBark does not claim ownership of AI Output merely because it was generated through BeeBark."
+    },
+    {
+     "type": "p",
+     "num": "14.2",
+     "text": "AI Output may not qualify for copyright protection in the same manner as independently created human-authored works."
+    },
+    {
+     "type": "p",
+     "num": "14.3",
+     "text": "The User is responsible for determining whether AI Output may lawfully be used, published, commercialised or incorporated into another work."
+    },
+    {
+     "type": "p",
+     "num": "14.4",
+     "text": "BeeBark does not guarantee that AI Output:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "is copyrightable;",
+      "is exclusive;",
+      "is original;",
+      "is free from third-party rights; or",
+      "can be commercially exploited without additional permissions."
+     ]
+    },
+    {
+     "type": "p",
+     "num": "14.5",
+     "text": "Where the User combines AI Output with human-created material, the User remains responsible for the resulting work."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "15",
+   "title": "AI and Copyright Infringement",
+   "body": [
+    {
+     "type": "p",
+     "num": "15.1",
+     "text": "Users must not knowingly use BeeBark AI functionality to generate, reproduce, transform or distribute material in violation of applicable copyright law."
+    },
+    {
+     "type": "p",
+     "num": "15.2",
+     "text": "Users must not intentionally submit copyrighted third-party material to an AI feature where they do not have the necessary rights or authority."
+    },
+    {
+     "type": "p",
+     "num": "15.3",
+     "text": "BeeBark may restrict, remove or disable access to AI functionality or resulting content where it receives a credible complaint or otherwise reasonably believes that intellectual-property rights have been infringed."
+    },
+    {
+     "type": "p",
+     "num": "15.4",
+     "text": "Nothing in this Policy limits rights or remedies available under the Copyright Act, 1957 or other applicable law."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "16",
+   "title": "Synthetically Generated Information",
+   "body": [
+    {
+     "type": "p",
+     "num": "16.1",
+     "text": "BeeBark recognises that Indian law regulates certain forms of synthetically generated information (“SGI”) through the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021, as amended from time to time."
+    },
+    {
+     "type": "p",
+     "num": "16.2",
+     "text": "Where BeeBark’s functionality or User-generated content falls within applicable SGI requirements, BeeBark shall implement measures required by applicable law."
+    },
+    {
+     "type": "p",
+     "num": "16.3",
+     "text": "Such measures may include, where legally applicable:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "appropriate labelling;",
+      "metadata or technical identification;",
+      "disclosure mechanisms;",
+      "user notices;",
+      "restrictions on unlawful synthetic content;",
+      "reasonable technical measures; and",
+      "content removal or disabling mechanisms."
+     ]
+    },
+    {
+     "type": "p",
+     "num": "16.4",
+     "text": "Users must not use BeeBark AI functionality to create or distribute unlawful synthetic content."
+    },
+    {
+     "type": "p",
+     "num": "16.5",
+     "text": "Users must not use AI-generated or synthetic content to impersonate another person, deceive another person, facilitate fraud, or otherwise violate applicable law."
+    },
+    {
+     "type": "p",
+     "num": "16.6",
+     "text": "BeeBark may update its AI functionality and content controls when required by amendments to Indian law or directions issued by competent authorities."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "17",
+   "title": "Deceptive or Fraudulent AI Use",
+   "body": [
+    {
+     "type": "p",
+     "text": "Users must not use BeeBark AI functionality to:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "impersonate another person;",
+      "create fake professional identities;",
+      "fabricate qualifications;",
+      "fabricate employment;",
+      "fabricate project experience;",
+      "create fraudulent job listings;",
+      "deceive candidates or employers;",
+      "create fraudulent business information;",
+      "manipulate professional reputation through false information;",
+      "conduct phishing or scams;",
+      "generate malicious code;",
+      "facilitate cyber attacks;",
+      "evade security controls;",
+      "create unlawful synthetic media;",
+      "manipulate another person’s identity without lawful authority; or",
+      "facilitate any unlawful activity."
+     ]
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "18",
+   "title": "AI and Harassment / Abuse",
+   "body": [
+    {
+     "type": "p",
+     "text": "AI functionality must not be used to generate, facilitate or distribute:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "threats;",
+      "harassment;",
+      "stalking;",
+      "targeted abuse;",
+      "discriminatory material prohibited by law;",
+      "defamatory material presented as fact;",
+      "non-consensual intimate material;",
+      "impersonation intended to cause harm;",
+      "malicious reputational attacks; or",
+      "other unlawful or abusive material."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "BeeBark may take appropriate action under the User Agreement and applicable law."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "19",
+   "title": "AI and Employment / Hiring",
+   "body": [
+    {
+     "type": "p",
+     "num": "19.1",
+     "text": "BeeBark’s current AI functionality is primarily intended to assist with portfolio and professional-content creation."
+    },
+    {
+     "type": "p",
+     "num": "19.2",
+     "text": "Unless expressly stated otherwise, BeeBark AI does not make employment decisions."
+    },
+    {
+     "type": "p",
+     "num": "19.3",
+     "text": "AI-generated portfolio descriptions, keywords or summaries do not constitute:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "candidate recommendations;",
+      "employment eligibility determinations;",
+      "hiring decisions;",
+      "professional qualification verification; or",
+      "employer endorsements."
+     ]
+    },
+    {
+     "type": "p",
+     "num": "19.4",
+     "text": "If BeeBark introduces AI-powered recruitment, matching, ranking or candidate-assessment functionality, BeeBark may issue additional terms, notices and safeguards applicable to those features."
+    },
+    {
+     "type": "p",
+     "num": "19.5",
+     "text": "Employers remain responsible for their own recruitment decisions and compliance with applicable employment and anti-discrimination laws."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "20",
+   "title": "AI Recommendations",
+   "body": [
+    {
+     "type": "p",
+     "num": "20.1",
+     "text": "BeeBark may in the future use AI to generate recommendations concerning profiles, projects, opportunities, connections or other Platform content."
+    },
+    {
+     "type": "p",
+     "num": "20.2",
+     "text": "Recommendations may be based on information available to BeeBark and may not always be accurate or appropriate."
+    },
+    {
+     "type": "p",
+     "num": "20.3",
+     "text": "AI recommendations do not constitute professional, employment, financial, legal or other expert advice."
+    },
+    {
+     "type": "p",
+     "num": "20.4",
+     "text": "BeeBark does not guarantee that recommended Users, projects, businesses or opportunities are suitable for a particular User."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "21",
+   "title": "AI Bias and Fairness",
+   "body": [
+    {
+     "type": "p",
+     "num": "21.1",
+     "text": "AI systems may reflect limitations, errors or biases present in their training data, design, inputs or outputs."
+    },
+    {
+     "type": "p",
+     "num": "21.2",
+     "text": "BeeBark shall take reasonable measures appropriate to its AI functionality to identify and address material risks of misuse, discrimination or harmful outcomes."
+    },
+    {
+     "type": "p",
+     "num": "21.3",
+     "text": "Users must not rely solely on AI-generated information where human assessment is reasonably necessary."
+    },
+    {
+     "type": "p",
+     "num": "21.4",
+     "text": "BeeBark does not guarantee that AI systems are completely free from bias."
+    },
+    {
+     "type": "p",
+     "num": "21.5",
+     "text": "Where AI is used in a future feature capable of materially affecting Users, BeeBark may implement additional safeguards appropriate to the risk of that feature."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "22",
+   "title": "AI Safety and Security",
+   "body": [
+    {
+     "type": "p",
+     "num": "22.1",
+     "text": "Users must not attempt to:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "bypass AI safety controls;",
+      "extract confidential system instructions;",
+      "compromise AI infrastructure;",
+      "exploit vulnerabilities;",
+      "overload AI services;",
+      "circumvent usage limits;",
+      "use automated requests to abuse AI functionality;",
+      "interfere with third-party AI systems; or",
+      "gain unauthorised access to AI-related systems."
+     ]
+    },
+    {
+     "type": "p",
+     "num": "22.2",
+     "text": "BeeBark may impose rate limits, usage limits, access controls or other safeguards to protect the Platform and its AI infrastructure."
+    },
+    {
+     "type": "p",
+     "num": "22.3",
+     "text": "BeeBark may suspend access where AI usage creates a material security, financial, operational or legal risk."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "23",
+   "title": "Prompt Injection and Manipulation",
+   "body": [
+    {
+     "type": "p",
+     "num": "23.1",
+     "text": "Users must not intentionally use prompts, uploaded documents or other inputs to:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "bypass Platform restrictions;",
+      "cause unauthorised disclosure of information;",
+      "extract protected system information;",
+      "manipulate another User’s data;",
+      "circumvent content safeguards; or",
+      "compromise BeeBark’s systems."
+     ]
+    },
+    {
+     "type": "p",
+     "num": "23.2",
+     "text": "BeeBark may use automated and manual controls to detect and mitigate such activity."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "24",
+   "title": "AI-Assisted Content Moderation",
+   "body": [
+    {
+     "type": "p",
+     "num": "24.1",
+     "text": "BeeBark may use automated systems, including AI-based tools, to assist with:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "identifying potentially unlawful content;",
+      "identifying prohibited content;",
+      "detecting spam;",
+      "detecting fraud;",
+      "detecting security threats;",
+      "prioritising reports; and",
+      "supporting moderation decisions."
+     ]
+    },
+    {
+     "type": "p",
+     "num": "24.2",
+     "text": "Automated detection may produce false positives or false negatives."
+    },
+    {
+     "type": "p",
+     "num": "24.3",
+     "text": "Where appropriate, BeeBark may use human review in connection with enforcement decisions."
+    },
+    {
+     "type": "p",
+     "num": "24.4",
+     "text": "Content enforcement shall remain subject to the User Agreement and applicable Indian law."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "25",
+   "title": "AI and Privacy",
+   "body": [
+    {
+     "type": "p",
+     "num": "25.1",
+     "text": "BeeBark’s processing of personal data through AI functionality is governed by the BeeBark Privacy Policy."
+    },
+    {
+     "type": "p",
+     "num": "25.2",
+     "text": "Users should not submit personal data to an AI feature unless the submission is reasonably necessary and lawful."
+    },
+    {
+     "type": "p",
+     "num": "25.3",
+     "text": "Where consent is required for a particular processing activity, BeeBark shall obtain consent through an appropriate mechanism."
+    },
+    {
+     "type": "p",
+     "num": "25.4",
+     "text": "Users may exercise applicable privacy rights in accordance with the Privacy Policy and applicable law."
+    },
+    {
+     "type": "p",
+     "num": "25.5",
+     "text": "Where AI processing involves third-party processors, relevant processing shall be governed by appropriate contractual and technical safeguards."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "26",
+   "title": "Children and AI",
+   "body": [
+    {
+     "type": "p",
+     "num": "26.1",
+     "text": "BeeBark’s minimum age requirements shall apply equally to AI functionality."
+    },
+    {
+     "type": "p",
+     "num": "26.2",
+     "text": "Where children are legally permitted to access relevant BeeBark functionality, BeeBark shall implement safeguards required under applicable Indian law."
+    },
+    {
+     "type": "p",
+     "num": "26.3",
+     "text": "BeeBark shall not knowingly permit prohibited processing of children’s personal data through AI functionality."
+    },
+    {
+     "type": "p",
+     "num": "26.4",
+     "text": "AI functionality may be restricted or unavailable to accounts subject to child-specific legal safeguards."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "27",
+   "title": "Confidential Information",
+   "body": [
+    {
+     "type": "p",
+     "num": "27.1",
+     "text": "BeeBark does not require Users to submit confidential information to use its AI functionality."
+    },
+    {
+     "type": "p",
+     "num": "27.2",
+     "text": "Users should use particular caution when processing:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "client information;",
+      "architectural drawings;",
+      "engineering documents;",
+      "tender documents;",
+      "contracts;",
+      "financial information;",
+      "trade secrets;",
+      "unreleased designs;",
+      "internal business documents; or",
+      "other confidential material."
+     ]
+    },
+    {
+     "type": "p",
+     "num": "27.3",
+     "text": "A User who submits such information represents that they are authorised to do so."
+    },
+    {
+     "type": "p",
+     "num": "27.4",
+     "text": "BeeBark shall not be responsible for a User’s breach of an independent confidentiality obligation merely because the User chose to submit the information to an AI feature."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "28",
+   "title": "AI Output and Professional Advice",
+   "body": [
+    {
+     "type": "p",
+     "text": "AI Output is not:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "legal advice;",
+      "financial advice;",
+      "architectural advice;",
+      "engineering advice;",
+      "employment advice;",
+      "recruitment advice;",
+      "regulatory advice; or",
+      "any other professional advice."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "Users must obtain appropriate professional advice where required."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "29",
+   "title": "Third-Party AI Content",
+   "body": [
+    {
+     "type": "p",
+     "num": "29.1",
+     "text": "AI systems may generate information based on patterns learned from large datasets and may produce output similar to material generated for other users."
+    },
+    {
+     "type": "p",
+     "num": "29.2",
+     "text": "BeeBark does not guarantee exclusivity."
+    },
+    {
+     "type": "p",
+     "num": "29.3",
+     "text": "BeeBark shall not knowingly represent third-party AI output as independently authored by BeeBark."
+    },
+    {
+     "type": "p",
+     "num": "29.4",
+     "text": "Users are responsible for conducting additional checks where originality, attribution or intellectual-property ownership is commercially important."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "30",
+   "title": "Availability of AI Features",
+   "body": [
+    {
+     "type": "p",
+     "num": "30.1",
+     "text": "AI functionality may depend upon third-party infrastructure and may be unavailable from time to time."
+    },
+    {
+     "type": "p",
+     "num": "30.2",
+     "text": "BeeBark may:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "introduce limits;",
+      "suspend features;",
+      "change models;",
+      "replace providers;",
+      "modify prompts or workflows;",
+      "change functionality; or",
+      "discontinue an AI feature."
+     ]
+    },
+    {
+     "type": "p",
+     "num": "30.3",
+     "text": "BeeBark shall make commercially and legally appropriate efforts to communicate material changes where required."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "31",
+   "title": "AI Usage Limits",
+   "body": [
+    {
+     "type": "p",
+     "num": "31.1",
+     "text": "BeeBark may impose reasonable limits on:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "number of AI requests;",
+      "file size;",
+      "input length;",
+      "processing frequency;",
+      "storage;",
+      "output length;",
+      "API consumption; or",
+      "other technical resources."
+     ]
+    },
+    {
+     "type": "p",
+     "num": "31.2",
+     "text": "Limits may be introduced to:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "prevent abuse;",
+      "maintain availability;",
+      "control infrastructure costs;",
+      "prevent automated exploitation;",
+      "maintain security; or",
+      "comply with third-party provider limits."
+     ]
+    },
+    {
+     "type": "p",
+     "num": "31.3",
+     "text": "Paid or enterprise AI functionality, if introduced, may be subject to separate commercial terms."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "32",
+   "title": "Monitoring and Abuse Prevention",
+   "body": [
+    {
+     "type": "p",
+     "num": "32.1",
+     "text": "BeeBark may monitor AI-related activity to the extent reasonably necessary for:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "security;",
+      "fraud prevention;",
+      "abuse prevention;",
+      "troubleshooting;",
+      "legal compliance;",
+      "enforcement of these AI Terms; and",
+      "protection of BeeBark and its Users."
+     ]
+    },
+    {
+     "type": "p",
+     "num": "32.2",
+     "text": "Monitoring shall be undertaken subject to applicable privacy and data-protection law."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "33",
+   "title": "Reporting AI-Related Content",
+   "body": [
+    {
+     "type": "p",
+     "num": "33.1",
+     "text": "Users may report AI-generated or AI-assisted content that they reasonably believe:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "is unlawful;",
+      "infringes intellectual-property rights;",
+      "impersonates another person;",
+      "contains fraudulent professional information;",
+      "violates privacy;",
+      "contains prohibited content; or",
+      "violates the User Agreement or these AI Terms."
+     ]
+    },
+    {
+     "type": "p",
+     "num": "33.2",
+     "text": "Reports may be submitted through:"
+    },
+    {
+     "type": "contact"
+    },
+    {
+     "type": "p",
+     "num": "33.3",
+     "text": "BeeBark may request additional information reasonably necessary to assess a complaint."
+    },
+    {
+     "type": "p",
+     "num": "33.4",
+     "text": "BeeBark may take action consistent with applicable law and its policies."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "34",
+   "title": "Government and Law-Enforcement Requests",
+   "body": [
+    {
+     "type": "p",
+     "num": "34.1",
+     "text": "BeeBark may provide AI-related information to competent authorities where required by law, court order, lawful governmental direction or other legally binding process."
+    },
+    {
+     "type": "p",
+     "num": "34.2",
+     "text": "BeeBark may preserve relevant information where legally required or reasonably necessary for investigation or legal proceedings."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "35",
+   "title": "Suspension of AI Access",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark may suspend or restrict a User’s AI access where:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "these AI Terms are breached;",
+      "AI functionality is being abused;",
+      "the User creates a security risk;",
+      "the User attempts to circumvent safeguards;",
+      "the User uses AI to facilitate fraud or unlawful activity;",
+      "the User creates unreasonable technical or financial burden;",
+      "a third-party provider requires suspension; or",
+      "suspension is necessary to comply with law."
+     ]
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "36",
+   "title": "Termination",
+   "body": [
+    {
+     "type": "p",
+     "num": "36.1",
+     "text": "Termination of the User’s BeeBark account may result in termination of access to AI functionality."
+    },
+    {
+     "type": "p",
+     "num": "36.2",
+     "text": "Certain AI-related information may remain subject to lawful retention requirements."
+    },
+    {
+     "type": "p",
+     "num": "36.3",
+     "text": "Clauses concerning intellectual property, misuse, liability, confidentiality, indemnity, dispute resolution and other provisions intended to survive termination shall continue to apply."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "37",
+   "title": "Liability Relating to AI",
+   "body": [
+    {
+     "type": "p",
+     "num": "37.1",
+     "text": "To the maximum extent permitted by applicable law, BeeBark shall not be responsible for losses arising solely from a User’s failure to review or verify AI Output."
+    },
+    {
+     "type": "p",
+     "num": "37.2",
+     "text": "Nothing in these AI Terms excludes liability that cannot lawfully be excluded under Indian law."
+    },
+    {
+     "type": "p",
+     "num": "37.3",
+     "text": "BeeBark does not guarantee:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "accuracy of AI Output;",
+      "uninterrupted AI availability;",
+      "originality of AI Output;",
+      "suitability of AI Output;",
+      "professional acceptability of AI Output;",
+      "absence of bias;",
+      "absence of errors; or",
+      "absence of third-party intellectual-property claims."
+     ]
+    },
+    {
+     "type": "p",
+     "num": "37.4",
+     "text": "The liability limitations contained in the User Agreement apply to these AI Terms to the extent legally permissible."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "38",
+   "title": "Indemnity",
+   "body": [
+    {
+     "type": "p",
+     "num": "38.1",
+     "text": "To the extent permitted by applicable law, a User shall indemnify BeeBark against claims, losses, liabilities, costs and reasonable legal expenses arising from:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "unlawful AI Input;",
+      "unlawful use of AI functionality;",
+      "infringement of third-party rights;",
+      "fraudulent AI-generated professional claims;",
+      "unauthorised disclosure of confidential information;",
+      "misuse of AI functionality; or",
+      "violation of these AI Terms or applicable law."
+     ]
+    },
+    {
+     "type": "p",
+     "num": "38.2",
+     "text": "Nothing in this clause requires the User to indemnify BeeBark for liability caused solely by BeeBark’s own unlawful conduct or liability that cannot legally be transferred."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "39",
+   "title": "Compliance with Indian Law",
+   "body": [
+    {
+     "type": "p",
+     "num": "39.1",
+     "text": "These AI Terms shall be interpreted consistently with applicable Indian law, including, where relevant:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "the Information Technology Act, 2000;",
+      "the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021, as amended;",
+      "the Digital Personal Data Protection Act, 2023;",
+      "the Digital Personal Data Protection Rules, 2025, to the extent applicable and operative;",
+      "the Copyright Act, 1957;",
+      "the Trade Marks Act, 1999;",
+      "the Consumer Protection Act, 2019;",
+      "applicable cyber-security laws and directions;",
+      "applicable contract law; and",
+      "other applicable laws, rules, regulations, notifications and binding governmental directions."
+     ]
+    },
+    {
+     "type": "p",
+     "num": "39.2",
+     "text": "Where Indian law imposes a mandatory obligation concerning AI, synthetic information, personal data, content moderation or intermediary due diligence, such obligation shall prevail over any inconsistent provision of these AI Terms."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "40",
+   "title": "No Waiver of Statutory Rights",
+   "body": [
+    {
+     "type": "p",
+     "text": "Nothing in these AI Terms shall:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "exclude a statutory right that cannot lawfully be excluded;",
+      "prevent a User from exercising a statutory remedy;",
+      "prevent a competent authority from exercising its lawful powers; or",
+      "restrict any mandatory protection available under Indian law."
+     ]
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "41",
+   "title": "Governing Law and Dispute Resolution",
+   "body": [
+    {
+     "type": "p",
+     "num": "41.1",
+     "text": "These AI Terms shall be governed by the laws of India."
+    },
+    {
+     "type": "p",
+     "num": "41.2",
+     "text": "Any dispute shall first be addressed through the grievance/contact mechanism provided by BeeBark."
+    },
+    {
+     "type": "p",
+     "num": "41.3",
+     "text": "Subject to rights and remedies that cannot lawfully be waived, unresolved contractual disputes shall be dealt with in accordance with the dispute-resolution mechanism contained in the User Agreement."
+    },
+    {
+     "type": "p",
+     "num": "41.4",
+     "text": "The arbitration seat shall be New Delhi, India, unless otherwise specified in the User Agreement."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "42",
+   "title": "Changes to These AI Terms",
+   "body": [
+    {
+     "type": "p",
+     "num": "42.1",
+     "text": "BeeBark may update these AI Terms to reflect:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "changes in AI technology;",
+      "new AI features;",
+      "changes in third-party AI providers;",
+      "changes in applicable law;",
+      "security developments;",
+      "changes in Platform architecture; or",
+      "operational requirements."
+     ]
+    },
+    {
+     "type": "p",
+     "num": "42.2",
+     "text": "Material changes shall be communicated through appropriate means where required by law."
+    },
+    {
+     "type": "p",
+     "num": "42.3",
+     "text": "The revised version shall specify its effective date."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "43",
+   "title": "Relationship with Other BeeBark Documents",
+   "body": [
+    {
+     "type": "p",
+     "num": "43.1",
+     "text": "These AI Terms supplement the User Agreement."
+    },
+    {
+     "type": "p",
+     "num": "43.2",
+     "text": "The Privacy Policy governs processing of personal data."
+    },
+    {
+     "type": "p",
+     "num": "43.3",
+     "text": "The User Agreement governs general Platform use, User conduct, account management, intellectual property, liability and dispute resolution."
+    },
+    {
+     "type": "p",
+     "num": "43.4",
+     "text": "Where there is a conflict:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "mandatory applicable law shall prevail;",
+      "the Privacy Policy shall govern matters specifically concerning personal-data processing;",
+      "these AI Terms shall govern matters specifically concerning AI functionality; and",
+      "the User Agreement shall govern general Platform matters."
+     ]
+    },
+    {
+     "type": "p",
+     "num": "43.5",
+     "text": "Feature-specific terms or notices may apply to particular AI functionality where expressly presented to the User."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "44",
+   "title": "Contact",
+   "body": [
+    {
+     "type": "contact"
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "45",
+   "title": "User Acknowledgement",
+   "body": [
+    {
+     "type": "p",
+     "text": "By using any BeeBark AI feature, the User acknowledges that:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "AI is an assistive technology;",
+      "AI-generated information may be inaccurate;",
+      "AI Output must be reviewed before publication or reliance;",
+      "the User remains responsible for published content;",
+      "the User must have authority to submit information to an AI feature;",
+      "confidential or third-party information must not be submitted without appropriate authority;",
+      "AI does not verify professional credentials;",
+      "AI Output is not professional advice;",
+      "BeeBark may use third-party AI providers;",
+      "AI features may change or become unavailable; and",
+      "use of BeeBark AI functionality is subject to these AI Terms, the User Agreement, Privacy Policy and applicable law."
+     ]
+    }
+   ]
+  }
+ ]
+}

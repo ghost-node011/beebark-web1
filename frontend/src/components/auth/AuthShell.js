@@ -46,9 +46,11 @@ const AuthShell = ({ children }) => (
         {children}
       </div>
       <p className="mt-10 text-center text-sm text-[#857B71]">
+        <Link to="/terms" className="hover:text-[#32281F]">User Agreement</Link>
+        <span className="mx-3">·</span>
         <Link to="/privacy" className="hover:text-[#32281F]">Privacy Policy</Link>
         <span className="mx-3">·</span>
-        <Link to="/privacy#terms" className="hover:text-[#32281F]">Terms of Service</Link>
+        <Link to="/community-standards" className="hover:text-[#32281F]">Community Standards</Link>
       </p>
     </div>
   </div>

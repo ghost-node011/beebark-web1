@@ -1,0 +1,1100 @@
+{
+ "title": "BEEBARK USER AGREEMENT",
+ "meta": {
+  "effective": "28th September, 2026",
+  "updated": "28th September, 2026"
+ },
+ "blocks": [
+  {
+   "type": "p",
+   "text": "This User Agreement (“Agreement”) governs access to and use of the BeeBark website, mobile application, software, platform and related services (collectively, the “Platform”) provided by BEEBARK TECH LLP, a company incorporated under the laws of India, having its registered office at 249, First Floor, Kandle Kashan Fatehpuri, Chandni Chowk, Chandni Chowk Police Station, Delhi, North Delhi – 110006, India."
+  },
+  {
+   "type": "p",
+   "text": "By accessing, registering for, or using the Platform, you (“User”, “you” or “your”) agree to be legally bound by this Agreement, the BeeBark Privacy Policy and any other policies expressly incorporated into this Agreement."
+  },
+  {
+   "type": "p",
+   "text": "If you do not agree to this Agreement, you must not access or use the Platform."
+  },
+  {
+   "type": "section",
+   "num": "1",
+   "title": "About BeeBark",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark is a specialised professional digital platform for persons and organisations operating in or connected with the built environment, including architecture, interior design, construction, real estate and related professional disciplines. The Platform may provide, among other things:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "professional profiles;",
+      "living/dynamic professional portfolios;",
+      "AI-assisted portfolio creation and content organisation;",
+      "professional discovery;",
+      "networking and professional interactions;",
+      "job and opportunity listings;",
+      "hiring and application workflows; and",
+      "other features introduced by BeeBark from time to time."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "The Platform is intended to facilitate professional presentation, discovery and interaction. BeeBark does not itself become a party to any professional, employment, consultancy, contractor, collaboration or other transaction between Users merely because the Platform facilitates that interaction."
+    },
+    {
+     "type": "p",
+     "text": "An employer, recruiter, business or other User is solely responsible for its dealings with candidates or other Users. Similarly, a candidate or professional is solely responsible for representations made to employers, businesses or other Users."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "2",
+   "title": "Acceptance and Electronic Contract",
+   "body": [
+    {
+     "type": "p",
+     "text": "This Agreement constitutes an electronic contract between you and BeeBark and does not require physical or handwritten execution."
+    },
+    {
+     "type": "p",
+     "text": "By clicking “I Agree”, “Sign Up”, “Create Account”, “Continue”, or any substantially similar mechanism, or by otherwise accessing or using the Platform after being provided access to this Agreement, you signify your acceptance of this Agreement."
+    },
+    {
+     "type": "p",
+     "text": "You represent that you have the legal capacity to enter into this Agreement under applicable Indian law."
+    },
+    {
+     "type": "p",
+     "text": "Where you use the Platform on behalf of a company, partnership, LLP, firm, trust, institution or other organisation (“Business”), you represent and warrant that you have authority to bind that Business."
+    },
+    {
+     "type": "p",
+     "text": "Electronic records generated in connection with your use of the Platform may constitute evidence of your acceptance and transactions, subject to applicable law."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "3",
+   "title": "Eligibility",
+   "body": [
+    {
+     "type": "p",
+     "text": "You may use the Platform only if:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "you satisfy the minimum age requirement specified by BeeBark i.e. 18+ years;",
+      "you are legally capable of entering into a binding contract;",
+      "your use of the Platform is lawful in the jurisdiction applicable to you; and",
+      "you are not prohibited from using the Platform under applicable law."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "You must not create or operate an account for another person without lawful authority."
+    },
+    {
+     "type": "p",
+     "text": "In the event of the user not being eligible as per the Agreement, their account shall be permanently removed from the platform."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "4",
+   "title": "Account Registration",
+   "body": [
+    {
+     "type": "p",
+     "text": "You may be required to provide information including your name, email address, telephone number, professional information, education, employment history, skills, qualifications, credentials or other information necessary to operate the Platform."
+    },
+    {
+     "type": "p",
+     "text": "You agree that information supplied by you shall be accurate, complete and not misleading."
+    },
+    {
+     "type": "p",
+     "text": "You must promptly update information that becomes materially inaccurate."
+    },
+    {
+     "type": "p",
+     "text": "You are responsible for maintaining the confidentiality of your authentication credentials and for activity occurring through your account, except to the extent caused by BeeBark’s failure to comply with its legal or security obligations."
+    },
+    {
+     "type": "p",
+     "text": "You must immediately notify BeeBark if you reasonably suspect:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "unauthorised access;",
+      "account takeover;",
+      "loss or compromise of credentials;",
+      "fraudulent activity; or",
+      "any other security incident affecting your account."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "BeeBark may require additional information reasonably necessary to verify account ownership or secure an account."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "5",
+   "title": "Business Accounts",
+   "body": [
+    {
+     "type": "p",
+     "text": "A Business Account may be created or operated by an authorised representative of the relevant organisation. The person operating a Business Account represents and warrants that they have authority to create, manage and publish information on behalf of the relevant organisation."
+    },
+    {
+     "type": "p",
+     "text": "Business Users are responsible for maintaining appropriate internal controls over administrator access. Beebark shall not be responsible for ownership/ administration/ recruitment roles of Business Accounts/ portfolios/ users."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark may request evidence of authority where reasonably necessary to address disputes concerning ownership, control or administration of a Business Account."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark may suspend or restrict administrative access where there is a reasonable security, fraud, ownership or authority concern."
+    },
+    {
+     "type": "p",
+     "text": "The precise administrator, role, transfer and recovery mechanisms applicable to Business Accounts may be supplemented by Business Terms issued by BeeBark."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "6",
+   "title": "Professional Profiles",
+   "body": [
+    {
+     "type": "p",
+     "text": "Users may create professional profiles containing information such as:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "name and professional identity;",
+      "education;",
+      "employment and professional history;",
+      "skills and specialisations;",
+      "projects;",
+      "professional associations;",
+      "certifications, registrations or licences;",
+      "business affiliations; and",
+      "other professional information."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "You are solely responsible for the truthfulness and legality of information you publish."
+    },
+    {
+     "type": "p",
+     "text": "Unless expressly identified by BeeBark as verified, a credential, qualification, employment history, project attribution, business association or professional claim displayed on the Platform should not be treated as independently verified by BeeBark."
+    },
+    {
+     "type": "p",
+     "text": "Any future verification feature shall be limited to the particular information, source or credential actually verified and shall not constitute a general endorsement of the User."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "7",
+   "title": "Portfolios and User Content",
+   "body": [
+    {
+     "type": "p",
+     "text": "Users may upload, submit, create, display or otherwise make available drawings, designs, renders, photographs, videos, project documents, descriptions, text, graphics, credentials and other materials (“User Content”)."
+    },
+    {
+     "type": "p",
+     "text": "As between BeeBark and the User, the User retains ownership of User Content to the extent the User owns such rights."
+    },
+    {
+     "type": "p",
+     "text": "Nothing in this Agreement transfers ownership of User Content to BeeBark, however, certain licenses shall be granted by the User to provide the service."
+    },
+    {
+     "type": "p",
+     "text": "You grant BeeBark a non-exclusive, worldwide, royalty-free, transferable, sub-licensable licence to host, use, distribute, modify, run, publicly perform, or store, reproduce, format, adapt, display, transmit, translate, create derivative works and otherwise process your User Content solely to:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "operate and provide the Platform;",
+      "display your portfolio and profile according to your selected settings;",
+      "enable professional discovery and networking;",
+      "facilitate hiring and applications;",
+      "perform security, moderation and technical operations;",
+      "create backups and maintain business continuity; and",
+      "provide other functions expressly requested or enabled by you."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "The licence shall continue only for so long as reasonably necessary for the relevant purpose, subject to lawful retention requirements and legitimate operational needs."
+    },
+    {
+     "type": "p",
+     "text": "The User agree that Beebark can download and install updates to the Platform."
+    },
+    {
+     "type": "p",
+     "text": "You represent and warrant that you have all rights, permissions, licences, consents and authorisations necessary for BeeBark to process and display the User Content in accordance with this Agreement."
+    },
+    {
+     "type": "p",
+     "text": "This obligation is particularly important where User Content contains:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "work created for an employer;",
+      "client-confidential information;",
+      "architectural or engineering drawings;",
+      "photographs owned by a photographer;",
+      "designs created jointly with collaborators;",
+      "third-party trademarks;",
+      "personal information concerning other individuals; or",
+      "commercially confidential material."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "You must not upload confidential or proprietary material where you do not have the right to disclose or publish it."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark does not determine ownership of disputed professional work merely because a User uploads it."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark may restrict, disable or remove access to User Content where it reasonably believes that the content violates this Agreement, applicable law, intellectual-property rights, privacy rights, court orders, government directions or other lawful requirements as per its community standards."
+    },
+    {
+     "type": "p",
+     "text": "Beebark retains the right to remove any content or information User shares on the Platform if it believes that the content violates any clause of this Agreement, its policies (including but not limited to privacy policies, AI policies, Community Standards), or Beebark is permitted or required to do so by law."
+    },
+    {
+     "type": "p",
+     "text": "Beebark retains the right to refuse to provide or stop providing all or part of the Service to you (including terminating or disabling your access to the platform) immediately to protect the community or services or platform, or if the user creates risk or legal exposure for Beebark Tech/ Beebark, violate this Agreement, if repeatedly infringed other users intellectual property rights, or where required to do so by law."
+    },
+    {
+     "type": "p",
+     "text": "Beebark retains the right to terminate or change the service, remove or block content or information shared on the platform, or stop providing all or part of the services and platform if it is determined by it that doing so is reasonably necessary to avoid or mitigate adverse legal or regulatory impact on Beebark Tech/ Beebark."
+    },
+    {
+     "type": "p",
+     "text": "If the User believes their portfolio has been terminated in error, or if the User wants to disable or permanently delete their portfolio, the User shall consult Beebark’s Help Center."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "8",
+   "title": "AI Features",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark may provide AI-assisted features to help Users organise information, generate descriptions, identify keywords, create summaries or otherwise structure portfolio information as per Beebark’s AI Policy."
+    },
+    {
+     "type": "p",
+     "text": "AI functionality is an assistive feature and does not replace the User’s professional judgement."
+    },
+    {
+     "type": "p",
+     "text": "AI-generated or AI-assisted content may be inaccurate, incomplete, inappropriate or factually incorrect."
+    },
+    {
+     "type": "p",
+     "text": "You must review AI-generated content before publishing or relying upon it."
+    },
+    {
+     "type": "p",
+     "text": "You remain solely responsible for the accuracy, legality and appropriateness of content that you publish."
+    },
+    {
+     "type": "p",
+     "text": "You must not knowingly use AI functionality to generate fraudulent professional qualifications, licences, project experience, employment history or other deceptive representations."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark may use third-party AI or technology providers to provide AI functionality."
+    },
+    {
+     "type": "p",
+     "text": "Information submitted to an AI feature may be transmitted to the relevant provider where necessary to provide that feature, subject to the Privacy Policy and applicable contractual and legal safeguards."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark may change or replace AI providers, models, technologies or infrastructure where reasonably necessary for operation, security, compliance, performance or commercial reasons."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark does not represent that any AI-generated output is:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "unique;",
+      "accurate;",
+      "professionally suitable;",
+      "legally compliant; or",
+      "free from third-party rights."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "Users shall not submit information to AI functionality where the User lacks authority to permit such processing."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "9",
+   "title": "Professional Discovery and Networking",
+   "body": [
+    {
+     "type": "p",
+     "text": "The Platform may allow Users to discover professional profiles, businesses, projects and other information."
+    },
+    {
+     "type": "p",
+     "text": "You acknowledge that information intentionally made public or discoverable may be accessed by other Users and, depending on the Platform’s technical architecture and applicable settings, by persons who are not registered Users."
+    },
+    {
+     "type": "p",
+     "text": "You are responsible for selecting appropriate visibility settings made available by BeeBark."
+    },
+    {
+     "type": "p",
+     "text": "You must not use the Platform to stalk, harass, threaten, defame, discriminate against or unlawfully profile another person."
+    },
+    {
+     "type": "p",
+     "text": "You must not scrape, crawl, harvest, bulk-download, systematically copy, reproduce, index or commercially exploit Platform data without BeeBark’s prior written authorisation."
+    },
+    {
+     "type": "p",
+     "text": "This restriction does not prevent lawful use of information made publicly available where such use is otherwise permitted by applicable law."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "10",
+   "title": "Hiring and Jobs",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark may allow Business Users or other authorised Users to publish employment, internship, freelance, consultancy or other professional opportunities through the Users’ profile, posts, articles, links, job postings, messages etc."
+    },
+    {
+     "type": "p",
+     "text": "Employers and recruiters are solely responsible for:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "the accuracy of job descriptions;",
+      "compensation and employment conditions;",
+      "statutory employment obligations;",
+      "compliance with applicable labour and employment laws;",
+      "lawful selection criteria;",
+      "candidate communications;",
+      "background checks conducted by them; and",
+      "decisions concerning recruitment."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "BeeBark does not guarantee that:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "a vacancy is genuine;",
+      "a User will obtain employment;",
+      "a candidate possesses claimed qualifications;",
+      "an employer will honour an offer; or",
+      "any particular professional outcome will occur."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "Users must not publish fraudulent, deceptive, discriminatory or unlawful job opportunities."
+    },
+    {
+     "type": "p",
+     "text": "Employers must not request personal information from candidates unless reasonably necessary and lawful."
+    },
+    {
+     "type": "p",
+     "text": "Candidate information made available through a hiring workflow shall be used only for legitimate recruitment or related purposes and shall not be sold, misused or unlawfully disclosed."
+    },
+    {
+     "type": "p",
+     "text": "Candidate-data sale and misuse is prohibited. Should a User be found engaging in such activities, their portfolio/ account from the platform shall be terminated, without any prejudice to any legal actions in the future for their conduct."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark is not the employer, employee, recruiter, staffing agency, placement agency, contractor or principal merely because it provides the Platform."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "11",
+   "title": "Prohibited Activities",
+   "body": [
+    {
+     "type": "p",
+     "text": "You must not:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "impersonate another person or organisation;",
+      "create a false professional identity;",
+      "submit false credentials or professional claims;",
+      "falsely claim ownership or authorship of work;",
+      "upload content without the necessary rights;",
+      "publish confidential client or employer information without authorisation;",
+      "publish fraudulent employment opportunities;",
+      "engage in unlawful discrimination, harassment, threats or abuse;",
+      "infringe intellectual-property rights;",
+      "violate privacy or data-protection rights;",
+      "introduce malware, ransomware, viruses, malicious code or harmful software;",
+      "attempt unauthorised access to the Platform or another account;",
+      "probe, scan or test Platform security without authorisation;",
+      "circumvent security, authentication, access controls or rate limits;",
+      "scrape or bulk-download Platform information;",
+      "use bots or automated systems to abuse the Platform;",
+      "use AI functionality in a manner that causes unreasonable technical or financial burden;",
+      "send spam or unsolicited commercial communications through the Platform;",
+      "manipulate rankings, recommendations or discovery mechanisms;",
+      "use the Platform for fraud, phishing or financial scams;",
+      "facilitate unlawful activity;",
+      "use the Platform to infringe another person’s rights;",
+      "attempt to reverse engineer the Platform except to the extent expressly permitted by applicable law;",
+      "copy or commercially exploit BeeBark’s proprietary systems; or",
+      "otherwise use the Platform in violation of applicable law."
+     ]
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "12",
+   "title": "User-to-User Communications",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark may provide messaging, networking or communication functionality."
+    },
+    {
+     "type": "p",
+     "text": "Users are solely responsible for communications they initiate."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark does not endorse statements made by Users."
+    },
+    {
+     "type": "p",
+     "text": "Users should exercise appropriate professional caution before relying upon representations made by another User."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark may retain and process communications to the extent necessary for providing the service, security, abuse prevention, legal compliance, dispute handling or other lawful purposes described in the Privacy Policy."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "13",
+   "title": "Content Moderation and Grievance Redressal",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark may receive complaints concerning User Content or User conduct."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark shall maintain a grievance mechanism in accordance with applicable Indian law."
+    },
+    {
+     "type": "p",
+     "text": "Complaints may be submitted through:"
+    },
+    {
+     "type": "contact"
+    },
+    {
+     "type": "p",
+     "text": "Complaints should contain sufficient information to enable BeeBark to understand and investigate the issue."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark may take action including:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "requesting clarification;",
+      "restricting visibility;",
+      "disabling access;",
+      "removing content;",
+      "suspending an account;",
+      "terminating an account; or",
+      "referring the matter to an appropriate authority where legally required."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "Nothing in this Agreement limits BeeBark’s obligation to comply with lawful orders, notices, directions or requests issued by competent governmental, judicial, regulatory, law-enforcement or other statutory authorities."
+    },
+    {
+     "type": "p",
+     "text": "Where applicable under Indian law, BeeBark shall follow prescribed procedures and timelines for grievance handling, content removal and other intermediary obligations."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "14",
+   "title": "Intellectual Property of BeeBark",
+   "body": [
+    {
+     "type": "p",
+     "text": "The Platform and all BeeBark-owned elements, including but not limited to its software, source code, object code, architecture, design system, interfaces, visual design, workflows, databases, documentation, trademarks, logos, branding, prompts, internal AI workflows and proprietary systems (“BeeBark IP”) are owned by or licensed to BeeBark."
+    },
+    {
+     "type": "p",
+     "text": "Except as expressly permitted by this Agreement, no User receives any ownership right in BeeBark IP."
+    },
+    {
+     "type": "p",
+     "text": "You must not:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "copy BeeBark IP;",
+      "modify or create derivative works from BeeBark IP;",
+      "sell, sublicense or commercially exploit BeeBark IP;",
+      "reverse engineer the Platform except where such restriction is prohibited by law;",
+      "remove proprietary notices; or",
+      "use BeeBark trademarks without prior written permission."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "Third-party software, APIs, AI models, libraries and services remain subject to their respective licences and terms."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "15",
+   "title": "Feedback",
+   "body": [
+    {
+     "type": "p",
+     "text": "If you provide suggestions, recommendations, ideas or feedback regarding BeeBark, you grant BeeBark a worldwide, perpetual, irrevocable, royalty-free right to use such feedback for development and improvement of its products and services."
+    },
+    {
+     "type": "p",
+     "text": "This clause does not transfer ownership of your User Content."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "16",
+   "title": "Third-Party Services",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark may rely on third-party service providers for hosting, storage, communications, analytics, authentication, AI, payment processing, security, infrastructure and other services."
+    },
+    {
+     "type": "p",
+     "text": "Third-party services may be governed by their own terms and privacy policies."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark does not guarantee uninterrupted availability of third-party services."
+    },
+    {
+     "type": "p",
+     "text": "Where a User expressly connects a third-party account or service, the User authorises BeeBark to access the information and permissions necessary to provide that integration, subject to the applicable authorisation flow."
+    },
+    {
+     "type": "p",
+     "text": "Any future user-authorised integration shall be subject to additional terms where necessary."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "17",
+   "title": "Fees and Paid Services",
+   "body": [
+    {
+     "type": "p",
+     "text": "Core BeeBark functionality is presently intended to be available without charge, subject to applicable limits and product conditions."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark may introduce paid features, subscriptions, services or other commercial offerings in the future which shall have separately disclosed terms."
+    },
+    {
+     "type": "p",
+     "text": "Any paid service shall be subject to applicable pricing, subscription, refund, cancellation and commercial terms presented to the User before purchase."
+    },
+    {
+     "type": "p",
+     "text": "Where applicable, BeeBark shall comply with the Consumer Protection Act, 2019, the Consumer Protection (E-Commerce) Rules, 2020 and other applicable consumer and taxation laws."
+    },
+    {
+     "type": "p",
+     "text": "Nothing in this Agreement excludes statutory consumer rights that cannot lawfully be excluded."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "18",
+   "title": "Platform Availability and Changes",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark may modify, update, suspend or discontinue any feature where reasonably necessary for:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "security;",
+      "legal or regulatory compliance;",
+      "technical reasons;",
+      "maintenance;",
+      "business continuity;",
+      "improvement of the Platform; or",
+      "commercial reasons."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "BeeBark does not guarantee that every feature will remain available indefinitely."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark shall not materially modify contractual terms in a manner prohibited by applicable law."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "19",
+   "title": "Account Suspension and Termination",
+   "body": [
+    {
+     "type": "p",
+     "text": "User may stop using the Platform at any time."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark may suspend or terminate an account where:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "the User materially breaches this Agreement;",
+      "the User violates applicable law;",
+      "the account presents a security or fraud risk;",
+      "the User engages in prohibited conduct;",
+      "suspension is required by law or governmental direction;",
+      "continued operation creates material risk to BeeBark or another person; or",
+      "the Platform or relevant service is discontinued."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "Where reasonably practicable and legally permissible, BeeBark may provide notice and an opportunity to remedy a breach before suspension."
+    },
+    {
+     "type": "p",
+     "text": "Immediate action may be taken where necessary to address serious security, fraud, unlawful-content or legal risks."
+    },
+    {
+     "type": "p",
+     "text": "Termination shall not affect rights or obligations that by their nature survive termination."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "20",
+   "title": "Deletion and Retention",
+   "body": [
+    {
+     "type": "p",
+     "text": "Users may request closure or deletion of their portfolio through the mechanism made available by BeeBark. When the user requests to delete content or their portfolio, the deletion process shall automatically begin no more than 30 days after such request. It may take up to 90 days to delete content after the deletion process begins."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark shall process deletion requests in accordance with applicable law and its Privacy Policy. While the deletion process is being undertaken, the content/ portfolio remains subject to this Agreement and Privacy Policy."
+    },
+    {
+     "type": "p",
+     "text": "After the content is deleted, it may take up to another 90 days to delete it from Beebark’s backups and disaster recovery systems. Certain information may be retained where required or permitted by law, including for:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "legal compliance;",
+      "fraud prevention;",
+      "security;",
+      "dispute resolution;",
+      "enforcement of legal rights;",
+      "accounting and tax requirements; or",
+      "legitimate operational purposes permitted by law."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "Specific retention periods shall be published by BeeBark once its retention schedule is finalised."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "21",
+   "title": "Privacy and Data Protection",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark’s processing of personal data is governed by the BeeBark Privacy Policy."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark shall process personal data in accordance with applicable Indian data-protection law, including the Digital Personal Data Protection Act, 2023 and applicable Rules and notifications to the extent in force and applicable to the relevant processing."
+    },
+    {
+     "type": "p",
+     "text": "Where BeeBark acts as a Data Fiduciary, it shall discharge the obligations applicable to it in that capacity."
+    },
+    {
+     "type": "p",
+     "text": "Where BeeBark engages Data Processors, it shall manage such processing in accordance with applicable law and contractual safeguards."
+    },
+    {
+     "type": "p",
+     "text": "Users shall not upload another person’s personal data unless they have a lawful basis or other necessary authority to do so."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "22",
+   "title": "Confidentiality and Sensitive Material",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark does not require Users to upload confidential client, employer or commercially sensitive material merely to use the Platform unless so required by applicable laws."
+    },
+    {
+     "type": "p",
+     "text": "Users are responsible for determining whether they are authorised to publish any material."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark shall implement reasonable technical and organisational safeguards appropriate to the information it processes."
+    },
+    {
+     "type": "p",
+     "text": "Nothing in this Agreement requires BeeBark to treat intentionally published public portfolio information as confidential after lawful publication."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "23",
+   "title": "Disclaimers",
+   "body": [
+    {
+     "type": "p",
+     "text": "To the maximum extent permitted by law, the Platform is provided on an “as available” basis."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark does not guarantee:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "employment;",
+      "business opportunities;",
+      "professional success;",
+      "accuracy of User Content;",
+      "authenticity of every User;",
+      "authenticity of every job listing;",
+      "accuracy of AI output;",
+      "uninterrupted availability; or",
+      "suitability of the Platform for a particular purpose."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "BeeBark is a technology platform and does not provide legal, financial, architectural, engineering, employment, recruitment or other professional advice merely by providing Platform functionality."
+    },
+    {
+     "type": "p",
+     "text": "Users should independently verify material professional, employment, financial or legal information before relying upon it."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "24",
+   "title": "Limitation of Liability",
+   "body": [
+    {
+     "type": "p",
+     "text": "NOTHING IN THIS AGREEMENT EXCLUDES OR LIMITS LIABILITY THAT CANNOT LAWFULLY BE EXCLUDED OR LIMITED UNDER APPLICABLE INDIAN LAW. BEEBARK SHALL NOT BE LIABLE FOR INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL OR PUNITIVE LOSSES TO THE EXTENT SUCH EXCLUSION IS PERMITTED BY LAW."
+    },
+    {
+     "type": "p",
+     "text": "THE LIMITATION IN THIS CLAUSE SHALL NOT APPLY TO LIABILITY ARISING FROM MATTERS THAT CANNOT LEGALLY BE LIMITED, INCLUDING WHERE APPLICABLE FRAUD, WILFUL MISCONDUCT, OR OTHER LIABILITY MANDATORILY IMPOSED BY LAW."
+    },
+    {
+     "type": "p",
+     "text": "BEEBARK’S AGGREGATE LIABILITY ARISING OUT OF OR RELATING TO THE PLATFORM UNDER THIS AGREEMENT, WHETHER ARISING IN CONTRACT, TORT (INCLUDING NEGLIGENCE), BREACH OF STATUTORY DUTY, OR OTHERWISE, SHALL NOT EXCEED THE TOTAL AMOUNT ACTUALLY PAID BY THE USER TO BEEBARK FOR THE RELEVANT SERVICE DURING THE TWELVE (12) MONTHS PRECEDING THE EVENT GIVING RISE TO THE CLAIM, IF ANY."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "25",
+   "title": "Indemnity",
+   "body": [
+    {
+     "type": "p",
+     "text": "To the extent permitted by law, you agree to indemnify and hold harmless BeeBark, its officers, directors, employees and service providers against claims, losses, liabilities, damages, costs and reasonable legal expenses arising from:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "your breach of this Agreement;",
+      "unlawful User Content;",
+      "infringement of third-party intellectual-property rights;",
+      "violation of privacy or other rights;",
+      "fraudulent or misleading professional representations;",
+      "misuse of the Platform;",
+      "unauthorised disclosure of confidential information; or",
+      "your violation of applicable law."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "BeeBark shall be entitled to control the defence of an indemnified claim, subject to applicable law."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "26",
+   "title": "Government and Law-Enforcement Requests",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark may disclose information where required by applicable law, court order, statutory authority, law-enforcement request or other legally binding direction."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark may also take emergency measures where reasonably necessary to protect Users, the public, the Platform or its infrastructure from serious harm, subject to applicable law."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "27",
+   "title": "Compliance with Indian Law",
+   "body": [
+    {
+     "type": "p",
+     "text": "This Agreement shall be interpreted consistently with applicable Indian law, including, as applicable:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "the Information Technology Act, 2000;",
+      "applicable rules and regulations made thereunder, including the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021, as amended;",
+      "the Digital Personal Data Protection Act, 2023 and applicable rules;",
+      "the Indian Contract Act, 1872;",
+      "the Consumer Protection Act, 2019 and applicable e-commerce rules;",
+      "the Copyright Act, 1957;",
+      "the Trade Marks Act, 1999;",
+      "applicable intellectual-property laws;",
+      "applicable tax laws;",
+      "applicable cyber-security requirements;",
+      "applicable employment and labour laws to the extent relevant to User activities; and",
+      "all other laws, rules, regulations, notifications and binding governmental directions applicable to BeeBark and the relevant activity."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "Nothing in this Agreement is intended to contract out of any mandatory statutory right or obligation."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "28",
+   "title": "Dispute Resolution",
+   "body": [
+    {
+     "type": "p",
+     "text": "The parties shall first attempt in good faith to resolve any dispute through written notice and discussion."
+    },
+    {
+     "type": "p",
+     "text": "Subject to rights available under applicable law, disputes that cannot be resolved amicably within thirty (30) days shall be referred to arbitration in accordance with the Arbitration and Conciliation Act, 1996."
+    },
+    {
+     "type": "p",
+     "text": "The arbitration shall be conducted by a sole arbitrator mutually appointed by the parties, failing which the arbitrator shall be appointed in accordance with applicable law."
+    },
+    {
+     "type": "p",
+     "text": "The seat and venue of arbitration shall be New Delhi, India."
+    },
+    {
+     "type": "p",
+     "text": "Courts at New Delhi, India, shall have jurisdiction for interim, supervisory and other proceedings permitted by law."
+    },
+    {
+     "type": "p",
+     "text": "Nothing in this Clause prevents a consumer or other person from exercising a statutory remedy before a competent forum where such right cannot lawfully be waived."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "29",
+   "title": "Changes to This Agreement",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark may amend this Agreement from time to time."
+    },
+    {
+     "type": "p",
+     "text": "Material amendments shall be notified through appropriate means, including publication on the Platform or communication to Users where required by law."
+    },
+    {
+     "type": "p",
+     "text": "The updated Agreement shall identify its effective date."
+    },
+    {
+     "type": "p",
+     "text": "Continued use of the Platform after the effective date of an amended Agreement constitutes acceptance to the extent permitted by law."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "30",
+   "title": "Severability",
+   "body": [
+    {
+     "type": "p",
+     "text": "If any provision is held invalid, unlawful or unenforceable, that provision shall be modified or severed to the minimum extent necessary, and the remaining provisions shall continue in effect."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "31",
+   "title": "Waiver",
+   "body": [
+    {
+     "type": "p",
+     "text": "Failure by BeeBark to enforce any provision shall not constitute a waiver of its right to enforce that provision later."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "32",
+   "title": "Assignment",
+   "body": [
+    {
+     "type": "p",
+     "text": "You may not assign or transfer your rights or obligations under this Agreement without BeeBark’s prior written consent, except where such restriction is prohibited by law."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark may assign this Agreement as part of a merger, restructuring, sale, financing, acquisition or transfer of its business, subject to applicable law."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "33",
+   "title": "Entire Agreement",
+   "body": [
+    {
+     "type": "p",
+     "text": "This Agreement, together with the Privacy Policy and any additional terms expressly incorporated by reference, constitutes the agreement between you and BeeBark concerning use of the Platform."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "34",
+   "title": "Contact",
+   "body": [
+    {
+     "type": "contact"
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "35",
+   "title": "User Acknowledgement",
+   "body": [
+    {
+     "type": "p",
+     "text": "By registering for or using BeeBark, you acknowledge that:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "you have read and understood this Agreement;",
+      "you agree to be legally bound by it;",
+      "you are responsible for the accuracy and legality of information you publish;",
+      "AI functionality is assistive and requires human review;",
+      "BeeBark does not independently guarantee every professional, business or employment representation made by Users; and",
+      "your personal data will be processed in accordance with the BeeBark Privacy Policy and applicable law."
+     ]
+    }
+   ]
+  }
+ ]
+}

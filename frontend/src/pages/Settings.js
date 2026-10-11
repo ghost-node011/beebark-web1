@@ -11,12 +11,13 @@ import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import { FiUser, FiLock, FiSlash, FiLogOut, FiPauseCircle, FiTrash2, FiChevronRight, FiBell, FiBriefcase, FiGrid, FiPlus } from 'react-icons/fi';
+import { FiUser, FiLock, FiSlash, FiLogOut, FiPauseCircle, FiTrash2, FiChevronRight, FiBell, FiBriefcase, FiGrid, FiPlus, FiFileText } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { SkeletonRows } from '../components/Skeletons';
 import { API_URL } from '../config/api';
 import { usePages } from '../context/PagesContext';
 import CompanyLogo from '../components/company/CompanyLogo';
+import { LEGAL_DOCS, LEGAL_CONTACT } from '../config/legal';
 
 const PRIVACY = [
   { field: 'analyticsPublic', label: 'Show my profile analytics', hint: 'Profile views and counts on your profile' },
@@ -31,6 +32,7 @@ const NAV = [
   { id: 'privacy', label: 'Privacy', icon: FiLock },
   { id: 'jobs', label: 'Job settings', icon: FiBriefcase },
   { id: 'blocked', label: 'Blocked people', icon: FiSlash },
+  { id: 'legal', label: 'Policies', icon: FiFileText },
   { id: 'signout', label: 'Sign out', icon: FiLogOut },
   { id: 'close', label: 'Close account', icon: FiPauseCircle, danger: true }
 ];
@@ -56,6 +58,14 @@ const Settings = () => {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const needsPassword = (user?.authProvider || 'local') === 'local';
+
+  // Links like /settings#settings-legal open at that section
+  useEffect(() => {
+    const id = window.location.hash.slice(1);
+    if (!id) return undefined;
+    const t = setTimeout(() => document.getElementById(id)?.scrollIntoView({ block: 'start' }), 100);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     axios.get(`${API_URL}/api/account/blocked`)
@@ -246,6 +256,17 @@ const Settings = () => {
                 ))}
               </div>
             )}
+          </Section>
+
+          <Section id="legal" icon={FiFileText} title="Policies">
+            <div className="divide-y divide-gray-100" data-testid="settings-policies">
+              {LEGAL_DOCS.map((d) => (
+                <Link key={d.slug} to={d.path} className="flex items-center justify-between py-2.5 text-sm font-medium text-black hover:text-[#7A6450]">
+                  {d.label}<FiChevronRight className="text-gray-400" />
+                </Link>
+              ))}
+            </div>
+            <p className="mt-3 text-xs text-gray-500">Complaints, privacy or data requests: <a href={`mailto:${LEGAL_CONTACT.grievance}`} className="underline">{LEGAL_CONTACT.grievance}</a></p>
           </Section>
 
           <Section id="signout" icon={FiLogOut} title="Sign out">

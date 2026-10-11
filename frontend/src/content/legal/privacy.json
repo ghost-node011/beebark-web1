@@ -1,0 +1,1038 @@
+{
+ "title": "BEEBARK PRIVACY POLICY",
+ "meta": {
+  "effective": "",
+  "updated": ""
+ },
+ "blocks": [
+  {
+   "type": "p",
+   "text": "This Privacy Policy (“Policy”) explains how Beebark Tech LLP, (“BeeBark”, “we”, “us” or “our”), collects, receives, uses, stores, discloses and otherwise processes personal data in connection with the BeeBark website, mobile application, platform and related services (“Platform”)."
+  },
+  {
+   "type": "p",
+   "text": "BeeBark is committed to handling personal data in accordance with applicable Indian data-protection law, including the Digital Personal Data Protection Act, 2023 (“DPDP Act”) and the Digital Personal Data Protection Rules, 2025 (“DPDP Rules”), to the extent applicable and in force in relation to the relevant processing, together with other applicable laws."
+  },
+  {
+   "type": "p",
+   "text": "The DPDP framework is being brought into operation through the commencement framework prescribed by the Government; accordingly, references in this Policy to statutory obligations shall apply to the extent those provisions are operative and applicable at the relevant time."
+  },
+  {
+   "type": "section",
+   "num": "1",
+   "title": "Who This Policy Applies to",
+   "body": [
+    {
+     "type": "p",
+     "text": "This Policy applies to personal data processed by BeeBark relating to:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "individual professionals who are 18+;",
+      "students and other eligible users who are 18+;",
+      "business users;",
+      "authorised representatives of businesses;",
+      "employers and recruiters;",
+      "job applicants who are 18+;",
+      "persons communicating with BeeBark;",
+      "visitors to the Platform who are 18+; and",
+      "other persons whose personal data is lawfully provided to BeeBark in connection with Platform activities."
+     ]
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "2",
+   "title": "BeeBark as Data Fiduciary",
+   "body": [
+    {
+     "type": "p",
+     "text": "Where BeeBark determines the purpose and means of processing personal data, BeeBark acts as a Data Fiduciary under applicable data-protection law. BeeBark may engage third parties as Data Processors to process personal data on BeeBark’s behalf. BeeBark shall remain responsible for its obligations as a Data Fiduciary to the extent required by applicable law."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "3",
+   "title": "What Personal Data We Collect",
+   "body": [
+    {
+     "type": "p",
+     "text": "Depending on how you use BeeBark, we may collect the following categories of information. Beebark collects personal data from the user, when they provide, post or upload it to Beebark, such as when the user fills out a form, respond to a survey or submit a resume or portfolio or fill out a job application."
+    },
+    {
+     "type": "p",
+     "text": "The user doesn’t have to post or upload personal data, though if the user doesn’t it may limit the ability to grow and engage with the network over the platform."
+    },
+    {
+     "type": "h3",
+     "text": "Account and identity information"
+    },
+    {
+     "type": "p",
+     "text": "This may include:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "name;",
+      "email address;",
+      "telephone number;",
+      "login credentials;",
+      "account identifiers;",
+      "authentication information;",
+      "account recovery information; and",
+      "information required to establish or secure your account."
+     ]
+    },
+    {
+     "type": "h3",
+     "text": "Professional information"
+    },
+    {
+     "type": "p",
+     "text": "This may include:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "profession;",
+      "designation;",
+      "education;",
+      "employment history;",
+      "skills;",
+      "areas of expertise;",
+      "professional experience;",
+      "certifications;",
+      "registrations and licences;",
+      "professional affiliations;",
+      "business associations; and",
+      "other information voluntarily included in your professional profile."
+     ]
+    },
+    {
+     "type": "h3",
+     "text": "Portfolio and project information"
+    },
+    {
+     "type": "p",
+     "text": "This may include:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "project names;",
+      "project descriptions;",
+      "drawings;",
+      "renders;",
+      "photographs;",
+      "videos;",
+      "project documents;",
+      "project locations;",
+      "project roles;",
+      "dates and timelines;",
+      "collaborators;",
+      "descriptions and written content; and",
+      "other materials submitted as part of a portfolio."
+     ]
+    },
+    {
+     "type": "h3",
+     "text": "Business information"
+    },
+    {
+     "type": "p",
+     "text": "Business Users may provide:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "organisation name;",
+      "registered or business address;",
+      "business contact information;",
+      "website;",
+      "business description;",
+      "services;",
+      "projects;",
+      "team information;",
+      "business credentials;",
+      "job opportunities; and",
+      "information concerning authorised representatives."
+     ]
+    },
+    {
+     "type": "h3",
+     "text": "Hiring information"
+    },
+    {
+     "type": "p",
+     "text": "Where hiring functionality is used, BeeBark may process:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "job descriptions;",
+      "candidate profiles;",
+      "applications;",
+      "CVs and portfolio information;",
+      "application communications;",
+      "recruiter information;",
+      "hiring status; and",
+      "other information necessary to operate the relevant hiring workflow."
+     ]
+    },
+    {
+     "type": "h3",
+     "text": "Usage and activity information"
+    },
+    {
+     "type": "p",
+     "text": "BeeBark may generate information concerning:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "features used;",
+      "interactions with the Platform;",
+      "profile and portfolio activity;",
+      "searches;",
+      "networking interactions;",
+      "job interactions;",
+      "preferences;",
+      "timestamps; and",
+      "other operational activity."
+     ]
+    },
+    {
+     "type": "h3",
+     "text": "Device and technical information"
+    },
+    {
+     "type": "p",
+     "text": "This may include:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "IP address;",
+      "browser type;",
+      "operating system;",
+      "device identifiers;",
+      "session information;",
+      "log information;",
+      "crash information;",
+      "security events; and",
+      "technical information necessary to operate and secure the Platform."
+     ]
+    },
+    {
+     "type": "h3",
+     "text": "Information received from third parties"
+    },
+    {
+     "type": "p",
+     "text": "BeeBark may receive information from:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "employers;",
+      "candidates;",
+      "business representatives;",
+      "authentication providers;",
+      "integration partners;",
+      "service providers;",
+      "publicly available sources where lawfully used; and",
+      "other Users."
+     ]
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "4",
+   "title": "Purposes for Processing Personal Data",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark may process personal data for purposes including:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "creating and administering accounts;",
+      "authenticating Users;",
+      "maintaining professional profiles;",
+      "creating and maintaining portfolios;",
+      "enabling professional discovery;",
+      "facilitating networking;",
+      "facilitating hiring and applications;",
+      "providing AI-assisted features;",
+      "providing customer support;",
+      "preventing fraud and abuse;",
+      "protecting Platform security;",
+      "detecting unauthorised access;",
+      "troubleshooting and maintaining the Platform;",
+      "improving Platform functionality;",
+      "communicating with Users;",
+      "complying with legal obligations;",
+      "responding to lawful governmental or judicial requests;",
+      "resolving disputes;",
+      "enforcing contractual rights;",
+      "maintaining records where legally required; and",
+      "other purposes disclosed to you at or before collection or otherwise permitted by applicable law."
+     ]
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "5",
+   "title": "Notice and Consent",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark shall provide appropriate notice regarding processing of personal data as required under applicable law."
+    },
+    {
+     "type": "p",
+     "text": "Where consent is required, BeeBark shall seek consent through an appropriate affirmative mechanism. Consent, where relied upon, shall be capable of being withdrawn through an appropriate mechanism, subject to the consequences of withdrawal explained to the User. Withdrawal of consent shall not affect processing lawfully carried out before withdrawal. BeeBark shall not require consent for processing where another lawful basis recognised under applicable law permits the processing."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "6",
+   "title": "Professional Profiles and Public Information",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark is designed to enable professional discovery. Certain profile and portfolio information may therefore be visible to other Users or publicly accessible depending upon Platform design and the User’s applicable visibility settings."
+    },
+    {
+     "type": "p",
+     "text": "Information intentionally made available as a public professional profile may be viewed, accessed, shared or indexed by others. Users should not publish personal information that they do not wish to make publicly discoverable. Account credentials, authentication information, security information and other restricted information shall not be treated as public professional information."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark shall provide appropriate visibility controls where such controls are part of the Platform. Beebark provides many choices about the collections, use and sharing of user data, from deleting or correcting data user includes in their portfolio and controlling the visibility of the posts to communication controls."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "7",
+   "title": "Portfolio Information",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark processes portfolio information to provide the living professional portfolio functionality."
+    },
+    {
+     "type": "p",
+     "text": "Users remain responsible for ensuring that they have the right to submit and publish portfolio material. Portfolio information may relate to projects involving employers, clients, photographers, architects, designers, engineers, contractors, consultants or other persons."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark does not assume that the person uploading project material owns every underlying intellectual-property or confidentiality right associated with it."
+    },
+    {
+     "type": "p",
+     "text": "Users must not provide BeeBark with confidential material where they lack authority to disclose or process that material."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "8",
+   "title": "AI Processing",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark may use artificial intelligence and machine-learning technology to provide portfolio assistance and other features. Depending on the feature, information submitted for AI processing may include:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "project descriptions;",
+      "project facts;",
+      "professional information;",
+      "portfolio information;",
+      "prompts or instructions; and",
+      "other information necessary to produce the requested output."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "BeeBark may transmit the relevant information to third-party AI providers where necessary to provide the feature."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark shall select and manage AI providers in accordance with applicable contractual, security and data-protection requirements. AI providers may change over time. The precise processing, retention, geographic location and use of information by a particular AI provider shall depend on the applicable service arrangement and shall be managed by BeeBark in accordance with applicable law. BeeBark shall not represent that AI-generated output is necessarily accurate or unique."
+    },
+    {
+     "type": "p",
+     "text": "Users should review AI output before publication. Users must not submit information to an AI feature where they lack authority to permit the relevant processing."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "9",
+   "title": "How AI Output is Used",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark’s intended AI workflow is designed so that AI output can be presented to the User for review and editing before publication. The User decides whether to publish the resulting content, subject to applicable Platform rules."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark may retain AI prompts, inputs, outputs and associated technical information for as long as reasonably necessary to provide the feature, maintain security, resolve disputes, comply with law and fulfil other disclosed purposes, subject to applicable retention requirements."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "10",
+   "title": "Hiring and Application Data",
+   "body": [
+    {
+     "type": "p",
+     "text": "When a User applies for an opportunity, information may be shared with the relevant employer or recruiter as necessary to process the application."
+    },
+    {
+     "type": "p",
+     "text": "Employers and recruiters are independently responsible for their processing of candidate information after receiving it, including their compliance with applicable data-protection, employment and other laws. BeeBark does not determine an employer’s recruitment decision."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark may process hiring information to facilitate applications, communications, fraud prevention, security and related Platform functionality as per the hiring and recruitment policy."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "11",
+   "title": "Business Accounts",
+   "body": [
+    {
+     "type": "p",
+     "text": "Where a person creates or manages a Business Account, BeeBark may process information about both:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "the organisation; and",
+      "the individual acting as its representative."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "Business information may be displayed publicly where the Business User chooses or BeeBark’s functionality provides for public business profiles. Administrative and security information shall be handled separately from public business-profile information."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "12",
+   "title": "Sharing of Personal Data",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark may disclose personal data to the following categories of recipients where necessary and lawful:"
+    },
+    {
+     "type": "p",
+     "text": "Other Users - Information may be disclosed to other Users where necessary for professional discovery, networking, profiles, portfolios or hiring workflows."
+    },
+    {
+     "type": "p",
+     "text": "Employers and candidates - Relevant information may be exchanged to facilitate recruitment and applications."
+    },
+    {
+     "type": "p",
+     "text": "Service providers - BeeBark may use third-party providers for:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "cloud hosting;",
+      "storage;",
+      "AI;",
+      "analytics;",
+      "authentication;",
+      "communications;",
+      "security;",
+      "customer support;",
+      "payment processing;",
+      "infrastructure; and",
+      "other operational functions."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "Professional advisers - BeeBark may disclose information to lawyers, accountants, auditors, insurers and other professional advisers where reasonably necessary."
+    },
+    {
+     "type": "p",
+     "text": "Governmental and law-enforcement authorities - BeeBark may disclose information where required or authorised by applicable law, court order, governmental direction or other lawful process."
+    },
+    {
+     "type": "p",
+     "text": "Corporate transactions - Personal data may be transferred or disclosed in connection with a merger, acquisition, restructuring, financing, sale of assets or similar transaction, subject to applicable law."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "13",
+   "title": "Data Processors",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark may appoint Data Processors to perform processing on its behalf. BeeBark shall seek to ensure that relevant processors are contractually required to process personal data only for authorised purposes and to maintain appropriate safeguards."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark may replace processors where reasonably necessary for security, performance, cost, compliance or operational reasons."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "14",
+   "title": "Security Safeguards",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark shall implement reasonable technical and organisational measures appropriate to the nature and volume of personal data processed and the risks associated with processing. Measures may include:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "access controls;",
+      "authentication controls;",
+      "encryption or equivalent safeguards where appropriate;",
+      "logging and monitoring;",
+      "least-privilege access;",
+      "security testing;",
+      "incident management;",
+      "backup and recovery mechanisms; and",
+      "employee or contractor access controls."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "No electronic transmission or storage system can be guaranteed to be completely secure. Users are responsible for protecting their passwords, authentication credentials and devices."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "15",
+   "title": "Personal Data Breaches",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark shall maintain processes for identifying, assessing and responding to personal-data breaches."
+    },
+    {
+     "type": "p",
+     "text": "Where a breach occurs, BeeBark shall take measures required by applicable law, including notification to the relevant authority and/or affected Data Principals where legally required."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark may also take additional protective measures where reasonably necessary to reduce potential harm."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "16",
+   "title": "Data Retention",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark shall retain personal data only for as long as reasonably necessary for the purpose for which it was collected or as required or permitted by applicable law."
+    },
+    {
+     "type": "p",
+     "text": "Retention periods may differ depending on the category of data and purpose. BeeBark may retain certain information after account closure where necessary for:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "compliance with law;",
+      "tax and accounting requirements;",
+      "fraud prevention;",
+      "cyber-security;",
+      "dispute resolution;",
+      "enforcement of contractual rights;",
+      "legal claims; or",
+      "other purposes permitted by applicable law."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "BeeBark shall establish and maintain an internal data-retention schedule and publish relevant retention information where required."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "17",
+   "title": "Account Deletion",
+   "body": [
+    {
+     "type": "p",
+     "text": "Users may request deletion of their account through the mechanism made available by BeeBark. BeeBark shall process the request in accordance with applicable law."
+    },
+    {
+     "type": "p",
+     "text": "Deletion may not result in immediate destruction of every record where retention is legally required or otherwise permitted."
+    },
+    {
+     "type": "p",
+     "text": "Where appropriate, BeeBark may anonymise information instead of deleting it where lawful and technically appropriate."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "18",
+   "title": "Data Principal Rights",
+   "body": [
+    {
+     "type": "p",
+     "text": "Subject to applicable law and any applicable exceptions, a Data Principal may have rights including:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "access to information concerning processing;",
+      "correction of inaccurate or incomplete personal data;",
+      "erasure of personal data;",
+      "withdrawal of consent where processing is based on consent;",
+      "grievance redressal; and",
+      "other rights prescribed under applicable law."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "Requests may be submitted through:"
+    },
+    {
+     "type": "contact"
+    },
+    {
+     "type": "p",
+     "text": "BeeBark may require reasonable information necessary to authenticate the requester and protect against unauthorised requests."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark shall respond to valid requests within applicable statutory timelines."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "19",
+   "title": "Grievance Redressal",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark shall maintain a grievance mechanism for privacy and data-protection matters. Privacy grievances may be submitted to:"
+    },
+    {
+     "type": "contact"
+    },
+    {
+     "type": "p",
+     "text": "BeeBark shall handle grievances in accordance with applicable law and its internal grievance procedures."
+    },
+    {
+     "type": "p",
+     "text": "Where applicable, Users may have recourse to the Data Protection Board of India or another competent authority in accordance with law."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "20",
+   "title": "Children’s Personal Data",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark shall not knowingly undertake prohibited processing of children’s personal data."
+    },
+    {
+     "type": "p",
+     "text": "If BeeBark becomes aware that children’s personal data has been collected or processed contrary to applicable law, it shall take appropriate corrective measures."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "21",
+   "title": "Sensitive or Confidential Information",
+   "body": [
+    {
+     "type": "p",
+     "text": "Users should avoid submitting unnecessary sensitive personal information to the Platform. Users must not upload confidential client, employer or third-party information unless they have the necessary authority."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark shall process information according to the legal classification applicable at the relevant time."
+    },
+    {
+     "type": "p",
+     "text": "Where BeeBark receives a complaint concerning unauthorised disclosure, it may restrict access to the relevant content while investigating the matter."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "22",
+   "title": "Third-Party Integrations",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark may in future permit Users to connect external services through user-authorised integrations. Where such integration is enabled, BeeBark shall request the permissions necessary for the relevant functionality."
+    },
+    {
+     "type": "p",
+     "text": "The external provider may separately process information under its own terms and privacy policy. Users should review the relevant third-party privacy documentation before authorising an integration."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark shall not request permissions unrelated to the functionality being provided, subject to technical and legal requirements."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "23",
+   "title": "Cookies and Similar Technologies",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark may use cookies, SDKs, pixels, local storage and similar technologies for:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "authentication;",
+      "security;",
+      "remembering preferences, features and services;",
+      "customised content;",
+      "analytics and research;",
+      "performance;",
+      "functionality; and",
+      "other disclosed purposes."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "BeeBark shall provide appropriate notices and controls where required by applicable law. A separate Cookie Policy may be issued where necessary."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "24",
+   "title": "Analytics and De-Identified Information",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark may analyse usage and operational information to understand Platform performance, security, reliability and functionality."
+    },
+    {
+     "type": "p",
+     "text": "Where information is anonymised so that it cannot reasonably be associated with an identifiable individual, BeeBark may use such information for legitimate business purposes, subject to applicable law. BeeBark shall not represent personal data as anonymous merely because direct identifiers have been removed where individuals can reasonably still be identified."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "25",
+   "title": "Direct Marketing",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark may send service-related communications necessary to administer accounts and provide the Platform."
+    },
+    {
+     "type": "p",
+     "text": "Promotional communications shall be handled in accordance with applicable law and any consent or preference mechanisms required. Users may opt out of promotional communications through available mechanisms, subject to legally permitted exceptions."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "26",
+   "title": "International Data Transfers",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark may use service providers located in India or other jurisdictions."
+    },
+    {
+     "type": "p",
+     "text": "Where personal data is transferred, stored or processed outside India, BeeBark shall do so in accordance with applicable Indian law, including any restrictions, requirements or Government notifications applicable to cross-border transfers."
+    },
+    {
+     "type": "p",
+     "text": "Users may be informed of relevant international processing through this Policy, notices or other disclosures where required."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "27",
+   "title": "Government, Legal and Regulatory Disclosures",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark may process or disclose personal data where reasonably necessary to:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "comply with law;",
+      "respond to lawful governmental requests;",
+      "comply with court orders;",
+      "assist law enforcement where legally required;",
+      "protect the rights, property or security of BeeBark or another person;",
+      "investigate fraud or security incidents; or",
+      "establish, exercise or defend legal claims."
+     ]
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "28",
+   "title": "Professional Verification",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark’s current Phase-1 model does not treat every professional or business claim as independently verified. BeeBark may introduce identity, business or professional verification mechanisms in the future. Where verification is introduced, BeeBark shall disclose the relevant verification process and information requirements. Verification of one credential or item shall not be interpreted as verification of all information supplied by the User."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "29",
+   "title": "Data Relating to Other People",
+   "body": [
+    {
+     "type": "p",
+     "text": "You may submit personal data relating to another person only where you have the legal right or authority to do so. This includes information concerning:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "clients;",
+      "employees;",
+      "colleagues;",
+      "collaborators;",
+      "photographers;",
+      "project partners;",
+      "candidates;",
+      "business representatives; and",
+      "other individuals."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "Where necessary, BeeBark may request information regarding the source or authority for such data."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "30",
+   "title": "User Responsibilities",
+   "body": [
+    {
+     "type": "p",
+     "text": "You are responsible for:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "providing accurate information;",
+      "keeping account information current;",
+      "protecting authentication credentials;",
+      "ensuring that information uploaded to BeeBark may lawfully be processed;",
+      "obtaining required permissions from third parties;",
+      "selecting appropriate profile visibility;",
+      "reviewing AI-generated content;",
+      "avoiding unnecessary disclosure of confidential information; and",
+      "complying with the BeeBark User Agreement."
+     ]
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "31",
+   "title": "Employee and Internal Access",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark shall restrict internal access to personal data according to business necessity and applicable security practices. Access may be provided to authorised personnel responsible for:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "support;",
+      "security;",
+      "engineering;",
+      "moderation;",
+      "compliance;",
+      "legal matters;",
+      "fraud prevention; or",
+      "other legitimate operational functions."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "Access shall be subject to appropriate controls."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "32",
+   "title": "Data Portability and Export",
+   "body": [
+    {
+     "type": "p",
+     "text": "Where BeeBark provides an export mechanism, Users may request export of eligible account or portfolio information."
+    },
+    {
+     "type": "p",
+     "text": "The scope, format and availability of exports shall depend on the relevant Platform functionality."
+    },
+    {
+     "type": "p",
+     "text": "BeeBark shall comply with legally applicable portability requirements where applicable."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "33",
+   "title": "Privacy of Public Professional Information",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark’s professional ecosystem is designed around discoverability. Users should therefore distinguish between:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "information intended to establish professional visibility; and",
+      "information that should remain private or restricted."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "BeeBark may use technical measures to discourage scraping, automated harvesting and bulk extraction. No security measure can guarantee that information made publicly available will never be copied or redistributed by another person."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "34",
+   "title": "Data of Business Users",
+   "body": [
+    {
+     "type": "p",
+     "text": "Information concerning a company or organisation may not always constitute personal data. Information identifying or relating to an individual representative may constitute personal data and shall be handled accordingly. BeeBark shall distinguish, where reasonably practicable, between organisational information and personal information relating to representatives."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "35",
+   "title": "Changes to This Policy",
+   "body": [
+    {
+     "type": "p",
+     "text": "BeeBark may update this Policy from time to time. Changes may be made to reflect:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "legal or regulatory developments;",
+      "new Platform features;",
+      "changes in technology;",
+      "changes in service providers;",
+      "changes in business operations; or",
+      "security requirements."
+     ]
+    },
+    {
+     "type": "p",
+     "text": "Material changes shall be communicated through appropriate means where required by law."
+    },
+    {
+     "type": "p",
+     "text": "The “Last Updated” date shall identify the latest revision."
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "36",
+   "title": "Governing Legal Framework",
+   "body": [
+    {
+     "type": "p",
+     "text": "This Policy shall be interpreted in accordance with applicable Indian law, including, where applicable:"
+    },
+    {
+     "type": "list",
+     "items": [
+      "the Digital Personal Data Protection Act, 2023;",
+      "the Digital Personal Data Protection Rules, 2025;",
+      "the Information Technology Act, 2000;",
+      "applicable rules made under the Information Technology Act;",
+      "applicable cyber-security requirements;",
+      "consumer-protection laws where relevant; and",
+      "other applicable laws, rules, regulations and governmental directions."
+     ]
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "37",
+   "title": "Contact Us",
+   "body": [
+    {
+     "type": "p",
+     "text": "For privacy-related questions, requests or complaints:"
+    },
+    {
+     "type": "contact"
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "num": "38",
+   "title": "Important Notice",
+   "body": [
+    {
+     "type": "p",
+     "text": "This Privacy Policy describes BeeBark’s privacy framework. Where a specific feature, data flow, third-party provider or statutory obligation requires additional terms or notices, BeeBark may provide a supplementary notice, consent request, cookie notice, business data-processing agreement, AI notice or other legally required documentation."
+    }
+   ]
+  }
+ ]
+}

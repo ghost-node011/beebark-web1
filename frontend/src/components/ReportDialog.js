@@ -65,7 +65,8 @@ const ReportDialog = ({ open, onOpenChange, person, context = 'profile', itemId,
           <DialogTitle>{noun ? `Report this ${noun}` : `Report ${person?.name}`}</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-slate-500 -mt-2">
-          {noun && itemTitle ? <>“{itemTitle}” by {person?.name}. </> : null}They won't know you reported this.
+          {noun && itemTitle ? <>“{itemTitle}” by {person?.name}. </> : null}They won't know you reported this. We review reports against our{' '}
+          <a href="/community-standards" target="_blank" rel="noreferrer" className="font-medium text-[#32281F] underline">Community Standards</a>.
         </p>
         <div className="space-y-2" role="radiogroup">
           {REASONS.map((r) => (
