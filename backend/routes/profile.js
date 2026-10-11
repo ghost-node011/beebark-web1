@@ -7,6 +7,7 @@ const Company = require('../models/Company');
 const { firmToPage } = require('../utils/firmToPage');
 const { sendWelcomeEmail } = require('../utils/email');
 const { WAITLISTED_STATES, waitlistedStateOf } = require('../utils/regions');
+const { waitlistBadgesFor } = require('../utils/waitlistBadges');
 const Waitlist = require('../models/Waitlist');
 const auth = require('../middleware/auth');
 const { uploadDocument, uploadToCloudinary } = require('../config/cloudinary');
@@ -210,6 +211,21 @@ const meResponse = (user) => ({
       jobPreferences: user.jobPreferences
 });
 
+// Pre-launch waitlist members get its badges (verified, Top 50) when they sign
+// in, so accounts created before the badges existed get them too
+async function grantWaitlistBadges(user) {
+  if (user.badges?.verified && user.badges?.top50) return;
+  try {
+    const found = await waitlistBadgesFor(user.email);
+    if (!found) return;
+    const set = { 'badges.verified': true, ...(found.top50 ? { 'badges.top50': true } : {}) };
+    await User.updateOne({ _id: user._id }, { $set: set });
+    user.badges = { ...(user.badges?.toObject?.() || user.badges || {}), verified: true, ...(found.top50 ? { top50: true } : {}) };
+  } catch (err) {
+    console.error('Waitlist badges:', err.message);
+  }
+}
+
 router.get('/me', auth, async (req, res) => {
   try {
     if (['firm', 'company'].includes(req.user?.role)) {
@@ -218,6 +234,7 @@ router.get('/me', auth, async (req, res) => {
     const user = await User.findById(req.userId)
       .select('-password')
       .populate('connections', 'name email profilePic bio');
+    await grantWaitlistBadges(user);
     res.json({ user: { ...meResponse(user), experience: await withPages(user.experience) } });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch profile', message: error.message });
