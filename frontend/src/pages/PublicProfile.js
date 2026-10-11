@@ -8,7 +8,7 @@ import { Badge } from '../components/ui/badge';
 import { Card, CardContent } from '../components/ui/card';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config/api';
-import { ProfileHero, ProfileTabs, VisibilityPill, PillFilter, PAGE_BG, heroBtn } from '../components/profile/ProfileShell';
+import { ProfileHero, ProfileTabs, VisibilityPill, PillFilter, PAGE_BG, heroBtn, useProfileTab } from '../components/profile/ProfileShell';
 import {
   FiUserPlus, FiMessageCircle, FiEye, FiZap, FiThumbsUp, FiThumbsDown, FiX, FiTarget, FiLayers, FiGlobe,
   FiBookOpen, FiFlag, FiSlash, FiUserCheck, FiCalendar, FiInfo, FiShare2, FiChevronDown,
@@ -43,6 +43,8 @@ const PublicProfile = ({ open = false }) => {
   const [followerCount, setFollowerCount] = useState(0);
   const [rating, setRating] = useState(null);
   const [ratingDismissed, setRatingDismissed] = useState(false);
+  // Before any early return (hooks rule); checked against this page's tabs below
+  const { tab, setTab } = useProfileTab();
   const [ratingFeedback, setRatingFeedback] = useState(null);
   const [galleryCategory, setGalleryCategory] = useState('All');
   const [reportOpen, setReportOpen] = useState(false);
@@ -165,6 +167,8 @@ const PublicProfile = ({ open = false }) => {
     { id: 'section-activity', label: 'Activity' },
     ...(data.listingCount ? [{ id: 'section-listings', label: 'Listings' }] : []),
   ];
+  const currentTab = tabs.some((t) => t.id === tab) ? tab : 'section-overview';
+  const shown = (id) => currentTab === 'section-overview' || currentTab === id;
   const projectLink = (item) => `/portfolio/${user.username}?project=${item._id}`;
 
   const connectButton = status === 'connected' ? null
@@ -228,7 +232,7 @@ const PublicProfile = ({ open = false }) => {
           actions={actions}
         />
 
-        <ProfileTabs tabs={tabs} />
+        <ProfileTabs tabs={tabs} active={currentTab} onChange={setTab} />
       <div className="max-w-6xl mx-auto mt-6 sm:mt-8 space-y-6 sm:space-y-8">
 
         {rating && !ratingDismissed && (
@@ -251,9 +255,9 @@ const PublicProfile = ({ open = false }) => {
           </Card>
         )}
 
-        <div id="section-overview" className="space-y-6 sm:space-y-8 scroll-mt-36">
+        <div id="section-overview" className={`space-y-6 sm:space-y-8 scroll-mt-36 ${shown('section-overview') ? '' : 'hidden'}`}>
           {showAnalytics && (
-            <Section title="Analytics" action={<VisibilityPill isPublic={user.analyticsPublic} editable={false} />}>
+            <Section title="Analytics" action={<VisibilityPill isPublic={false} editable={false} />}>
               <AnalyticsCards items={[
                 { icon: FiEye, value: analytics.viewsWeek.toLocaleString('en-IN'), label: 'Profile Views', note: trend(analytics.viewsChange) },
                 { icon: FiBookmark, value: analytics.saves.toLocaleString('en-IN'), label: 'Project Saves', note: 'All time' },
@@ -277,6 +281,7 @@ const PublicProfile = ({ open = false }) => {
 
         <Section
           id="section-portfolio"
+          className={shown('section-portfolio') ? '' : 'hidden'}
           title="Portfolio"
           action={galleryCategories.length > 0 ? <div className="hidden md:block"><PillFilter options={['All', ...galleryCategories]} active={galleryCategory} onChange={setGalleryCategory} /></div> : null}
         >
@@ -291,7 +296,7 @@ const PublicProfile = ({ open = false }) => {
           ) : <p className="pf-muted">{firstName}'s portfolio is private.</p>}
         </Section>
 
-        <div id="section-experience" className="space-y-6 sm:space-y-8 scroll-mt-36">
+        <div id="section-experience" className={`space-y-6 sm:space-y-8 scroll-mt-36 ${shown('section-experience') ? '' : 'hidden'}`}>
           <Section title="Experience">
             {user.experience?.length > 0 ? (
               <div className="space-y-4">{sortExperience(user.experience).map((exp) => <ExperienceCard key={exp._index} exp={exp} />)}</div>
@@ -329,7 +334,7 @@ const PublicProfile = ({ open = false }) => {
 
         </div>
 
-        <Section id="section-activity" title="Recent Activity" action={!showActivity ? <VisibilityPill isPublic={false} editable={false} /> : null}>
+        <Section id="section-activity" className={shown('section-activity') ? '' : 'hidden'} title="Recent Activity" action={!showActivity ? <VisibilityPill isPublic={false} editable={false} /> : null}>
           {showActivity ? (
             data.recentActivity?.length > 0 ? (
               <ActivityCards
@@ -344,7 +349,7 @@ const PublicProfile = ({ open = false }) => {
         </Section>
 
         {data.listingCount > 0 && (
-          <Section id="section-listings" title="Property Listings"><ListingCards listings={data.listings} /></Section>
+          <Section id="section-listings" className={shown('section-listings') ? '' : 'hidden'} title="Property Listings"><ListingCards listings={data.listings} /></Section>
         )}
 
 

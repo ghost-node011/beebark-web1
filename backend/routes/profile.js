@@ -22,6 +22,16 @@ const Job = require('../models/Job');
 const { isBlockedBetween } = require('../utils/userRelations');
 
 const clip = (v, n) => String(v ?? '').trim().slice(0, n);
+
+// "Founder" / "Co-founder" titles are for accounts verified by the BeeBark team.
+// Text a user already had is kept, so older profiles can still be saved.
+const FOUNDER = /founder/i;
+const FOUNDER_ERROR = 'Only verified accounts can use Founder or Co-founder in their title or bio';
+function addsFounderTitle(current, { headline, bio, titles = [] }) {
+  if (current?.badges?.verified) return false;
+  const had = new Set([current?.headline, current?.bio, ...(current?.experience || []).map((e) => e.title)].filter(Boolean).map((t) => t.trim().toLowerCase()));
+  return [headline, bio, ...titles].some((t) => t && FOUNDER.test(t) && !had.has(String(t).trim().toLowerCase()));
+}
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 function cleanExperience(list) {
@@ -174,7 +184,7 @@ const meResponse = (user) => ({
       connections: user.connections,
       pendingRequests: user.pendingRequests,
       sentRequests: user.sentRequests,
-      analyticsPublic: user.settings?.analyticsPublic || false,
+      analyticsPublic: false,
       galleryPublic: user.settings?.galleryPublic ?? true,
       activityPublic: user.settings?.activityPublic || false,
       readReceipts: user.settings?.readReceipts !== false,
@@ -306,10 +316,11 @@ async function buildProfile(username, viewerId, { visitor = '', countView = true
     }
   }
 
-  const analyticsPublic = user.settings?.analyticsPublic || false;
+  // Analytics are always private: only the profile's owner sees them
+  const analyticsPublic = false;
   const galleryPublic = user.settings?.galleryPublic ?? true;
   const activityPublic = user.settings?.activityPublic || false;
-  const showAnalytics = isOwnProfile || analyticsPublic;
+  const showAnalytics = isOwnProfile;
   const showGallery = isOwnProfile || galleryPublic;
   const showActivity = isOwnProfile || activityPublic;
 
@@ -389,7 +400,8 @@ async function buildProfile(username, viewerId, { visitor = '', countView = true
     portfolioCount: showGallery ? portfolioCount : 0,
     recentActivity: recentPosts.map((p) => ({
       _id: p._id, title: p.title || '', kind: p.kind || 'update', content: p.content, mediaUrl: p.mediaUrl,
-      likeCount: p.likes?.length || 0, commentCount: p.comments?.length || 0, createdAt: p.createdAt
+      likeCount: p.likes?.length || 0, commentCount: p.comments?.length || 0, createdAt: p.createdAt,
+      liked: Boolean(viewerId && (p.likes || []).some((id) => String(id) === String(viewerId)))
     })),
     isOwnProfile
   };
@@ -474,7 +486,8 @@ router.get('/activity', auth, async (req, res) => {
         mediaUrl: p.mediaUrl,
         likeCount: p.likes?.length || 0,
         commentCount: p.comments?.length || 0,
-        createdAt: p.createdAt
+        createdAt: p.createdAt,
+        liked: (p.likes || []).some((id) => String(id) === String(req.userId))
       }))
     });
   } catch (error) {
@@ -557,7 +570,7 @@ router.get('/:userId', auth, async (req, res) => {
 
 router.put('/update', auth, async (req, res) => {
   try {
-    const { name, bio, pronouns, profilePic, coverPhoto, skills, experience, education, location, intent, industries, specialization, projectTypeFocus, markets, activeProjects, analyticsPublic, galleryPublic, activityPublic, readReceipts, jobsView, publicProfile, careerStage, headline, contact, socialLinks, languages, availability, business, associatedProfessionals } = req.body;
+    const { name, bio, pronouns, profilePic, coverPhoto, skills, experience, education, location, intent, industries, specialization, projectTypeFocus, markets, activeProjects, galleryPublic, activityPublic, readReceipts, jobsView, publicProfile, careerStage, headline, contact, socialLinks, languages, availability, business, associatedProfessionals } = req.body;
     const VALID_INTENT = ['learn', 'network', 'hire', 'get_hired'];
     const VALID_INDUSTRY = ['architecture', 'interiors', 'construction', 'real_estate', 'related'];
     const asTagList = (arr) => arr.map((s) => String(s).trim()).filter(Boolean).slice(0, 20);
@@ -590,6 +603,12 @@ router.put('/update', auth, async (req, res) => {
     if (Array.isArray(education)) updateData.education = cleanEducation(education);
     if (Array.isArray(languages)) updateData.languages = cleanLanguages(languages);
     if (headline !== undefined) updateData.headline = clip(headline, 140);
+    if ([updateData.headline, updateData.bio, ...(updateData.experience || []).map((e) => e.title)].some((t) => t && FOUNDER.test(t))) {
+      const current = await User.findById(req.userId).select('badges headline bio experience.title').lean();
+      if (addsFounderTitle(current, { headline: updateData.headline, bio: updateData.bio, titles: (updateData.experience || []).map((e) => e.title) })) {
+        return res.status(400).json({ error: FOUNDER_ERROR });
+      }
+    }
     if (contact && typeof contact === 'object') {
       for (const [key, label] of [['phone', 'Phone'], ['whatsapp', 'WhatsApp']]) {
         if (cleanPhone(contact[key]) === null) return res.status(400).json({ error: `${label} number must have 10 digits`, field: `contact.${key}` });
@@ -612,7 +631,7 @@ router.put('/update', auth, async (req, res) => {
     if (Array.isArray(markets)) updateData.markets = asTagList(markets);
     const VALID_STAGE = ['studying', 'career_prep', 'fresher', 'intern', 'employed', 'freelance', 'business_owner', ''];
     if (careerStage !== undefined && VALID_STAGE.includes(careerStage)) updateData.careerStage = careerStage;
-    if (typeof analyticsPublic === 'boolean') updateData['settings.analyticsPublic'] = analyticsPublic;
+    // analyticsPublic is ignored: analytics are always private
     if (typeof galleryPublic === 'boolean') updateData['settings.galleryPublic'] = galleryPublic;
     if (typeof activityPublic === 'boolean') updateData['settings.activityPublic'] = activityPublic;
     if (typeof readReceipts === 'boolean') updateData['settings.readReceipts'] = readReceipts;
@@ -687,6 +706,10 @@ router.put('/onboarding', auth, async (req, res) => {
     }
     if (industriesOther !== undefined) update.industriesOther = String(industriesOther).slice(0, 100);
     if (bio !== undefined) update.bio = String(bio).slice(0, 500);
+    if (update.bio && FOUNDER.test(update.bio)) {
+      const current = await User.findById(req.userId).select('badges headline bio experience.title').lean();
+      if (addsFounderTitle(current, { bio: update.bio })) return res.status(400).json({ error: FOUNDER_ERROR });
+    }
     if (location !== undefined) update.location = String(location).trim().slice(0, 120);
     // BeeBark isn't open in every state yet
     const closedRegion = waitlistedStateOf(update.location);
@@ -708,7 +731,7 @@ router.put('/onboarding', auth, async (req, res) => {
     // first Experience / Education entry and the headline
     const push = {};
     if (background && typeof background === 'object') {
-      const current = await User.findById(req.userId).select('experience education headline role').lean();
+      const current = await User.findById(req.userId).select('experience education headline bio role badges').lean();
       const asRole = update.role || current.role;
       if (asRole === 'student') {
         const school = clip(background.school, 160);
@@ -724,6 +747,7 @@ router.put('/onboarding', auth, async (req, res) => {
       } else {
         const title = clip(background.title, 120);
         if (!title) return res.status(400).json({ error: 'Add your job title' });
+        if (addsFounderTitle(current, { titles: [title] })) return res.status(400).json({ error: FOUNDER_ERROR });
         const selfEmployed = background.selfEmployed === true;
         let company = selfEmployed ? 'Self-employed' : clip(background.company, 120);
         let companyPage;

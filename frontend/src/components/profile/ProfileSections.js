@@ -4,7 +4,7 @@ import CompanyLogo from '../company/CompanyLogo';
 import { toast } from 'sonner';
 import {
   FiGlobe, FiMapPin, FiUsers, FiCalendar, FiExternalLink, FiMail, FiPhone, FiCopy, FiLock, FiChevronDown,
-  FiBriefcase, FiHome, FiFileText, FiHeart, FiMessageCircle, FiTrash2, FiSend, FiCheckCircle
+  FiBriefcase, FiHome, FiFileText, FiTrash2, FiSend, FiCheckCircle
 } from 'react-icons/fi';
 import { LuBuilding2 as FiBriefcaseAlt } from 'react-icons/lu';
 import { FaWhatsapp } from 'react-icons/fa6';
@@ -14,6 +14,7 @@ import { inrSalary } from '../../utils/salary';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { AVAILABILITY_LABELS, experienceDates, employmentTypeLabel, proficiencyLabel } from '../../config/profileOptions';
 import { personHeadline } from '../../utils/personHeadline';
+import PostActions from './PostActions';
 
 // Read-only pieces shared by the own-profile and public-profile pages
 
@@ -185,11 +186,7 @@ export const ActivityCards = ({ posts, renderShare, onDelete }) => (
         {post.title && <h3 className="pf-serif mt-3 text-lg sm:text-xl font-semibold text-[#32281F]">{post.title}</h3>}
         <p className={`${post.title ? 'mt-1.5' : 'mt-3'} text-[16px] leading-relaxed pf-muted whitespace-pre-line line-clamp-4`}>{post.content}</p>
         {post.mediaUrl && <img src={post.mediaUrl} alt="" className="mt-4 rounded-xl max-h-72 w-full object-cover" loading="lazy" />}
-        <div className="mt-4 flex items-center gap-5 text-[15px] pf-muted">
-          <span className="inline-flex items-center gap-1.5"><FiHeart className="w-4 h-4" />{post.likeCount}</span>
-          <span className="inline-flex items-center gap-1.5"><FiMessageCircle className="w-4 h-4" />{post.commentCount}</span>
-          {renderShare?.(post)}
-        </div>
+        <PostActions post={post} share={renderShare?.(post)} />
       </article>
     ))}
   </div>

@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { FiCamera, FiX, FiMapPin, FiPlus, FiBriefcase, FiInfo, FiGlobe, FiCalendar, FiCheck } from 'react-icons/fi';
 import {
@@ -59,33 +60,71 @@ export const SocialIcons = ({ links, size = 'w-5 h-5' }) => (
  * Sticky section nav under the hero. Clicking scrolls to a section; the
  * underline follows whichever section is on screen.
  */
-export const ProfileTabs = ({ tabs }) => {
-  const [active, setActive] = useState(tabs[0]?.id);
+// The open profile tab, kept in the URL (?tab=portfolio) so links and Back work.
+// Overview shows every section; the other tabs show only their own.
+// Pass `tabs` to fall back to Overview for a tab the page doesn't have.
+export const useProfileTab = (tabs) => {
+  const [params, setParams] = useSearchParams();
+  const wanted = params.get('tab') ? `section-${params.get('tab')}` : 'section-overview';
+  const tab = !tabs || tabs.some((t) => t.id === wanted) ? wanted : 'section-overview';
+  const setTab = (id) => {
+    const next = new URLSearchParams(params);
+    if (id === 'section-overview') next.delete('tab'); else next.set('tab', id.replace(/^section-/, ''));
+    setParams(next, { replace: true });
+  };
+  const shown = (id) => tab === 'section-overview' || tab === id;
+  return { tab, setTab, shown };
+};
+
+/**
+ * Profile tabs. With `active` and `onChange` each tab shows its own section
+ * (see useProfileTab); without them, tabs scroll to sections on one page.
+ */
+export const ProfileTabs = ({ tabs, active: controlled, onChange }) => {
+  const [spied, setSpied] = useState(tabs[0]?.id);
+  const anchorRef = useRef(null); // marks where the sticky tabs sit in the page
   useEffect(() => {
+    if (onChange) return undefined;
     const onScroll = () => {
       let current = tabs[0]?.id;
       for (const t of tabs) {
         const el = document.getElementById(t.id);
         if (el && el.getBoundingClientRect().top < 230) current = t.id;
       }
-      setActive(current);
+      setSpied(current);
     };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
-  }, [tabs]);
+  }, [tabs, onChange]);
+  const active = onChange ? controlled : spied;
 
   const go = (id) => {
+    if (onChange) {
+      onChange(id);
+      // Keep the tabs in view: if the page has scrolled past them, go back up to them
+      const anchor = anchorRef.current;
+      if (anchor) {
+        const top = anchor.getBoundingClientRect().top + window.scrollY - 64;
+        if (window.scrollY > top) window.scrollTo({ top });
+      }
+      return;
+    }
     const el = document.getElementById(id);
     if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 128, behavior: 'smooth' });
   };
 
   return (
-    <nav className="sticky top-16 z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-white/95 backdrop-blur border-b border-[#E6E1DB]" aria-label="Profile sections">
+    <>
+    <span ref={anchorRef} aria-hidden="true" />
+    <nav className="sticky top-16 z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-white/95 backdrop-blur border-b border-[#E6E1DB]" aria-label="Profile sections" role="tablist">
       <div className="max-w-6xl mx-auto flex gap-2 overflow-x-auto">
         {tabs.map((t) => (
           <button
             key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={active === t.id}
             onClick={() => go(t.id)}
             className={`relative px-4 sm:px-5 py-4 text-[15px] whitespace-nowrap transition ${active === t.id ? 'text-[#32281F] font-semibold' : 'pf-muted hover:text-[#32281F]'}`}
             aria-current={active === t.id ? 'true' : undefined}
@@ -97,6 +136,7 @@ export const ProfileTabs = ({ tabs }) => {
         ))}
       </div>
     </nav>
+    </>
   );
 };
 

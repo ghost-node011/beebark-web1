@@ -24,7 +24,7 @@ import { API_URL } from '../config/api';
 import ResumeImport from '../components/ResumeImport';
 import { SuggestChip, useSuggestChip } from '../components/ai/SuggestChip';
 import { InfoBlock } from '../components/profile/ProfileWidgets';
-import { ProfileHero, ProfileTabs, VisibilityPill, PillFilter, PAGE_BG, SOCIAL } from '../components/profile/ProfileShell';
+import { ProfileHero, ProfileTabs, VisibilityPill, PillFilter, PAGE_BG, SOCIAL, useProfileTab } from '../components/profile/ProfileShell';
 import ShareMenu from '../components/ShareMenu';
 import { sortExperience, PeopleGrid, AnalyticsCards, ProjectGrid, ExperienceCard, ListingCards, ContactInfoDialog, ActivityCards, ReadMore } from '../components/profile/ProfileSections';
 import { heroBtn } from '../components/profile/ProfileShell';
@@ -107,7 +107,6 @@ const emptyFormFromUser = (user) => ({
   headline: user?.headline || '',
   contact: { email: '', phone: '', whatsapp: '', website: '', address: '', visibility: 'connections', ...(user?.contact || {}) },
   socialLinks: user?.socialLinks || [],
-  analyticsPublic: user?.analyticsPublic || false,
   galleryPublic: user?.galleryPublic ?? true,
   activityPublic: user?.activityPublic || false
 });
@@ -276,7 +275,7 @@ const Profile = () => {
   };
 
   // Shared by the Analytics / Work Gallery / Activity visibility pills —
-  // `field` is one of analyticsPublic / galleryPublic / activityPublic.
+  // `field` is galleryPublic or activityPublic (analytics are always private).
   const handleVisibilityToggle = async (field, checked) => {
     setFormData((f) => ({ ...f, [field]: checked }));
     try {
@@ -488,6 +487,15 @@ const Profile = () => {
   const edit = (key) => setEditingSection(key);
   const liveErrors = fieldErrors(formData);
 
+  const profileTabs = [
+    { id: 'section-overview', label: 'Overview' },
+    { id: 'section-portfolio', label: 'Portfolio' },
+    { id: 'section-experience', label: 'Experience' },
+    { id: 'section-activity', label: 'Activity' },
+    ...(galleryPreview.listingCount ? [{ id: 'section-listings', label: 'Listings' }] : []),
+  ];
+  const { tab, setTab, shown } = useProfileTab(profileTabs);
+
   return (
     <div className={`min-h-screen ${PAGE_BG}`} data-testid="profile-page">
       <Sidebar />
@@ -530,15 +538,9 @@ const Profile = () => {
             }
           />
 
-          <ProfileTabs tabs={[
-            { id: 'section-overview', label: 'Overview' },
-            { id: 'section-portfolio', label: 'Portfolio' },
-            { id: 'section-experience', label: 'Experience' },
-            { id: 'section-activity', label: 'Activity' },
-            ...(galleryPreview.listingCount ? [{ id: 'section-listings', label: 'Listings' }] : []),
-          ]} />
+          <ProfileTabs tabs={profileTabs} active={tab} onChange={setTab} />
 
-          <div className="pf-card flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between" data-testid="public-link-card">
+          <div className={`pf-card flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between ${tab === 'section-overview' ? '' : 'hidden'}`} data-testid="public-link-card">
             <div className="min-w-0">
               <p className="text-sm font-semibold text-[#32281F]">Public profile &amp; URL</p>
               <p className="mt-0.5 truncate text-[15px] pf-muted">
@@ -663,11 +665,11 @@ const Profile = () => {
             </DialogContent>
           </Dialog>
 
-          <div id="section-overview" className="space-y-6 scroll-mt-24">
+          <div id="section-overview" className={`space-y-6 scroll-mt-24 ${shown('section-overview') ? '' : 'hidden'}`}>
               <Card className="p-5 sm:p-8 rounded-2xl border-black/5 shadow-sm">
                 <div className="flex items-center justify-between mb-5">
                   <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 font-serif">Analytics</h3>
-                  <VisibilityPill isPublic={formData.analyticsPublic} editable onToggle={(v) => handleVisibilityToggle('analyticsPublic', v)} />
+                  <VisibilityPill isPublic={false} editable={false} />
                 </div>
                 <AnalyticsCards items={[
                   { icon: FiEye, value: (galleryPreview.analytics?.viewsWeek ?? 0).toLocaleString('en-IN'), label: 'Profile Views', note: weekTrend(galleryPreview.analytics?.viewsChange) },
@@ -675,7 +677,7 @@ const Profile = () => {
                   { icon: FiCalendar, value: (galleryPreview.analytics?.meetingsMonth ?? 0).toLocaleString('en-IN'), label: 'Meeting Requests', note: 'This month' },
                   { icon: FiMessageSquare, value: (galleryPreview.analytics?.enquiriesMonth ?? 0).toLocaleString('en-IN'), label: 'Enquiries', note: 'This month' }
                 ]} />
-                <p className="text-xs text-slate-400 mt-3">Private by default — only visible to you until you switch it to Public above.</p>
+                <p className="text-xs text-slate-400 mt-3">Only you can see your analytics.</p>
               </Card>
 
               <SectionCard
@@ -775,7 +777,7 @@ const Profile = () => {
 
           </div>
 
-          <div id="section-portfolio" className="space-y-6 scroll-mt-24">
+          <div id="section-portfolio" className={`space-y-6 scroll-mt-24 ${shown('section-portfolio') ? '' : 'hidden'}`}>
             <SectionCard
               title="Portfolio" sectionKey="gallery-noop" editingSection={editingSection} editable={false}
               action={
@@ -804,7 +806,7 @@ const Profile = () => {
             </SectionCard>
           </div>
 
-          <div id="section-experience" className="space-y-6 scroll-mt-24">
+          <div id="section-experience" className={`space-y-6 scroll-mt-24 ${shown('section-experience') ? '' : 'hidden'}`}>
               <Card className="p-5 sm:p-8 rounded-2xl border-black/5 shadow-sm" data-testid="experience-section">
                 <div className="flex items-center justify-between mb-4 gap-3">
                   <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 font-serif flex items-center gap-2"><FiBriefcase className="w-4 h-4" />Experience</h3>
@@ -1078,7 +1080,7 @@ const Profile = () => {
               </Card>
           </div>
 
-          <div id="section-activity" className="space-y-6 scroll-mt-24">
+          <div id="section-activity" className={`space-y-6 scroll-mt-24 ${shown('section-activity') ? '' : 'hidden'}`}>
               <SectionCard
                 title="Recent Activity" sectionKey="activity-noop" editingSection={editingSection} editable={false}
                 action={
@@ -1127,7 +1129,7 @@ const Profile = () => {
           </div>
 
           {galleryPreview.listingCount > 0 && (
-            <div id="section-listings" className="scroll-mt-32">
+            <div id="section-listings" className={`scroll-mt-32 ${shown('section-listings') ? '' : 'hidden'}`}>
               <Card className="p-5 sm:p-8 rounded-2xl border-black/5 shadow-sm">
                 <div className="flex items-center justify-between mb-5 gap-3">
                   <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 font-serif">Property Listings</h3>
