@@ -23,7 +23,7 @@ router.get('/count', async (req, res) => {
 // The waitlist is closed now that BeeBark has launched: no new entries and no
 // waitlist emails. Existing entries stay in the database (read through
 // /api/external/waitlist by the admin portal).
-const REGISTER_URL = 'https://www.thebeebark.com/register';
+const REGISTER_URL = 'https://thebeebark.com/register';
 router.post('/', (req, res) => {
   res.status(410).json({
     code: 'WAITLIST_CLOSED',
