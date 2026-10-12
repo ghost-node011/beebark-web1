@@ -6,8 +6,10 @@ import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator
 } from './ui/dropdown-menu';
 
-// Absolute link for an in-app path
-export const shareUrl = (path) => `${window.location.origin}${path.startsWith('/') ? path : `/${path}`}`;
+// Absolute link for an in-app path. Always www for BeeBark's own domain: the bare
+// domain only forwards its home page, so thebeebark.com/<page> links break.
+const siteOrigin = () => window.location.origin.replace('://thebeebark.com', '://www.thebeebark.com');
+export const shareUrl = (path) => `${siteOrigin()}${path.startsWith('/') ? path : `/${path}`}`;
 
 const copy = async (url) => {
   try {

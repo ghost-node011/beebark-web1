@@ -9,14 +9,14 @@ import { Textarea } from '../components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
-import { FiCamera, FiImage, FiPlus, FiDownload, FiX, FiEye, FiEdit2, FiTrash2, FiArrowUp, FiArrowDown, FiStar, FiShare2, FiFileText, FiMonitor, FiSmartphone } from 'react-icons/fi';
+import { FiCamera, FiImage, FiPlus, FiDownload, FiX, FiEye, FiEdit2, FiTrash2, FiArrowUp, FiArrowDown, FiStar, FiShare2, FiFileText, FiMonitor, FiSmartphone, FiLink, FiExternalLink, FiGlobe } from 'react-icons/fi';
 // import { FiZap, FiCheck } from 'react-icons/fi'; // used by the AI tools below (switched off)
 // import { Card, CardContent } from '../components/ui/card';
 // import { Badge } from '../components/ui/badge';
 import { API_URL } from '../config/api';
 import { AutocompleteInput, LocationInput } from '../components/AutocompleteInput';
 import { THEME_META, FONT_META, ACCENT_PRESETS, COLOUR_PRESETS, PALETTE_DEFAULTS, DEFAULT_CLOSING_LINE, resolveTemplate, resolveThemeKey, ProjectViewer, PROJECT_VIEWER_DIALOG_CLASS } from '../components/portfolio/PortfolioTemplates';
-import ShareMenu from '../components/ShareMenu';
+import ShareMenu, { shareUrl } from '../components/ShareMenu';
 import { PillFilter } from '../components/profile/ProfileShell';
 import { exportPortfolioPdf } from '../utils/exportPortfolioPdf';
 import { SkeletonCards } from '../components/Skeletons';
@@ -637,6 +637,36 @@ const Portfolio = () => {
             </Button>
           </div>
         </div>
+
+        {/* The public link to this portfolio, always visible so it's easy to find and share */}
+        {user?.username && (
+          <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-[#F1DFA8] bg-[#FFFBEF] p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5" data-testid="portfolio-link-card">
+            <div className="flex min-w-0 items-start gap-3">
+              <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F4C430] text-[#32281F]"><FiGlobe className="h-4 w-4" /></span>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-[#32281F]">Your portfolio link</p>
+                <a href={`/portfolio/${user.username}`} target="_blank" rel="noreferrer" className="block truncate text-[15px] text-[#6B625A] hover:text-[#32281F] hover:underline" data-testid="portfolio-link">
+                  {shareUrl(`/portfolio/${user.username}`).replace(/^https?:\/\//, '')}
+                </a>
+                <p className="mt-0.5 text-xs text-[#857B71]">
+                  {items.length === 0 ? 'Add a project, then share this link. Anyone with it can see your portfolio.' : 'Anyone with this link can see your portfolio, even without a BeeBark account.'}
+                </p>
+              </div>
+            </div>
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              <button type="button" data-testid="portfolio-link-copy"
+                onClick={() => navigator.clipboard?.writeText(shareUrl(`/portfolio/${user.username}`)).then(() => toast.success('Portfolio link copied'), () => toast(shareUrl(`/portfolio/${user.username}`)))}
+                className="inline-flex h-9 items-center gap-1.5 rounded-full bg-[#32281F] px-4 text-sm font-semibold text-white hover:bg-[#221A14]">
+                <FiLink className="h-4 w-4" />Copy link
+              </button>
+              <a href={`/portfolio/${user.username}`} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center gap-1.5 rounded-full border border-[#E6E1DB] bg-white px-4 text-sm font-medium text-[#32281F] hover:bg-gray-50">
+                <FiExternalLink className="h-4 w-4" />Open
+              </a>
+              <ShareMenu path={`/portfolio/${user.username}`} title={`${user.name}'s portfolio on BeeBark`} testId="portfolio-link-share"
+                trigger={<button type="button" className="inline-flex h-9 items-center gap-1.5 rounded-full border border-[#E6E1DB] bg-white px-4 text-sm font-medium text-[#32281F] hover:bg-gray-50" data-testid="portfolio-link-share"><FiShare2 className="h-4 w-4" />Share</button>} />
+            </div>
+          </div>
+        )}
 
         {/* Phone: Projects / Design / Preview tabs */}
         <div className="mb-4 flex border-b border-gray-200 lg:hidden" role="tablist">

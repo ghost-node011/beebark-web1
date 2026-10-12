@@ -25,7 +25,7 @@ import ResumeImport from '../components/ResumeImport';
 import { SuggestChip, useSuggestChip } from '../components/ai/SuggestChip';
 import { InfoBlock } from '../components/profile/ProfileWidgets';
 import { ProfileHero, ProfileTabs, VisibilityPill, PillFilter, PAGE_BG, SOCIAL, useProfileTab } from '../components/profile/ProfileShell';
-import ShareMenu from '../components/ShareMenu';
+import ShareMenu, { shareUrl } from '../components/ShareMenu';
 import { sortExperience, PeopleGrid, AnalyticsCards, ProjectGrid, ExperienceCard, ListingCards, ContactInfoDialog, ActivityCards, ReadMore } from '../components/profile/ProfileSections';
 import { heroBtn } from '../components/profile/ProfileShell';
 import { Switch } from '../components/ui/switch';
@@ -544,16 +544,23 @@ const Profile = () => {
             <div className="min-w-0">
               <p className="text-sm font-semibold text-[#32281F]">Public profile &amp; URL</p>
               <p className="mt-0.5 truncate text-[15px] pf-muted">
-                {user?.publicProfile !== false ? <a href={`/in/${user?.username}`} target="_blank" rel="noopener noreferrer" className="hover:underline">{window.location.host}/in/{user?.username}</a> : 'Your profile is only visible to signed-in BeeBark members'}
+                {user?.publicProfile !== false ? <a href={`/in/${user?.username}`} target="_blank" rel="noopener noreferrer" className="hover:underline">{shareUrl(`/in/${user?.username}`).replace(/^https?:\/\//, '')}</a> : 'Your profile is only visible to signed-in BeeBark members'}
+              </p>
+              <p className="mt-1 truncate text-sm pf-muted" data-testid="profile-portfolio-link">
+                Portfolio:{' '}
+                <a href={`/portfolio/${user?.username}`} target="_blank" rel="noopener noreferrer" className="font-medium text-[#32281F] hover:underline">{shareUrl(`/portfolio/${user?.username}`).replace(/^https?:\/\//, '')}</a>
+                <button type="button" onClick={() => navigator.clipboard?.writeText(shareUrl(`/portfolio/${user?.username}`)).then(() => toast.success('Portfolio link copied'), () => {})} className="ml-2 inline-flex items-center gap-1 align-middle text-xs font-semibold text-[#32281F] hover:underline" data-testid="copy-portfolio-link">
+                  <FiLink className="h-3.5 w-3.5" />Copy
+                </button>
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-4">
               {user?.publicProfile !== false && (
                 <>
-                  <button type="button" onClick={() => navigator.clipboard?.writeText(`${window.location.origin}/in/${user?.username}`).then(() => toast.success('Link copied'), () => {})} className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#32281F] hover:underline" data-testid="copy-public-link">
+                  <button type="button" onClick={() => navigator.clipboard?.writeText(shareUrl(`/in/${user?.username}`)).then(() => toast.success('Link copied'), () => {})} className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#32281F] hover:underline" data-testid="copy-public-link">
                     <FiLink className="w-4 h-4" />Copy link
                   </button>
-                  <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`${window.location.origin}/in/${user?.username}`)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#0A66C2] hover:underline">
+                  <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl(`/in/${user?.username}`))}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#0A66C2] hover:underline">
                     <FaLinkedin className="w-4 h-4" />Share on LinkedIn
                   </a>
                 </>
