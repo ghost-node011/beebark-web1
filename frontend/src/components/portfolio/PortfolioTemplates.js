@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '../ui/button';
 import { FiEdit2, FiTrash2, FiMail, FiChevronLeft, FiChevronRight, FiArrowRight, FiX, FiImage, FiMapPin, FiFlag, FiCalendar, FiMaximize2, FiUser, FiLayers, FiDownload } from 'react-icons/fi';
+import PhotoLightbox from '../PhotoLightbox';
 import {
   BOOK_THEME_META, BOOK_PALETTE_DEFAULTS, BOOK_COLOUR_PRESETS,
   NoirTemplate, RedlineTemplate, WarmTemplate, ManualTemplate, CleanbookTemplate, CreativeTemplate, CatalogueTemplate
@@ -789,6 +790,7 @@ const viewerDate = (value) => {
  * (Edit, Share, Report). Give it `key={item._id}` so the gallery restarts per project.
  */
 export const ProjectViewer = ({ item, index = 0, total = 1, initialPhoto = 0, onPrev, onNext, onClose, actions }) => {
+  const [zoomed, setZoomed] = useState(false); // full-screen view of the current photo
   const images = item?.images || [];
   const [photo, setPhoto] = useState(initialPhoto);
   const touchX = useRef(null);
@@ -863,7 +865,8 @@ export const ProjectViewer = ({ item, index = 0, total = 1, initialPhoto = 0, on
   const navBtn = 'inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-black transition hover:bg-gray-50 disabled:opacity-30';
 
   return (
-    <div className="flex h-full min-h-0 w-full min-w-0 flex-col bg-[#FAF9F6]" data-testid="project-viewer">
+    <div className="relative flex h-full min-h-0 w-full min-w-0 flex-col bg-[#FAF9F6]" data-testid="project-viewer">
+      {zoomed && <PhotoLightbox images={images} index={current} alt={item.title} inline onClose={() => setZoomed(false)} />}
       <header className="flex shrink-0 items-center gap-2 border-b border-gray-200 bg-white px-3 py-2 sm:px-5 sm:py-3">
         {total > 1 && (
           <div className="flex items-center gap-1.5">
@@ -886,10 +889,10 @@ export const ProjectViewer = ({ item, index = 0, total = 1, initialPhoto = 0, on
             onTouchEnd={onTouchEnd}
           >
             {images.length > 0 ? (
-              <a href={images[current]} target="_blank" rel="noreferrer" className="group flex h-full w-full items-center justify-center" title="Open full size" data-testid="project-viewer-image">
-                <img src={images[current]} alt={caption || `${item.title} – photo ${current + 1}`} className="max-h-full max-w-full object-contain" />
+              <button type="button" onClick={() => setZoomed(true)} className="group flex h-full w-full cursor-zoom-in items-center justify-center" title="View full screen" data-testid="project-viewer-image">
+                <img src={images[current]} alt={caption || `${item.title} – photo ${current + 1}`} className="max-h-full max-w-full object-contain" draggable={false} />
                 <span className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white opacity-80 group-hover:opacity-100"><FiMaximize2 className="h-4 w-4" /></span>
-              </a>
+              </button>
             ) : (
               <div className="text-center text-gray-400">
                 <FiImage className="mx-auto mb-2 h-10 w-10" />

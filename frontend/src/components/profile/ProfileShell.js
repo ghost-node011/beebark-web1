@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import PhotoLightbox from '../PhotoLightbox';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { FiCamera, FiX, FiMapPin, FiPlus, FiBriefcase, FiInfo, FiGlobe, FiCalendar, FiCheck } from 'react-icons/fi';
+import { FiCamera, FiMapPin, FiPlus, FiBriefcase, FiInfo, FiGlobe, FiCalendar, FiCheck } from 'react-icons/fi';
 import {
   FaLinkedin, FaInstagram, FaBehance, FaPinterest, FaYoutube, FaXTwitter, FaFacebook, FaGithub, FaHouzz, FaDribbble
 } from 'react-icons/fa6';
@@ -248,12 +249,7 @@ export const ProfileHero = ({
         <div className="flex flex-wrap items-center gap-3 pt-5 pb-6">{actions}</div>
       </div>
 
-      {lightboxOpen && (
-        <div className="fixed inset-0 z-[100] bg-black/85 flex items-center justify-center p-6" onClick={() => setLightboxOpen(false)}>
-          <button onClick={() => setLightboxOpen(false)} className="absolute top-5 right-5 text-white/80 hover:text-white p-2" aria-label="Close"><FiX className="w-7 h-7" /></button>
-          <img src={profilePic} alt={name} className="max-w-full max-h-full rounded-lg object-contain" onClick={(e) => e.stopPropagation()} />
-        </div>
-      )}
+      {lightboxOpen && <PhotoLightbox images={profilePic} alt={name} round onClose={() => setLightboxOpen(false)} />}
     </div>
   );
 };

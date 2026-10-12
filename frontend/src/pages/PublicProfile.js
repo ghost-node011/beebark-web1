@@ -12,8 +12,7 @@ import { ProfileHero, ProfileTabs, VisibilityPill, PillFilter, PAGE_BG, heroBtn,
 import {
   FiUserPlus, FiMessageCircle, FiEye, FiZap, FiThumbsUp, FiThumbsDown, FiX, FiTarget, FiLayers, FiGlobe,
   FiBookOpen, FiFlag, FiSlash, FiUserCheck, FiCalendar, FiInfo, FiShare2, FiChevronDown,
-  FiBookmark, FiFolder, FiCheck, FiPlus, FiImage, FiLink
-} from 'react-icons/fi';
+  FiBookmark, FiFolder, FiCheck, FiPlus, FiImage, FiLink, FiExternalLink } from 'react-icons/fi';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '../components/ui/dropdown-menu';
 import ReportDialog from '../components/ReportDialog';
 import ShareMenu from '../components/ShareMenu';
@@ -283,7 +282,16 @@ const PublicProfile = ({ open = false }) => {
           id="section-portfolio"
           className={shown('section-portfolio') ? '' : 'hidden'}
           title="Portfolio"
-          action={galleryCategories.length > 0 ? <div className="hidden md:block"><PillFilter options={['All', ...galleryCategories]} active={galleryCategory} onChange={setGalleryCategory} /></div> : null}
+          action={
+            <div className="flex flex-wrap items-center justify-end gap-3">
+              {galleryCategories.length > 0 && <div className="hidden md:block"><PillFilter options={['All', ...galleryCategories]} active={galleryCategory} onChange={setGalleryCategory} /></div>}
+              {showGallery && (
+                <Link to={`/portfolio/${user.username}`} target="_blank" className="inline-flex items-center gap-1.5 rounded-full bg-[#32281F] px-4 py-2 text-sm font-semibold text-white hover:bg-[#221A14]" data-testid="view-portfolio">
+                  View portfolio<FiExternalLink className="h-3.5 w-3.5" />
+                </Link>
+              )}
+            </div>
+          }
         >
           {showGallery ? (
             <>
