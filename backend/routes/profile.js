@@ -16,6 +16,8 @@ const { getDashboardInsights, computeProfileCompletion } = require('../utils/das
 const { analyzeResumeForProfile } = require('../utils/resumeVerifier');
 const { rateProfile } = require('../utils/profileRating');
 const PortfolioItem = require('../models/PortfolioItem');
+const { cleanName, nameError } = require('../utils/names');
+const { educationFromResume } = require('../utils/educationFromResume');
 const Post = require('../models/Post');
 const { availabilityOptionsFor, PROFICIENCY, EMPLOYMENT_TYPES, SOCIAL_PLATFORMS, socialLinkError, yearsOfExperience } = require('../utils/profileOptions');
 const Listing = require('../models/Listing');
@@ -257,8 +259,8 @@ router.get('/insights', auth, async (req, res) => {
 // also runs a full Groq analysis on every call.
 router.get('/completion', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.userId);
-    res.json(computeProfileCompletion(user));
+    const [user, portfolioCount] = await Promise.all([User.findById(req.userId), PortfolioItem.countDocuments({ user: req.userId })]);
+    res.json(computeProfileCompletion(user, { portfolioCount }));
   } catch (error) {
     res.status(500).json({ error: 'Failed to load profile completion', message: error.message });
   }
@@ -593,7 +595,11 @@ router.put('/update', auth, async (req, res) => {
     const asTagList = (arr) => arr.map((s) => String(s).trim()).filter(Boolean).slice(0, 20);
 
     const updateData = {};
-    if (name) updateData.name = name;
+    if (name !== undefined) {
+      const bad = nameError(name);
+      if (bad) return res.status(400).json({ error: bad, field: 'name' });
+      updateData.name = cleanName(name);
+    }
     if (bio !== undefined) updateData.bio = bio;
     if (pronouns !== undefined) updateData.pronouns = String(pronouns).slice(0, 30);
     if (coverPhoto !== undefined) updateData.coverPhoto = coverPhoto;
@@ -714,7 +720,11 @@ router.put('/onboarding', auth, async (req, res) => {
 
     const update = {};
     if (VALID_ROLES.includes(role)) update.role = role;
-    if (typeof name === 'string' && name.trim()) update.name = name.trim().slice(0, 100);
+    if (typeof name === 'string' && name.trim()) {
+      const bad = nameError(name);
+      if (bad) return res.status(400).json({ error: bad, field: 'name' });
+      update.name = cleanName(name);
+    }
     if (Array.isArray(intent)) {
       update.intent = intent.filter((i) => VALID_INTENT.includes(i));
     }
@@ -849,6 +859,9 @@ router.post('/import-resume', auth, (req, res) => {
         /* cloudinary not configured — skip storing the file */
       }
 
+      // Education to review before saving: the AI reading, or the rules when it found nothing
+      const educationEntries = analysis?.education?.length ? analysis.education : educationFromResume(parsed.rawText);
+
       user.resume = {
         url: resumeUrl,
         fileName: req.file.originalname,
@@ -879,7 +892,8 @@ router.post('/import-resume', auth, (req, res) => {
         detectedName: analysis?.detectedName || null,
         currentName: user.name,
         detectedLocation: analysis?.detectedLocation || null,
-        bios: analysis?.bios || []
+        bios: analysis?.bios || [],
+        educationEntries
       });
     } catch (e) {
       console.error('Resume import error:', e);

@@ -60,4 +60,6 @@ export const PAGE_TYPE_LABELS = {
   education: 'Education',
   other: 'Other'
 };
+// "Architecture firm", or what the owner wrote when the type is Other
+export const pageTypeLabel = (page) => (page?.type === 'other' && page?.typeOther ? page.typeOther : PAGE_TYPE_LABELS[page?.type] || '');
 export const TEAM_SIZE_OPTIONS = ['1', '2-10', '11-50', '51-200', '201-500', '501-1000', '1000+'];

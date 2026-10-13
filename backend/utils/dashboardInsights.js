@@ -89,19 +89,29 @@ const fallbackInsights = (m) => {
 
 // Simple, transparent checklist — used for the "X% complete" indicator shown
 // across the app so users always know what's left, and why.
-const computeProfileCompletion = (user) => {
+// Profile completion from the details each kind of account actually needs:
+// 100% only when every one of them is filled in. `portfolioCount` is the
+// number of portfolio projects (counted by the caller).
+const computeProfileCompletion = (user, { portfolioCount = 0 } = {}) => {
+  const filled = (v) => typeof v === 'string' && v.trim().length > 0;
+  const student = user.role === 'student';
   const checks = [
-    { key: 'profilePic', label: 'Add a profile photo', done: !!user.profilePic },
-    { key: 'bio', label: 'Write a short bio', done: !!user.bio?.trim() },
-    { key: 'location', label: 'Add your location', done: !!user.location?.trim() },
-    { key: 'skills', label: 'Add at least one skill', done: (user.skills || []).length > 0 },
-    { key: 'experience', label: 'Add work experience', done: (user.experience || []).length > 0 },
-    { key: 'industries', label: 'Pick an industry focus', done: (user.industries || []).length > 0 },
-    { key: 'resume', label: 'Upload your resume', done: !!user.resume?.url }
+    { key: 'profilePic', label: 'Add a profile photo', done: filled(user.profilePic) },
+    { key: 'headline', label: 'Add a headline (your role or what you do)', done: filled(user.headline) },
+    { key: 'bio', label: 'Write a short About (at least 50 characters)', done: (user.bio || '').trim().length >= 50 },
+    { key: 'location', label: 'Add your city', done: filled(user.location) },
+    { key: 'skills', label: 'Add at least 3 skills', done: (user.skills || []).length >= 3 },
+    { key: 'education', label: 'Add your education', done: (user.education || []).some((e) => filled(e.school)) },
+    ...(student ? [] : [
+      { key: 'experience', label: 'Add work experience', done: (user.experience || []).some((e) => filled(e.title) && (filled(e.company) || e.companyPage)) },
+      { key: 'specialization', label: 'Add your specialization', done: (user.specialization || []).length > 0 }
+    ]),
+    { key: 'portfolio', label: student ? 'Add a project to your portfolio' : 'Add at least 2 portfolio projects', done: portfolioCount >= (student ? 1 : 2) },
+    { key: 'resume', label: 'Upload your resume', done: filled(user.resume?.url) || filled(user.resume?.fileName) }
   ];
   const doneCount = checks.filter((c) => c.done).length;
   return {
-    percent: Math.round((doneCount / checks.length) * 100),
+    percent: Math.floor((doneCount / checks.length) * 100),
     missing: checks.filter((c) => !c.done).map((c) => c.label),
     items: checks.map((c) => ({ key: c.key, label: c.label, done: !!c.done }))
   };
@@ -109,7 +119,7 @@ const computeProfileCompletion = (user) => {
 
 const getDashboardInsights = async (user) => {
   const m = await computeMetrics(user);
-  const profileCompletion = computeProfileCompletion(user);
+  const profileCompletion = computeProfileCompletion(user, { portfolioCount: m.portfolioCount });
   const fallback = fallbackInsights(m);
 
   const key = `insights:${user._id}`;

@@ -24,6 +24,7 @@ const {
 
 // Roles a user may self-select at signup (others are reserved/legacy)
 // Firms aren't an account type any more: people create company Pages instead
+const { cleanName, nameError } = require('../utils/names');
 const SELECTABLE_ROLES = ['student', 'professional'];
 
 const signToken = (user) =>
@@ -103,7 +104,7 @@ router.post(
   '/register',
   registerLimiter,
   [
-    body('name').trim().notEmpty().withMessage('Name is required'),
+    body('name').customSanitizer(cleanName).custom((v) => { const e = nameError(v); if (e) throw new Error(e); return true; }),
     body('email').isEmail().withMessage('A valid email is required').normalizeEmail(),
     body('password').custom(strongPassword).withMessage(PASSWORD_MESSAGE),
     body('role').optional().isIn(SELECTABLE_ROLES).withMessage('Please choose a valid account type')

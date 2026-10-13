@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { FaEnvelope, FaUser, FaLock, FaEye, FaEyeSlash, FaCheck } from 'react-icons/fa';
 import AuthShell from '../components/auth/AuthShell';
 import SocialAuth from '../components/auth/SocialAuth';
+import { nameError } from '../utils/validation';
 import OtpVerification from '../components/auth/OtpVerification';
 
 // Password policy (matches backend): 8+ chars, upper, lower, number, special
@@ -54,7 +55,7 @@ const Register = () => {
 
   const submitDetails = async (e) => {
     e.preventDefault();
-    if (!form.name.trim()) return toast.error('Please enter your name');
+    if (nameError(form.name)) return toast.error(nameError(form.name));
     if (!strength.allValid) return toast.error('Please meet all password requirements');
     if (form.password !== form.confirmPassword) return toast.error('Passwords do not match');
 
@@ -83,8 +84,9 @@ const Register = () => {
               <label className="block text-[15px] font-semibold text-[#1C1712] mb-2">Full name</label>
               <div className="relative">
                 <FaUser className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
-                <input type="text" placeholder="Enter your name" value={form.name} onChange={update('name')} required className="input-beebark" data-testid="name-input" />
+                <input type="text" placeholder="Enter your name" value={form.name} onChange={update('name')} required autoComplete="name" className={`input-beebark ${form.name && nameError(form.name) ? '!border-red-400' : ''}`} aria-invalid={Boolean(form.name && nameError(form.name))} data-testid="name-input" />
               </div>
+              {form.name && nameError(form.name) && <p className="mt-1 text-xs text-red-500" data-testid="name-error">{nameError(form.name)}</p>}
             </div>
 
             <div>

@@ -86,7 +86,7 @@ router.get('/', auth, async (req, res) => {
       summary: { applications, applicationsWeek, views30, viewsWeek, pendingAnswers },
       recentActivity: recent.filter((n) => n.actor).map((n) => ({ _id: n._id, type: n.type, actor: n.actor, meta: n.meta, createdAt: n.createdAt })),
       careerStage: user.careerStage || '',
-      completion: computeProfileCompletion(user),
+      completion: computeProfileCompletion(user, { portfolioCount }),
       featuredJob: ordered[0] ? jobCard(ordered[0]) : null,
       jobs: ordered.slice(audience === 'student' ? 1 : 0, audience === 'student' ? 4 : 3).map(jobCard),
       featuredProject: featuredProject

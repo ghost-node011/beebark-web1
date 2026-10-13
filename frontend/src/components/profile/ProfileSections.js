@@ -81,68 +81,86 @@ export const ReadMore = ({ text, limit = 320 }) => {
 };
 
 // Square photo tiles; category, title, place · year and role appear on hover
-export const ProjectGrid = ({ items, linkFor }) => (
-  <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
-    {items.map((item) => (
-      <Link key={item._id} to={linkFor(item)} className="group relative block aspect-square overflow-hidden rounded-2xl bg-[#efebe5]" data-testid={`profile-project-${item._id}`}>
-        {item.images?.[0]
-          ? <img src={item.images[0]} alt={item.title} className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]" loading="lazy" />
-          : <div className="h-full w-full flex items-center justify-center p-4 text-center pf-serif text-lg pf-muted">{item.title}</div>}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#1e1610]/85 via-[#1e1610]/20 to-transparent opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-visible:opacity-100 transition duration-300" />
-        <div className="absolute inset-x-0 bottom-0 p-4 sm:p-6 text-white translate-y-0 sm:translate-y-3 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-hover:translate-y-0 sm:group-focus-visible:opacity-100 transition duration-300">
-          {item.category && <p className="text-xs sm:text-sm font-semibold text-[#F6C944]">{item.category}</p>}
-          <p className="pf-serif text-base sm:text-2xl font-semibold leading-tight mt-0.5">{item.title}</p>
-          {(item.location || item.year) && <p className="text-xs sm:text-[15px] text-white/80 mt-1">{[item.location, item.year].filter(Boolean).join(' · ')}</p>}
-          {item.role && <p className="text-xs sm:text-[15px] font-medium text-[#F6C944] mt-1">{item.role}</p>}
-        </div>
-      </Link>
-    ))}
-  </div>
+// One project: photo on top, title and details always readable underneath
+const ProjectCard = ({ item, to, featured = false }) => (
+  <Link to={to} className={`group flex h-full flex-col overflow-hidden rounded-2xl border border-[#E6E1DB] bg-white transition hover:-translate-y-0.5 hover:shadow-lg ${featured ? 'lg:col-span-2 lg:row-span-2' : ''}`} data-testid={`profile-project-${item._id}`}>
+    <div className={`relative overflow-hidden bg-[#efebe5] ${featured ? 'aspect-[4/3] lg:aspect-auto lg:flex-1 lg:min-h-[22rem]' : 'aspect-[4/3]'}`}>
+      {item.images?.[0]
+        ? <img src={item.images[0]} alt={item.title} className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]" loading="lazy" />
+        : <div className="absolute inset-0 flex items-center justify-center p-4 text-center pf-serif text-lg pf-muted">{item.title}</div>}
+      {item.category && <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-[#32281F] backdrop-blur-sm">{item.category}</span>}
+      {item.images?.length > 1 && <span className="absolute bottom-3 right-3 rounded-full bg-black/55 px-2 py-0.5 text-xs text-white">{item.images.length} photos</span>}
+    </div>
+    <div className="px-4 py-3 sm:px-5 sm:py-4">
+      <p className={`pf-serif font-semibold leading-snug text-[#32281F] line-clamp-2 ${featured ? 'text-xl sm:text-2xl' : 'text-base sm:text-lg'}`}>{item.title}</p>
+      {(item.location || item.year || item.role) && (
+        <p className="mt-1 truncate text-sm pf-muted">{[item.role, item.location, item.year].filter(Boolean).join(' · ')}</p>
+      )}
+    </div>
+  </Link>
 );
 
-const yearsOf = (exp) => {
-  const y = (d) => (/^\d{4}/.test(d || '') ? d.slice(0, 4) : '');
-  if (!exp.startDate) return exp.duration || '';
-  return `${y(exp.startDate)} – ${exp.current || !exp.endDate ? 'Present' : y(exp.endDate)}`;
+// Portfolio preview on a profile. The layout follows the number of projects:
+// one large card, two side by side, or the first one featured with the rest beside it.
+export const ProjectGrid = ({ items, linkFor }) => {
+  if (!items.length) return null;
+  if (items.length === 1) {
+    return <div className="grid max-w-3xl"><ProjectCard item={items[0]} to={linkFor(items[0])} /></div>;
+  }
+  if (items.length === 2) {
+    return <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">{items.map((item) => <ProjectCard key={item._id} item={item} to={linkFor(item)} />)}</div>;
+  }
+  // Featured project over two columns and two rows, two beside it, then a row of three:
+  // 3 or 6 cards always fill the grid without gaps
+  const shown = items.slice(0, items.length >= 6 ? 6 : 3);
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
+      {shown.map((item, i) => <ProjectCard key={item._id} item={item} to={linkFor(item)} featured={i === 0} />)}
+    </div>
+  );
 };
 
-// Experience card: icon, title, company, years and place; description opens below
+// Initials of a company with no BeeBark page, e.g. "Studio Mehta" -> "SM"
+const initialsOf = (name) => String(name || '').split(/\s+/).filter((w) => /^[\p{L}\p{N}]/u.test(w)).slice(0, 2).map((w) => w[0].toUpperCase()).join('') || '?';
+const LOGO_TONES = ['bg-[#F2EBDD] text-[#7A5A1E]', 'bg-[#E7EEF0] text-[#2F5560]', 'bg-[#EFE7EE] text-[#5E3A5A]', 'bg-[#E9EFE6] text-[#3D5A34]', 'bg-[#F3E6DF] text-[#7A3E26]'];
+const toneOf = (name) => LOGO_TONES[[...String(name || '')].reduce((n, c) => n + c.charCodeAt(0), 0) % LOGO_TONES.length];
+
+// Experience entry in the LinkedIn layout: logo, role, company and type, then
+// dates with the duration, location, and the description (expandable)
 export const ExperienceCard = ({ exp, actions }) => {
   const [open, setOpen] = useState(false);
-  const hasMore = Boolean(exp.description || exp.employmentType);
+  const company = exp.page ? exp.page.name : exp.company;
+  const type = employmentTypeLabel(exp.employmentType);
+  const long = (exp.description || '').length > 180;
   return (
-    <div className={`rounded-2xl border bg-white pf-hover ${open ? 'border-[#F4C430]' : 'border-[#E6E1DB]'}`}>
-      <div className="flex items-start gap-4 p-5 sm:p-6">
-        {exp.page ? (
-          <Link to={`/company/${exp.page.slug}`} className="shrink-0" aria-label={exp.page.name} data-testid="exp-company-link">
-            <CompanyLogo page={exp.page} className="w-12 h-12 sm:w-14 sm:h-14" text="text-sm" />
-          </Link>
-        ) : <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl pf-soft flex items-center justify-center shrink-0"><FiBriefcaseAlt className="w-6 h-6 text-[#2A221C]" /></div>}
-        <button type="button" onClick={() => hasMore && setOpen((o) => !o)} className="flex-1 min-w-0 text-left" aria-expanded={open}>
-          <p className="pf-serif text-lg sm:text-xl font-semibold text-[#32281F]">{exp.title}</p>
-          <p className="text-[16px] sm:text-[17px] pf-muted">
-            {exp.page ? exp.page.name : exp.company}
-          </p>
-          <p className="mt-1.5 flex flex-wrap items-center gap-x-5 gap-y-1 text-[15px] pf-muted">
-            <span>{yearsOf(exp)}</span>
-            {exp.location && <span className="inline-flex items-center gap-1.5"><FiMapPin className="w-4 h-4" />{exp.location}</span>}
-          </p>
-          {open && (
-            <div className="mt-4 space-y-2 text-[15px] leading-relaxed pf-muted">
-              {exp.employmentType && <p className="text-sm font-medium text-[#32281F]">{employmentTypeLabel(exp.employmentType)} · {experienceDates(exp)}</p>}
-              {exp.description && <p className="whitespace-pre-line">{exp.description}</p>}
-            </div>
-          )}
-        </button>
-        <div className="flex items-center gap-1 shrink-0">
-          {actions}
-          {hasMore && (
-            <button type="button" onClick={() => setOpen((o) => !o)} className="p-2 pf-muted hover:text-[#32281F]" aria-label={open ? 'Show less' : 'Show more'}>
-              <FiChevronDown className={`w-5 h-5 transition ${open ? 'rotate-180' : ''}`} />
-            </button>
-          )}
-        </div>
+    <div className="flex items-start gap-4 rounded-2xl border border-[#E6E1DB] bg-white p-5 sm:p-6" data-testid="experience-card">
+      {exp.page ? (
+        <Link to={`/company/${exp.page.slug}`} className="shrink-0" aria-label={exp.page.name} data-testid="exp-company-link">
+          <CompanyLogo page={exp.page} className="w-12 h-12 sm:w-14 sm:h-14" text="text-sm" />
+        </Link>
+      ) : (
+        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-base font-bold sm:h-14 sm:w-14 sm:text-lg ${toneOf(company)}`} aria-hidden="true">{initialsOf(company)}</div>
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="text-[17px] font-semibold leading-snug text-[#1C1712] sm:text-lg">{exp.title}</p>
+        <p className="text-[15px] text-[#3D342C]">
+          {exp.page ? <Link to={`/company/${exp.page.slug}`} className="hover:underline">{company}</Link> : company}
+          {type && <span className="pf-muted"> · {type}</span>}
+        </p>
+        {(exp.startDate || exp.duration) && <p className="mt-0.5 text-sm pf-muted" data-testid="exp-dates">{experienceDates(exp)}</p>}
+        {exp.location && <p className="text-sm pf-muted">{exp.location}</p>}
+        {exp.description && (
+          <div className="mt-2.5 text-[15px] leading-relaxed text-[#3D342C]">
+            <p className={`whitespace-pre-line ${long && !open ? 'line-clamp-2' : ''}`}>{exp.description}</p>
+            {long && (
+              <button type="button" onClick={() => setOpen((o) => !o)} className="mt-1 inline-flex items-center gap-1 text-sm font-semibold pf-muted hover:text-[#32281F]" aria-expanded={open}>
+                {open ? 'Show less' : '…see more'}<FiChevronDown className={`h-4 w-4 transition ${open ? 'rotate-180' : ''}`} />
+              </button>
+            )}
+          </div>
+        )}
       </div>
+      {actions && <div className="flex shrink-0 items-center gap-1">{actions}</div>}
     </div>
   );
 };

@@ -297,7 +297,7 @@ const PublicProfile = ({ open = false }) => {
             <>
               {galleryCategories.length > 0 && <div className="md:hidden mb-4"><PillFilter options={['All', ...galleryCategories]} active={galleryCategory} onChange={setGalleryCategory} /></div>}
               {visibleGalleryItems.length > 0 ? <ProjectGrid items={visibleGalleryItems} linkFor={projectLink} /> : <p className="pf-muted">Nothing here yet</p>}
-              {data.portfolioCount > visibleGalleryItems.length && (
+              {data.portfolioCount > Math.min(visibleGalleryItems.length, visibleGalleryItems.length >= 6 ? 6 : 3) && (
                 <Link to={`/portfolio/${user.username}`} target="_blank" className="inline-block mt-5 text-[15px] font-semibold text-[#32281F] hover:underline">View all {data.portfolioCount} projects →</Link>
               )}
             </>

@@ -143,7 +143,7 @@ export const ProfileTabs = ({ tabs, active: controlled, onChange }) => {
 
 const compact = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1).replace(/\.0$/, '')}M` : n >= 1e4 ? `${Math.round(n / 1e3)}K` : Number(n || 0).toLocaleString('en-IN'));
 
-// Verified tick, Top 50 medal (first 50 on the pre-launch waitlist) and Pro
+// Verified tick, Founding Member medal (first 50 on the pre-launch waitlist) and Pro
 // badge, all set by the BeeBark team only
 const Badges = ({ badges }) => (
   <>
@@ -153,8 +153,8 @@ const Badges = ({ badges }) => (
       </span>
     )}
     {badges?.top50 && (
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-[#F2B21B]/70 bg-black/20 px-3 py-1 text-sm font-semibold text-[#F2B21B] backdrop-blur-sm" title="One of BeeBark's first 50 members" data-testid="badge-top50">
-        <FaMedal className="h-3.5 w-3.5" />Top 50
+      <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-[#F2B21B] bg-[#32281F] px-3 py-1 text-sm font-semibold text-[#F6C944] shadow-sm" title="One of BeeBark's first 50 members" data-testid="badge-top50">
+        <FaMedal className="h-3.5 w-3.5" />Founding Member
       </span>
     )}
     {badges?.pro && (

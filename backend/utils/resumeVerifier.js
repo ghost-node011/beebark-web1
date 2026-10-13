@@ -1,4 +1,5 @@
 const { askGroqForJson } = require('./groqClient');
+const { cleanEducation } = require('./educationFromResume');
 
 const VALID_INTENT = ['learn', 'network', 'hire', 'get_hired'];
 const VALID_INDUSTRY = ['architecture', 'interiors', 'construction', 'real_estate', 'related'];
@@ -38,7 +39,9 @@ profile, each with a slightly different angle (achievement-focused, personality-
 concise/punchy, etc) — order them best-first, since the first one will be offered as the
 recommended default. Also suggest which of these platform intents apply —
 ${VALID_INTENT.join(', ')} — and which industries apply — ${VALID_INDUSTRY.join(', ')} — based only
-on what the resume actually shows.
+on what the resume actually shows. Also list the education entries exactly as the resume states
+them (school, degree, field of study, start and end year); leave a value empty or null when the
+resume doesn't say it, and never guess.
 
 Respond ONLY with a JSON object in this exact shape:
 {
@@ -48,10 +51,11 @@ Respond ONLY with a JSON object in this exact shape:
   "detectedLocation": "City, Country or null",
   "bios": ["bio option 1", "bio option 2", "bio option 3", "bio option 4", "bio option 5"],
   "suggestedIntent": ["learn"],
-  "suggestedIndustries": ["architecture"]
+  "suggestedIndustries": ["architecture"],
+  "education": [{ "school": "CEPT University", "degree": "B.Arch", "field": "Architecture", "startYear": 2013, "endYear": 2018 }]
 }
 If it is NOT a resume, respond with:
-{ "isResume": false, "reason": "one short sentence explaining what it looks like instead", "detectedName": null, "detectedLocation": null, "bios": [], "suggestedIntent": [], "suggestedIndustries": [] }`;
+{ "isResume": false, "reason": "one short sentence explaining what it looks like instead", "detectedName": null, "detectedLocation": null, "bios": [], "suggestedIntent": [], "suggestedIndustries": [], "education": [] }`;
 
   try {
     const result = await askGroqForJson(prompt);
@@ -65,7 +69,8 @@ If it is NOT a resume, respond with:
       nameMismatch: namesLikelyDiffer(result.detectedName, currentName),
       bios: Array.isArray(result.bios) ? result.bios.slice(0, 5) : [],
       suggestedIntent: (Array.isArray(result.suggestedIntent) ? result.suggestedIntent : []).filter((i) => VALID_INTENT.includes(i)),
-      suggestedIndustries: (Array.isArray(result.suggestedIndustries) ? result.suggestedIndustries : []).filter((i) => VALID_INDUSTRY.includes(i))
+      suggestedIndustries: (Array.isArray(result.suggestedIndustries) ? result.suggestedIndustries : []).filter((i) => VALID_INDUSTRY.includes(i)),
+      education: cleanEducation(result.education)
     };
   } catch (error) {
     console.error('Resume analysis error:', error.message);

@@ -3,6 +3,7 @@ import axios from 'axios';
 import { FiMapPin } from 'react-icons/fi';
 import { Input } from './ui/input';
 import { API_URL } from '../config/api';
+import { CITIES } from '../config/cities';
 
 // Text input with a suggestion list underneath. `fetchSuggestions(q)` returns
 // a promise of strings; typing is debounced and spell checking stays on.
@@ -103,13 +104,30 @@ const placeName = (p) => {
   return [...new Set(parts)].join(', ');
 };
 
+// Indian cities from BeeBark's own list first (instant, works offline), then
+// places from the map search; if that is slow or unreachable, the list alone is used
+const localCities = (q) => {
+  const t = q.trim().toLowerCase();
+  const starts = CITIES.filter((c) => c.city.toLowerCase().startsWith(t));
+  const contains = CITIES.filter((c) => !c.city.toLowerCase().startsWith(t) && c.label.toLowerCase().includes(t));
+  return [...starts, ...contains].slice(0, 6).map((c) => `${c.city}, ${c.state}`);
+};
+const placeSearch = (q) => {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 2500);
+  return fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6&lang=en&layer=city&layer=district&layer=locality&layer=state`, { signal: ctrl.signal })
+    .then((r) => r.json())
+    .then((d) => (d.features || []).map((f) => placeName(f.properties)).filter(Boolean))
+    .catch(() => [])
+    .finally(() => clearTimeout(timer));
+};
+
 export const LocationInput = (props) => {
-  const fetcher = React.useCallback(
-    (q) => fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6&lang=en&layer=city&layer=district&layer=locality&layer=state`)
-      .then((r) => r.json())
-      .then((d) => [...new Set((d.features || []).map((f) => placeName(f.properties)).filter(Boolean))]),
-    []
-  );
+  const fetcher = React.useCallback(async (q) => {
+    const local = localCities(q);
+    const remote = local.length >= 6 ? [] : await placeSearch(q);
+    return [...new Set([...local, ...remote])].slice(0, 8);
+  }, []);
   return <SuggestingInput {...props} minChars={2} icon={FiMapPin} fetchSuggestions={fetcher} />;
 };
 

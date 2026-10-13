@@ -14,6 +14,10 @@ const companySchema = new mongoose.Schema({
   about: { type: String, default: '', maxlength: 3000 },
   logo: { type: String, default: '' },
   cover: { type: String, default: '' },
+  // Which part of the cover shows in the wide banner: 0 = top, 50 = middle, 100 = bottom
+  coverPosition: { type: Number, default: 50, min: 0, max: 100 },
+  // What the company is, in the owner's words, when type is 'other'
+  typeOther: { type: String, default: '', trim: true, maxlength: 60 },
   website: { type: String, default: '' },
   email: { type: String, default: '' },
   phone: { type: String, default: '' },

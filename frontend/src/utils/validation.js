@@ -63,3 +63,14 @@ export const checkSocialLink = (platform, raw) => {
   if (domains && url.pathname.replace(/\/+$/, '') === '') return `Link to your own page, e.g. ${example}`;
   return '';
 };
+
+// A person's name: letters (any language) and single spaces, 2-60 characters.
+// Returns an error message or '' (same rule as the server).
+const NAME_RE = /^[\p{L}\p{M}]+(?: [\p{L}\p{M}]+)*$/u;
+export const nameError = (raw) => {
+  const v = String(raw || '').trim().replace(/\s+/g, ' ');
+  if (!v) return 'Enter your name';
+  if (v.length < 2) return 'Enter your full name';
+  if (v.length > 60) return 'Keep your name under 60 characters';
+  return NAME_RE.test(v) ? '' : 'Use letters and spaces only (no numbers or symbols)';
+};

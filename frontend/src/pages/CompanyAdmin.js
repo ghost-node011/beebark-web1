@@ -14,7 +14,7 @@ import { Input } from '../components/ui/input';
 import PageForm, { EMPTY_PAGE, pageErrors, slugify } from '../components/company/PageForm';
 import { PAGE_BG } from '../components/profile/ProfileShell';
 import { API_URL } from '../config/api';
-import { usePages, PAGE_TYPE_LABELS } from '../context/PagesContext';
+import { usePages, pageTypeLabel } from '../context/PagesContext';
 import CompanyLogo from '../components/company/CompanyLogo';
 
 const TABS = [
@@ -134,14 +134,14 @@ const CompanyAdmin = () => {
           {/* Welcome */}
           <div className="relative overflow-hidden rounded-2xl border border-[#E6E1DB] bg-white">
             <div className="absolute inset-y-0 right-0 w-full sm:w-1/2 opacity-90"
-              style={page.cover ? { backgroundImage: `linear-gradient(90deg, #fff 0%, rgba(255,255,255,0.4) 45%, rgba(255,255,255,0) 100%), url(${page.cover})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}} />
+              style={page.cover ? { backgroundImage: `linear-gradient(90deg, #fff 0%, rgba(255,255,255,0.4) 45%, rgba(255,255,255,0) 100%), url(${page.cover})`, backgroundSize: 'cover', backgroundPosition: `center ${page.coverPosition ?? 50}%` } : {}} />
             <div className="relative p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center gap-5">
               <CompanyLogo page={page} className="w-16 h-16 sm:w-20 sm:h-20" rounded="rounded-2xl" text="text-2xl" />
               <div className="min-w-0 flex-1">
                 <p className="pf-muted">{greeting()},</p>
                 <h1 className="pf-serif text-3xl sm:text-4xl font-bold text-[#32281F] break-words">{page.name}</h1>
                 <p className="mt-1 text-sm pf-muted flex flex-wrap gap-x-3">
-                  {PAGE_TYPE_LABELS[page.type] && <span className="inline-flex items-center gap-1"><FiGrid />{PAGE_TYPE_LABELS[page.type]}</span>}
+                  {pageTypeLabel(page) && <span className="inline-flex items-center gap-1"><FiGrid />{pageTypeLabel(page)}</span>}
                   {page.locations?.[0] && <span>{page.locations[0]}</span>}
                   <span>Company page</span>
                 </p>

@@ -14,8 +14,9 @@ import { ProfileTabs, PAGE_BG, heroBtn } from '../components/profile/ProfileShel
 import { Section } from '../components/profile/ProfileSections';
 import { API_URL } from '../config/api';
 import { useAuth } from '../context/AuthContext';
-import { usePages, PAGE_TYPE_LABELS } from '../context/PagesContext';
+import { usePages, pageTypeLabel } from '../context/PagesContext';
 import { inrSalary } from '../utils/salary';
+import { coverStyle } from '../components/company/CoverEditor';
 import CompanyLogo from '../components/company/CompanyLogo';
 
 const compact = (n) => (n >= 1e4 ? `${Math.round(n / 1e3)}K` : Number(n || 0).toLocaleString('en-IN'));
@@ -68,7 +69,7 @@ const CompanyPage = ({ open = false }) => {
 
   const { page, employees, jobs } = data;
   const admin = data.isAdmin && !preview;
-  const typeLabel = PAGE_TYPE_LABELS[page.type] || '';
+  const typeLabel = pageTypeLabel(page);
 
   const toggleFollow = async () => {
     if (!user) { navigate(`/register?next=${encodeURIComponent(`/company/${page.slug}`)}`); return; }
@@ -105,9 +106,7 @@ const CompanyPage = ({ open = false }) => {
       {/* Cover + logo */}
       <div className="-mx-4 sm:-mx-6 lg:-mx-8 -mt-4 sm:-mt-6 lg:-mt-8">
         <div className="relative h-44 sm:h-60 lg:h-72"
-          style={page.cover
-            ? { backgroundImage: `url(${page.cover})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-            : { background: 'linear-gradient(120deg, #6B5440 0%, #4A3A2C 40%, #32281F 75%, #221A14 100%)' }}>
+          style={coverStyle(page.cover, page.coverPosition)}>
           <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(20,15,10,0) 45%, rgba(20,15,10,0.35) 100%)' }} />
           {admin && (
             <Link to={`/company/${page.slug}/admin?tab=edit`} className="absolute top-3 right-3 z-10 flex items-center gap-1.5 rounded-lg bg-black/55 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm hover:bg-black/75">

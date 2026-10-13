@@ -36,7 +36,8 @@ import SkillPicker from '../components/SkillPicker';
 import CompanyInput from '../components/company/CompanyInput';
 import CompanyLogo from '../components/company/CompanyLogo';
 import { usePages } from '../context/PagesContext';
-import { checkPhone, checkYear, digitsOnly, checkSocialLink } from '../utils/validation';
+import MonthYearPicker from '../components/MonthYearPicker';
+import { checkPhone, checkYear, checkSocialLink, nameError } from '../utils/validation';
 
 const ROLE_LABELS = {
   student: 'Student',
@@ -73,6 +74,8 @@ const eduYearErrors = (d) => {
 // Problems that stop a save, keyed by field
 const fieldErrors = (form) => {
   const out = {};
+  const badName = nameError(form.name);
+  if (badName) out.name = `Name: ${badName}`;
   for (const [key, label] of [['phone', 'Phone'], ['whatsapp', 'WhatsApp']]) {
     const { error } = checkPhone(form.contact?.[key]);
     if (error) out[`contact.${key}`] = `${label}: ${error}`;
@@ -334,9 +337,10 @@ const Profile = () => {
   const saveExperience = async () => {
     const { index, ...entry } = expDraft;
     if (!entry.title.trim() || !entry.company.trim()) return toast.error('Add a title and company');
-    if (!entry.startDate) return toast.error('Add a start date');
-    if (!entry.current && entry.endDate && entry.endDate < entry.startDate) return toast.error('End date is before the start date');
-    if (!entry.current && !entry.endDate) return toast.error('Add an end date, or tick "I currently work here"');
+    const full = (v) => /^\d{4}-\d{2}$/.test(v || '');
+    if (!full(entry.startDate)) return toast.error('Choose the start month and year');
+    if (!entry.current && !full(entry.endDate)) return toast.error('Choose the end month and year, or tick "I currently work here"');
+    if (!entry.current && entry.endDate < entry.startDate) return toast.error('End date is before the start date');
     const next = index >= 0 ? formData.experience.map((e, i) => (i === index ? { ...e, ...entry, duration: '' } : e)) : [...formData.experience, entry];
     if (await saveFields({ experience: next })) setExpDraft(null);
   };
@@ -460,6 +464,12 @@ const Profile = () => {
     axios.get(`${API_URL}/api/profile/me`).then((res) => setUser(res.data.user)).catch(() => {});
   };
 
+  // Education added from the resume review: show it straight away
+  const handleEducationSaved = (education) => {
+    setFormData((f) => ({ ...f, education }));
+    axios.get(`${API_URL}/api/profile/me`).then((res) => setUser(res.data.user)).catch(() => {});
+  };
+
   const confirmNameChange = async (useResumeName) => {
     if (useResumeName && nameMismatch) {
       try {
@@ -580,7 +590,8 @@ const Profile = () => {
               <div className="space-y-5 px-6 py-5">
               <div className="space-y-2">
                 <Label>Name</Label>
-                <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} data-testid="name-input" />
+                <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className={liveErrors.name ? 'border-red-400' : ''} aria-invalid={Boolean(liveErrors.name)} data-testid="name-input" />
+                {liveErrors.name && <p className="text-xs text-red-500" data-testid="name-error">{liveErrors.name.replace(/^Name: /, '')}</p>}
               </div>
               <div className="space-y-2">
                 <Label>Headline</Label>
@@ -790,7 +801,12 @@ const Profile = () => {
               action={
                 <>
                   <VisibilityPill isPublic={formData.galleryPublic} editable onToggle={(v) => handleVisibilityToggle('galleryPublic', v)} />
-                  <Link to="/portfolio" className="text-sm font-medium text-black hover:underline hidden sm:inline">Full Portfolio →</Link>
+                  {user?.username && (
+                    <a href={`/portfolio/${user.username}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-[#E6E1DB] bg-white px-3 py-1.5 text-sm font-semibold text-[#32281F] hover:bg-gray-50" data-testid="view-portfolio">
+                      View portfolio<FiExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  )}
+                  <Link to="/portfolio" className="text-sm font-medium text-black hover:underline hidden sm:inline">Edit</Link>
                   <label className="cursor-pointer">
                     <input type="file" accept="image/*" multiple onChange={(e) => handleGalleryFiles(e.target.files)} className="hidden" disabled={uploadingGallery} />
                     <span className="flex items-center gap-1.5 text-sm font-medium bg-[#32281F] hover:bg-[#221A14] text-white rounded-lg px-3 py-1.5 transition">
@@ -806,7 +822,12 @@ const Profile = () => {
                 </div>
               )}
               {visibleGalleryItems.length > 0 ? (
-                <ProjectGrid items={visibleGalleryItems} linkFor={(item) => `/portfolio/${user?.username}?project=${item._id}`} />
+                <>
+                  <ProjectGrid items={visibleGalleryItems} linkFor={(item) => `/portfolio/${user?.username}?project=${item._id}`} />
+                  {visibleGalleryItems.length > (visibleGalleryItems.length >= 6 ? 6 : 3) && (
+                    <a href={`/portfolio/${user?.username}`} target="_blank" rel="noreferrer" className="mt-5 inline-block text-[15px] font-semibold text-[#32281F] hover:underline">View all {visibleGalleryItems.length} projects →</a>
+                  )}
+                </>
               ) : (
                 <p className="text-slate-500">Nothing here yet — add your first work photo above</p>
               )}
@@ -846,14 +867,10 @@ const Profile = () => {
                         <Label>Location</Label>
                         <LocationInput value={expDraft.location} onChange={(v) => setExpDraft((d) => ({ ...d, location: v }))} placeholder="City" />
                       </div>
-                      <div className="space-y-1">
-                        <Label>Start date *</Label>
-                        <Input type="month" value={expDraft.startDate} max={new Date().toISOString().slice(0, 7)} onChange={(e) => setExpDraft((d) => ({ ...d, startDate: e.target.value }))} data-testid="exp-start" />
-                      </div>
-                      <div className="space-y-1">
-                        <Label>End date</Label>
-                        <Input type="month" value={expDraft.current ? '' : expDraft.endDate} disabled={expDraft.current} min={expDraft.startDate || undefined} onChange={(e) => setExpDraft((d) => ({ ...d, endDate: e.target.value }))} data-testid="exp-end" />
-                      </div>
+                      <MonthYearPicker label="Start date" required value={expDraft.startDate} max={new Date().toISOString().slice(0, 7)} onChange={(v) => setExpDraft((d) => ({ ...d, startDate: v }))} testId="exp-start" />
+                      <MonthYearPicker label="End date" required={!expDraft.current} value={expDraft.current ? '' : expDraft.endDate} disabled={expDraft.current}
+                        min={/^\d{4}-\d{2}$/.test(expDraft.startDate) ? expDraft.startDate : ''} max={new Date().toISOString().slice(0, 7)}
+                        placeholder={expDraft.current ? '' : 'Not set'} onChange={(v) => setExpDraft((d) => ({ ...d, endDate: v }))} testId="exp-end" />
                     </div>
                     <label className="flex items-center gap-2 text-sm text-gray-700">
                       <input type="checkbox" checked={expDraft.current} onChange={(e) => setExpDraft((d) => ({ ...d, current: e.target.checked, endDate: e.target.checked ? '' : d.endDate }))} className="accent-[#32281F]" data-testid="exp-current" />
@@ -915,10 +932,13 @@ const Profile = () => {
                         const err = eduDraft.showYearErrors && eduYearErrors(eduDraft)[key];
                         return (
                           <div key={key} className="space-y-1">
-                            <Label>{label}</Label>
-                            <Input value={value} inputMode="numeric" maxLength={4} placeholder={ph}
-                              onChange={(e) => setEduDraft((d) => ({ ...d, startYear: d.startYear ?? splitYears(d.duration)[0], endYear: d.endYear ?? splitYears(d.duration)[1], [key]: digitsOnly(e.target.value) }))}
-                              aria-invalid={!!err} className={err ? 'border-red-400' : ''} data-testid={`edu-${key}`} />
+                            <Label htmlFor={`edu-${key}`}>{label}</Label>
+                            <select id={`edu-${key}`} value={value}
+                              onChange={(e) => setEduDraft((d) => ({ ...d, startYear: d.startYear ?? splitYears(d.duration)[0], endYear: d.endYear ?? splitYears(d.duration)[1], [key]: e.target.value }))}
+                              aria-invalid={!!err} className={`h-10 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:border-[#E0B93C] ${err ? 'border-red-400' : 'border-[#D8D2CA]'}`} data-testid={`edu-${key}`}>
+                              <option value="">{ph.replace('e.g. ', 'Year, e.g. ')}</option>
+                              {Array.from({ length: (i ? new Date().getFullYear() + 7 : new Date().getFullYear()) - 1960 + 1 }, (_, n) => String((i ? new Date().getFullYear() + 7 : new Date().getFullYear()) - n)).map((y) => <option key={y} value={y}>{y}</option>)}
+                            </select>
                             {err && <p className="text-xs text-red-600">{err}</p>}
                           </div>
                         );
@@ -957,7 +977,7 @@ const Profile = () => {
                 onEditClick={() => edit('skills')} onCancel={cancelSection} onSave={saveSection} saving={saving}
                 editContent={
                   <div className="space-y-3">
-                    <ResumeImport onImported={handleResumeImported} />
+                    <ResumeImport onImported={handleResumeImported} onEducationSaved={handleEducationSaved} />
                     <SkillPicker
                       skills={formData.skills}
                       onAdd={(skill) => setFormData((f) => ({ ...f, skills: [...f.skills, skill] }))}
@@ -1081,7 +1101,7 @@ const Profile = () => {
                   <p className="text-slate-500 mb-3">Upload your resume to fill your skills and apply to jobs faster. Only you can see it.</p>
                 )}
                 <div className="mt-3">
-                  <ResumeImport onImported={handleResumeImported} />
+                  <ResumeImport onImported={handleResumeImported} onEducationSaved={handleEducationSaved} />
                   {user?.resume?.url && <p className="text-xs text-gray-400 mt-1">Uploading a new file replaces the current one.</p>}
                 </div>
               </Card>

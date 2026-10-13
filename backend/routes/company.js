@@ -63,6 +63,11 @@ function pageFields(body = {}, partial = false) {
   if (has('about')) out.about = clip(body.about, 3000);
   if (has('logo')) out.logo = imageUrl(body.logo);
   if (has('cover')) out.cover = imageUrl(body.cover);
+  if (has('coverPosition')) {
+    const pos = Number(body.coverPosition);
+    out.coverPosition = Number.isFinite(pos) ? Math.min(100, Math.max(0, Math.round(pos))) : 50;
+  }
+  if (has('typeOther')) out.typeOther = clip(body.typeOther, 60);
   if (has('website')) {
     const w = withHttps(clip(body.website, 200));
     if (w && !validUrl(w)) return { error: 'Enter a valid website, e.g. yourstudio.com' };
@@ -94,7 +99,7 @@ function pageFields(body = {}, partial = false) {
 
 const pagePublic = (p) => ({
   _id: p._id, name: p.name, slug: p.slug, type: p.type, tagline: p.tagline, about: p.about,
-  logo: p.logo, cover: p.cover, website: p.website, email: p.email, phone: p.phone,
+  logo: p.logo, cover: p.cover, coverPosition: p.coverPosition ?? 50, typeOther: p.type === 'other' ? (p.typeOther || '') : '', website: p.website, email: p.email, phone: p.phone,
   locations: p.locations || [], teamSize: p.teamSize, founded: p.founded, specialties: p.specialties || [],
   verified: !!p.verified, followerCount: (p.followers || []).length, owner: p.owner, createdAt: p.createdAt
 });

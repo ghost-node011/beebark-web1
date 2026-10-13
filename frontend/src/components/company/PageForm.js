@@ -6,12 +6,14 @@ import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
 import { LocationInput } from '../AutocompleteInput';
+import CoverEditor from './CoverEditor';
+import CompanyTypePicker from './CompanyTypePicker';
 import { API_URL } from '../../config/api';
-import { PAGE_TYPE_LABELS, TEAM_SIZE_OPTIONS } from '../../context/PagesContext';
+import { TEAM_SIZE_OPTIONS } from '../../context/PagesContext';
 import { checkPhone, checkYear, digitsOnly } from '../../utils/validation';
 
 export const EMPTY_PAGE = {
-  name: '', slug: '', type: '', tagline: '', about: '', logo: '', cover: '', website: '', email: '', phone: '',
+  name: '', slug: '', type: '', typeOther: '', tagline: '', about: '', logo: '', cover: '', coverPosition: 50, website: '', email: '', phone: '',
   locations: [], teamSize: '', founded: '', specialties: []
 };
 
@@ -23,6 +25,7 @@ export const pageErrors = (form) => {
   const out = {};
   if (form.name.trim().length < 2) out.name = 'Add the company name';
   if (!form.type) out.type = 'Choose what kind of company this is';
+  else if (form.type === 'other' && !String(form.typeOther || '').trim()) out.type = 'Say what kind of company it is';
   if (slugify(form.slug).length < 2) out.slug = 'Choose a page address';
   const phone = checkPhone(form.phone).error;
   if (phone) out.phone = phone;
@@ -118,19 +121,15 @@ const PageForm = ({ form, setForm, showErrors = false, pageId = null }) => {
       {/* Cover + logo */}
       <div>
         <Label>Cover and logo</Label>
-        <div className="mt-1.5 relative h-32 sm:h-40 rounded-xl overflow-hidden border border-gray-200"
-          style={form.cover ? { backgroundImage: `url(${form.cover})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: 'linear-gradient(120deg, #6B5440 0%, #4A3A2C 40%, #32281F 75%, #221A14 100%)' }}>
-          <label className="absolute top-2 right-2 cursor-pointer rounded-lg bg-black/55 px-2.5 py-1 text-xs font-medium text-white hover:bg-black/75" data-testid="page-cover-upload">
-            <FiCamera className="inline w-3.5 h-3.5 mr-1" />{uploading === 'cover' ? 'Uploading…' : form.cover ? 'Change cover' : 'Add cover'}
-            <input type="file" accept="image/*" className="hidden" onChange={pickImage('cover')} />
-          </label>
+        <CoverEditor cover={form.cover} position={form.coverPosition ?? 50} onPosition={set('coverPosition')}
+          onPick={(e) => { set('coverPosition')(50); pickImage('cover')(e); }} uploading={uploading === 'cover'}>
           <label className="absolute left-3 bottom-3 cursor-pointer" data-testid="page-logo-upload" title="Upload logo">
             {form.logo
               ? <img src={form.logo} alt="" className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover border-[3px] border-white bg-white" />
               : <span className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-[3px] border-white bg-white/90 flex flex-col items-center justify-center text-[11px] text-gray-600"><FiCamera className="w-5 h-5 mb-0.5" />{uploading === 'logo' ? '…' : 'Logo'}</span>}
             <input type="file" accept="image/*" className="hidden" onChange={pickImage('logo')} />
           </label>
-        </div>
+        </CoverEditor>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -155,10 +154,7 @@ const PageForm = ({ form, setForm, showErrors = false, pageId = null }) => {
         </div>
         <div>
           <Label htmlFor="page-type">Type of company *</Label>
-          <select id="page-type" value={form.type} onChange={(e) => set('type')(e.target.value)} className={`mt-1 h-10 w-full rounded-md border bg-white px-2 text-sm ${errors.type ? 'border-red-400' : 'border-input'}`} data-testid="page-type">
-            <option value="">Choose…</option>
-            {Object.entries(PAGE_TYPE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-          </select>
+          <CompanyTypePicker value={form.type} otherText={form.typeOther || ''} onChange={set('type')} onOtherText={set('typeOther')} invalid={Boolean(errors.type)} />
           {err('type')}
         </div>
         <div>

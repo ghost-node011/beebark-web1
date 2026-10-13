@@ -1,12 +1,12 @@
 import { useInLayout } from '../context/LayoutContext';
-import React from 'react';
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useUI } from '../context/UIContext';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import {
   FiHome, FiMessageCircle, FiUsers, FiLayers, FiBriefcase,
-  FiVideo, FiX, FiImage, FiFileText, FiSend, FiHome as FiProperty, FiSettings, FiGrid, FiChevronsLeft, FiChevronsRight
+  FiVideo, FiX, FiImage, FiFileText, FiSend, FiHome as FiProperty, FiSettings, FiGrid, FiChevronsLeft, FiChevronsRight, FiUserPlus
 } from 'react-icons/fi';
 import { getCopy } from '../config/roleDomainCopy';
 import { personHeadline } from '../utils/personHeadline';
@@ -15,10 +15,12 @@ import useNavBadges from '../hooks/useNavBadges';
 import { usePages } from '../context/PagesContext';
 import { NEWS_ENABLED } from '../config/features';
 import CompanyLogo from './company/CompanyLogo';
+import InviteDialog from './InviteDialog';
 
 const SidebarFrame = () => {
   const { user } = useAuth();
   const { sidebarOpen, setSidebarOpen, collapsed, toggleCollapsed } = useUI();
+  const [inviteOpen, setInviteOpen] = useState(false);
   const close = () => setSidebarOpen(false);
   const copy = getCopy(user);
   const badges = useNavBadges();
@@ -125,9 +127,20 @@ const SidebarFrame = () => {
               </NavLink>
             );
           })}
+          {!acting && (
+            <button type="button" onClick={() => { close(); setInviteOpen(true); }} className="sidebar-item w-full text-left" data-testid="sidebar-invite" title={collapsed ? 'Invite to BeeBark' : undefined}>
+              <FiUserPlus className="w-5 h-5 shrink-0" />
+              <span className="sb-label flex-1">Invite to BeeBark</span>
+            </button>
+          )}
         </nav>
 
         <div className="border-t border-slate-200 p-4 shrink-0">
+          <p className="sb-label mb-2 flex flex-wrap gap-x-2 gap-y-0.5 px-3 text-[11px] text-slate-500" data-testid="sidebar-legal">
+            <Link to="/terms" onClick={close} className="hover:text-black hover:underline">User Agreement</Link><span>·</span>
+            <Link to="/privacy" onClick={close} className="hover:text-black hover:underline">Privacy</Link><span>·</span>
+            <Link to="/community-standards" onClick={close} className="hover:text-black hover:underline">Community</Link>
+          </p>
           {acting ? (
             <div className="space-y-1">
               <NavLink to={`/company/${acting.slug}`} onClick={close} className="flex items-center space-x-3 p-3 hover:bg-slate-50 rounded-lg">
@@ -157,6 +170,7 @@ const SidebarFrame = () => {
           )}
         </div>
       </div>
+      <InviteDialog open={inviteOpen} onOpenChange={setInviteOpen} />
     </>
   );
 };

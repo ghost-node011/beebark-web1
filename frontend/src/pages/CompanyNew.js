@@ -8,9 +8,10 @@ import TopBar from '../components/TopBar';
 import { Button } from '../components/ui/button';
 import PageForm, { EMPTY_PAGE, pageErrors, slugify } from '../components/company/PageForm';
 import { API_URL } from '../config/api';
-import { usePages, PAGE_TYPE_LABELS, TEAM_SIZE_OPTIONS } from '../context/PagesContext';
+import { usePages, TEAM_SIZE_OPTIONS, pageTypeLabel } from '../context/PagesContext';
 import { useAuth } from '../context/AuthContext';
 import CompanyLogo from '../components/company/CompanyLogo';
+import { coverStyle } from '../components/company/CoverEditor';
 import { PAGE_BG } from '../components/profile/ProfileShell';
 
 // Create a company Page (like LinkedIn's "Create a Company Page")
@@ -91,13 +92,13 @@ const CompanyNew = () => {
             <aside className="lg:sticky lg:top-24">
               <p className="text-xs font-semibold uppercase tracking-wide pf-muted mb-2">Page preview</p>
               <div className="pf-card overflow-hidden">
-                <div className="h-24" style={form.cover ? { backgroundImage: `url(${form.cover})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: 'linear-gradient(120deg, #6B5440 0%, #4A3A2C 40%, #32281F 75%, #221A14 100%)' }} />
+                <div className="aspect-[4/1]" style={coverStyle(form.cover, form.coverPosition)} />
                 <div className="px-5 pb-5">
                   <div className="-mt-8"><CompanyLogo page={{ name: form.name || 'Company', logo: form.logo }} className="w-16 h-16 border-[3px] border-white" text="text-xl" /></div>
                   <p className="mt-2 pf-serif text-xl font-bold text-[#32281F] break-words">{form.name || 'Company name'}</p>
                   <p className="text-sm pf-muted">{form.tagline || 'Tagline'}</p>
                   <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs pf-muted">
-                    {form.type && <span>{PAGE_TYPE_LABELS[form.type]}</span>}
+                    {form.type && <span>{pageTypeLabel(form)}</span>}
                     {form.locations[0] && <span className="inline-flex items-center gap-1"><FiMapPin />{form.locations[0]}</span>}
                     {form.teamSize && <span className="inline-flex items-center gap-1"><FiUsers />{form.teamSize}</span>}
                   </p>

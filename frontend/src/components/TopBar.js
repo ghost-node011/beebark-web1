@@ -1,10 +1,10 @@
 import { useInLayout } from '../context/LayoutContext';
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useUI } from '../context/UIContext';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { FiLogOut, FiMenu, FiUser, FiSettings, FiBell, FiChevronDown, FiGrid, FiPlus, FiCheckCircle, FiFileText } from 'react-icons/fi';
+import { FiLogOut, FiMenu, FiUser, FiSettings, FiBell, FiChevronDown, FiGrid, FiPlus, FiCheckCircle, FiFileText, FiUserPlus } from 'react-icons/fi';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -18,6 +18,7 @@ import PeopleSearchBox from './PeopleSearchBox';
 import { useBadgeTotal } from '../hooks/useNavBadges';
 import { usePages } from '../context/PagesContext';
 import CompanyLogo from './company/CompanyLogo';
+import InviteDialog from './InviteDialog';
 import { personHeadline } from '../utils/personHeadline';
 
 const TopBarFrame = () => {
@@ -26,6 +27,7 @@ const TopBarFrame = () => {
   const badgeTotal = useBadgeTotal();
   const { pages, acting, setActingAs } = usePages();
   const navigate = useNavigate();
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -114,7 +116,9 @@ const TopBarFrame = () => {
             <DropdownMenuItem onClick={() => navigate('/profile')}><FiUser className="mr-2" />View profile</DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate('/notifications')}><FiBell className="mr-2" />Notifications</DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate('/settings')} data-testid="menu-settings"><FiSettings className="mr-2" />Settings & privacy</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate('/settings#settings-legal')} data-testid="menu-policies"><FiFileText className="mr-2" />Policies</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setInviteOpen(true)} data-testid="menu-invite"><FiUserPlus className="mr-2" />Invite to BeeBark</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate('/terms')} data-testid="menu-user-agreement"><FiFileText className="mr-2" />User Agreement</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate('/settings#settings-legal')} data-testid="menu-policies"><FiFileText className="mr-2" />All policies</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} data-testid="logout-this-device"><FiLogOut className="mr-2" />Log out</DropdownMenuItem>
             <DropdownMenuItem onClick={handleLogoutAll} className="text-red-600" data-testid="logout-all-devices">
@@ -123,6 +127,7 @@ const TopBarFrame = () => {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      <InviteDialog open={inviteOpen} onOpenChange={setInviteOpen} />
     </div>
   );
 };
