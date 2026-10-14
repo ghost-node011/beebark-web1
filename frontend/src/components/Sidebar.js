@@ -128,7 +128,7 @@ const SidebarFrame = () => {
             );
           })}
           {!acting && (
-            <button type="button" onClick={() => { close(); setInviteOpen(true); }} className="sidebar-item w-full text-left" data-testid="sidebar-invite" title={collapsed ? 'Invite to BeeBark' : undefined}>
+            <button type="button" onClick={() => { close(); setInviteOpen(true); }} className="sidebar-item w-[calc(100%-1rem)] text-left" data-testid="sidebar-invite" title={collapsed ? 'Invite to BeeBark' : undefined}>
               <FiUserPlus className="w-5 h-5 shrink-0" />
               <span className="sb-label flex-1">Invite to BeeBark</span>
             </button>

@@ -18,18 +18,18 @@ const InviteDialog = ({ open, onOpenChange }) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md" data-testid="invite-dialog">
+      <DialogContent className="w-[calc(100%-2rem)] max-w-md overflow-hidden" data-testid="invite-dialog">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2"><FiUserPlus className="text-[#C9A227]" />Invite to BeeBark</DialogTitle>
         </DialogHeader>
         <p className="-mt-2 text-sm text-gray-500">Invite colleagues, clients and classmates. They get their own profile and portfolio, and you can connect once they join.</p>
-        <div className="flex items-center gap-2 rounded-xl border border-[#E6E1DB] bg-[#FAF8F5] p-2 pl-3">
+        <div className="flex min-w-0 items-center gap-2 rounded-xl border border-[#E6E1DB] bg-[#FAF8F5] p-2 pl-3">
           <span className="min-w-0 flex-1 truncate text-sm text-[#3D342C]" data-testid="invite-link">{link.replace(/^https?:\/\//, '')}</span>
           <button type="button" onClick={copy} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#32281F] px-3 py-2 text-sm font-semibold text-white hover:bg-[#221A14]" data-testid="invite-copy">
             <FiCopy className="h-4 w-4" />Copy
           </button>
         </div>
-        <div className={`grid gap-2 ${native ? 'grid-cols-4' : 'grid-cols-3'}`}>
+        <div className={`grid min-w-0 gap-2 ${native ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'}`}>
           <button type="button" className={btn} onClick={() => openWin(`https://wa.me/?text=${encodeURIComponent(message)}`)}><FaWhatsapp className="h-5 w-5 text-[#25D366]" />WhatsApp</button>
           <button type="button" className={btn} onClick={() => openWin(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(link)}`)}><FaLinkedin className="h-5 w-5 text-[#0A66C2]" />LinkedIn</button>
           <button type="button" className={btn} onClick={() => { window.location.href = `mailto:?subject=${encodeURIComponent('Join me on BeeBark')}&body=${encodeURIComponent(message)}`; }}><FiMail className="h-5 w-5" />Email</button>
