@@ -23,7 +23,8 @@ const PublicPortfolio = () => {
   const [data, setData] = useState(null);
   const [notFound, setNotFound] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const [viewerPhoto, setViewerPhoto] = useState(0);
+  // ?photo=<n> opens the project at that photo (links from a profile's photo tiles)
+  const [viewerPhoto, setViewerPhoto] = useState(() => Math.max(0, Number(new URLSearchParams(window.location.search).get('photo')) || 0));
   const [reportOpen, setReportOpen] = useState(false);
   // { item } while the quote form is open (item is null for a general message)
   const [quoteFor, setQuoteFor] = useState(null);
@@ -60,6 +61,7 @@ const PublicPortfolio = () => {
     const next = new URLSearchParams(searchParams);
     if (id) next.set('project', id);
     else next.delete('project');
+    next.delete('photo');
     setSearchParams(next, { replace: true });
   };
   const openProject = (item, photo = 0) => {

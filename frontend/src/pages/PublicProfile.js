@@ -268,7 +268,7 @@ const PublicProfile = ({ open = false }) => {
             </Section>
           )}
 
-          <Section title="Portfolio Identity">
+          <Section title="Professional Identity">
             {user.bio ? <ReadMore text={user.bio} /> : <p className="pf-muted">No bio yet</p>}
             <InfoTiles items={[
               { icon: FiTarget, label: 'Specialization', value: user.specialization },

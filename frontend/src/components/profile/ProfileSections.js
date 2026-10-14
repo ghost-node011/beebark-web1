@@ -81,41 +81,54 @@ export const ReadMore = ({ text, limit = 320 }) => {
 };
 
 // Square photo tiles; category, title, place · year and role appear on hover
-// One project: photo on top, title and details always readable underneath
-const ProjectCard = ({ item, to, featured = false }) => (
-  <Link to={to} className={`group flex h-full flex-col overflow-hidden rounded-2xl border border-[#E6E1DB] bg-white transition hover:-translate-y-0.5 hover:shadow-lg ${featured ? 'lg:col-span-2 lg:row-span-2' : ''}`} data-testid={`profile-project-${item._id}`}>
-    <div className={`relative overflow-hidden bg-[#efebe5] ${featured ? 'aspect-[4/3] lg:aspect-auto lg:flex-1 lg:min-h-[22rem]' : 'aspect-[4/3]'}`}>
-      {item.images?.[0]
-        ? <img src={item.images[0]} alt={item.title} className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]" loading="lazy" />
-        : <div className="absolute inset-0 flex items-center justify-center p-4 text-center pf-serif text-lg pf-muted">{item.title}</div>}
-      {item.category && <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-[#32281F] backdrop-blur-sm">{item.category}</span>}
-      {item.images?.length > 1 && <span className="absolute bottom-3 right-3 rounded-full bg-black/55 px-2 py-0.5 text-xs text-white">{item.images.length} photos</span>}
-    </div>
-    <div className="px-4 py-3 sm:px-5 sm:py-4">
-      <p className={`pf-serif font-semibold leading-snug text-[#32281F] line-clamp-2 ${featured ? 'text-xl sm:text-2xl' : 'text-base sm:text-lg'}`}>{item.title}</p>
-      {(item.location || item.year || item.role) && (
-        <p className="mt-1 truncate text-sm pf-muted">{[item.role, item.location, item.year].filter(Boolean).join(' · ')}</p>
-      )}
-    </div>
-  </Link>
-);
+// One tile: a project's photo on top, title and details always readable underneath.
+// `photo` > 0 is another photo of the same project (used to fill the grid).
+const ProjectCard = ({ item, to, photo = 0, featured = false }) => {
+  const src = item.images?.[photo];
+  const count = item.images?.length || 0;
+  return (
+    <Link to={to} className={`group flex h-full flex-col overflow-hidden rounded-2xl border border-[#E6E1DB] bg-white transition hover:-translate-y-0.5 hover:shadow-lg ${featured ? 'lg:col-span-2 lg:row-span-2' : ''}`} data-testid={photo ? `profile-project-photo-${item._id}-${photo}` : `profile-project-${item._id}`}>
+      <div className={`relative overflow-hidden bg-[#efebe5] ${featured ? 'aspect-[4/3] lg:aspect-auto lg:flex-1 lg:min-h-[22rem]' : 'aspect-[4/3]'}`}>
+        {src
+          ? <img src={src} alt={photo ? `${item.title}, photo ${photo + 1}` : item.title} className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]" loading="lazy" />
+          : <div className="absolute inset-0 flex items-center justify-center p-4 text-center pf-serif text-lg pf-muted">{item.title}</div>}
+        {!photo && item.category && <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-[#32281F] backdrop-blur-sm">{item.category}</span>}
+        {count > 1 && <span className="absolute bottom-3 right-3 rounded-full bg-black/55 px-2 py-0.5 text-xs text-white">{photo ? `${photo + 1} / ${count}` : `${count} photos`}</span>}
+      </div>
+      <div className="px-4 py-3 sm:px-5 sm:py-4">
+        <p className={`pf-serif font-semibold leading-snug text-[#32281F] line-clamp-2 ${featured ? 'text-xl sm:text-2xl' : 'text-base sm:text-lg'}`}>{item.title}</p>
+        {photo ? (
+          <p className="mt-1 truncate text-sm pf-muted">Photo {photo + 1} of {count}</p>
+        ) : (item.location || item.year || item.role) && (
+          <p className="mt-1 truncate text-sm pf-muted">{[item.role, item.location, item.year].filter(Boolean).join(' · ')}</p>
+        )}
+      </div>
+    </Link>
+  );
+};
 
-// Portfolio preview on a profile. The layout follows the number of projects:
-// one large card, two side by side, or the first one featured with the rest beside it.
+// Portfolio preview on a profile. With fewer than three projects, more photos of
+// those projects fill the grid, so one project with many photos doesn't look empty.
+// The layout follows the number of tiles: one large card, two side by side, or the
+// first one featured with the rest beside it.
 export const ProjectGrid = ({ items, linkFor }) => {
   if (!items.length) return null;
-  if (items.length === 1) {
-    return <div className="grid max-w-3xl"><ProjectCard item={items[0]} to={linkFor(items[0])} /></div>;
+  const tiles = items.map((item) => ({ item, photo: 0 }));
+  for (let photo = 1; tiles.length < 3 && photo < 12; photo += 1) {
+    for (const item of items) if (tiles.length < 3 && (item.images?.length || 0) > photo) tiles.push({ item, photo });
   }
-  if (items.length === 2) {
-    return <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">{items.map((item) => <ProjectCard key={item._id} item={item} to={linkFor(item)} />)}</div>;
-  }
-  // Featured project over two columns and two rows, two beside it, then a row of three:
-  // 3 or 6 cards always fill the grid without gaps
-  const shown = items.slice(0, items.length >= 6 ? 6 : 3);
+  // Extra photos sit right after their own project
+  if (tiles.length > items.length) tiles.sort((a, b) => items.indexOf(a.item) - items.indexOf(b.item) || a.photo - b.photo);
+  const link = ({ item, photo }) => (photo ? `${linkFor(item)}${linkFor(item).includes('?') ? '&' : '?'}photo=${photo}` : linkFor(item));
+  const card = (t, featured = false) => <ProjectCard key={`${t.item._id}-${t.photo}`} item={t.item} photo={t.photo} to={link(t)} featured={featured} />;
+  if (tiles.length === 1) return <div className="grid max-w-3xl">{card(tiles[0])}</div>;
+  if (tiles.length === 2) return <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">{tiles.map((t) => card(t))}</div>;
+  // Featured tile over two columns and two rows, two beside it, then a row of three:
+  // 3 or 6 tiles always fill the grid without gaps
+  const shown = tiles.slice(0, tiles.length >= 6 ? 6 : 3);
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
-      {shown.map((item, i) => <ProjectCard key={item._id} item={item} to={linkFor(item)} featured={i === 0} />)}
+      {shown.map((t, i) => card(t, i === 0))}
     </div>
   );
 };

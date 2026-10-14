@@ -756,7 +756,7 @@ const Profile = () => {
               </SectionCard>
 
               <SectionCard
-                title="Portfolio Identity" sectionKey="identity" editingSection={editingSection}
+                title="Professional Identity" sectionKey="identity" editingSection={editingSection}
                 onEditClick={() => edit('identity')} onCancel={cancelSection} onSave={saveSection} saving={saving}
                 editContent={
                   <div className="space-y-4">
