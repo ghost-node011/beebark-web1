@@ -24,7 +24,7 @@ const {
 
 // Roles a user may self-select at signup (others are reserved/legacy)
 // Firms aren't an account type any more: people create company Pages instead
-const { cleanName, nameError } = require('../utils/names');
+const { cleanName, nameError, nameFromProvider } = require('../utils/names');
 const SELECTABLE_ROLES = ['student', 'professional'];
 
 const signToken = (user) =>
@@ -391,7 +391,7 @@ router.post(
       } else {
         isNewUser = true;
         user = new User({
-          name: payload.name || email.split('@')[0],
+          name: nameFromProvider(payload.name, email.split('@')[0]),
           username: await generateUniqueUsername(email),
           email,
           googleId: payload.sub,
@@ -484,7 +484,7 @@ router.post(
       } else {
         isNewUser = true;
         user = new User({
-          name: profile.name || email.split('@')[0],
+          name: nameFromProvider(profile.name, email.split('@')[0]),
           username: await generateUniqueUsername(email),
           email,
           linkedinId: profile.sub,
@@ -559,7 +559,7 @@ router.post(
         isNewUser = true;
         const digits = phone.replace(/[^0-9]/g, '');
         user = new User({
-          name: decoded.name || 'New User',
+          name: nameFromProvider(decoded.name),
           username: await generateUniqueUsername(digits || 'user'),
           // email is required + unique; phone-only users get a placeholder they
           // can replace later. Real email can be collected during onboarding.
