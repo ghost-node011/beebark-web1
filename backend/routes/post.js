@@ -3,6 +3,7 @@ const router = express.Router();
 const Post = require('../models/Post');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const { isAllowedImageUrl } = require('../utils/imageUrls');
 
 router.post('/create', auth, async (req, res) => {
   try {
@@ -18,7 +19,7 @@ router.post('/create', auth, async (req, res) => {
       content: String(content).trim().slice(0, 5000),
       title: String(title || '').trim().slice(0, 160),
       kind: KINDS.includes(kind) ? kind : 'update',
-      mediaUrl: typeof mediaUrl === 'string' && /^(https:\/\/|\/uploads\/)/.test(mediaUrl) ? mediaUrl : ''
+      mediaUrl: isAllowedImageUrl(mediaUrl) ? mediaUrl : ''
     });
 
     await post.save();

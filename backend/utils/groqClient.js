@@ -23,7 +23,9 @@ const PROVIDERS = [
     keysEnv: ['GROQ_API_KEYS', 'GROQ_API_KEY'],
     model: () => process.env.GROQ_MODEL || 'openai/gpt-oss-120b',
     lightModel: () => process.env.GROQ_LIGHT_MODEL || 'openai/gpt-oss-20b',
-    visionModel: () => process.env.GROQ_VISION_MODEL || 'qwen/qwen3.6-27b',
+    visionModel: () => process.env.GROQ_VISION_MODEL || 'qwen/qwen3.8-27b',
+    // Tried in turn when a vision model has been retired (Groq renames them often)
+    visionFallbacks: ['qwen/qwen3.8-27b', 'meta-llama/llama-4-scout-17b-16e-instruct', 'meta-llama/llama-4-maverick-17b-128e-instruct'],
     supportsJsonMode: true
   },
   {
@@ -88,16 +90,40 @@ const pickModel = (provider, opts) => {
   return provider.model();
 };
 
+// Models the provider said don't exist (retired); skipped from then on
+const retiredModels = new Set();
+const isRetired = (error) => {
+  const msg = String(error.response?.data?.error?.message || '');
+  return [400, 404].includes(error.response?.status) && /does not exist|decommissioned|not supported|no longer supported|model_not_found/i.test(msg);
+};
+
 const requestProvider = async (provider, key, messages, opts) => {
-  const body = { model: pickModel(provider, opts), messages, temperature: 0.3 };
-  if (opts?.json && provider.supportsJsonMode) body.response_format = { type: 'json_object' };
-  const { data } = await axios.post(provider.url, body, {
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    timeout: TIMEOUT_MS
-  });
-  const text = data?.choices?.[0]?.message?.content;
-  if (!text) throw new Error(`${provider.name} returned no content`);
-  return text;
+  const first = pickModel(provider, opts);
+  const models = opts?.vision ? [...new Set([first, ...(provider.visionFallbacks || [])])] : [first];
+  let lastError = null;
+  for (const model of models) {
+    if (models.length > 1 && retiredModels.has(`${provider.name}:${model}`)) continue;
+    const body = { model, messages, temperature: 0.3 };
+    if (opts?.json && provider.supportsJsonMode) body.response_format = { type: 'json_object' };
+    try {
+      const { data } = await axios.post(provider.url, body, {
+        headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+        timeout: TIMEOUT_MS
+      });
+      const text = data?.choices?.[0]?.message?.content;
+      if (!text) throw new Error(`${provider.name} returned no content`);
+      return text;
+    } catch (error) {
+      lastError = error;
+      if (models.length > 1 && isRetired(error)) {
+        retiredModels.add(`${provider.name}:${model}`);
+        console.warn(`AI: ${provider.name} model ${model} is unavailable, trying the next one`);
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw lastError || new Error(`${provider.name}: no usable model`);
 };
 
 /**

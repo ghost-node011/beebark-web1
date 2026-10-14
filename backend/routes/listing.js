@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const auth = require('../middleware/auth');
 const Listing = require('../models/Listing');
 const User = require('../models/User');
+const { allowedImageUrls } = require('../utils/imageUrls');
 
 // Property listings for real-estate professionals
 const router = express.Router();
@@ -25,7 +26,7 @@ function clean(body) {
   if (body.subtitle !== undefined) out.subtitle = clip(body.subtitle, 80);
   for (const k of Object.keys(ENUMS)) if (ENUMS[k].includes(body[k])) out[k] = body[k];
   for (const k of ['price', 'priceTo', 'area', 'bedrooms', 'bathrooms']) if (body[k] !== undefined) out[k] = num(body[k]);
-  if (Array.isArray(body.images)) out.images = body.images.filter((u) => typeof u === 'string' && /^(https?:\/\/|\/uploads\/)[^\s"'<>]+$/.test(u)).slice(0, 20);
+  if (Array.isArray(body.images)) out.images = allowedImageUrls(body.images, 20);
   if (Array.isArray(body.amenities)) out.amenities = body.amenities.map((a) => clip(a, 40)).filter(Boolean).slice(0, 30);
   return out;
 }

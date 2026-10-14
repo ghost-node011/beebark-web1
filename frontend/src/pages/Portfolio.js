@@ -137,7 +137,9 @@ const Portfolio = () => {
     } catch (error) {
       const message = error.response?.data?.message;
       const prefix = uploaded ? `${uploaded} of ${files.length} photos added. ` : '';
-      toast.error(prefix + (message === 'File too large' ? 'One photo is too large — each must be under 18MB.' : 'Some photos could not be uploaded. Please try those again.'));
+      // Photos refused by the safety check (or the check being busy) come with their own reason
+      const reason = error.response?.data?.moderation ? error.response.data.error : '';
+      toast.error(prefix + (reason || (message === 'File too large' ? 'One photo is too large — each must be under 18MB.' : 'Some photos could not be uploaded. Please try those again.')), { duration: reason ? 8000 : 4000 });
     } finally {
       setUploadProgress(null);
     }

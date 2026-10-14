@@ -9,6 +9,7 @@ const { isBlockedBetween } = require('../utils/userRelations');
 const { sendQuoteRequestEmail } = require('../utils/email');
 const { analyzePortfolioItem, suggestPortfolioStyle } = require('../utils/portfolioAdvisor');
 const { draftPortfolioFromImages } = require('../utils/portfolioAutoGenerator');
+const { allowedImageUrls } = require('../utils/imageUrls');
 
 // Build one-time "starter" suggestions from resume/experience data, without
 // saving anything — used only when the user's portfolio is still empty.
@@ -90,7 +91,8 @@ const extraFields = (body, images) => {
   }
   return { fields };
 };
-const imageList = (images) => (Array.isArray(images) ? images.filter((u) => typeof u === 'string' && u) : []);
+// Only images uploaded through BeeBark (checked on upload); links elsewhere are dropped
+const imageList = (images) => allowedImageUrls(images, 40);
 
 const LOOK_TEXT_LIMITS = { tagline: 160, aboutText: 1200, closingLine: 120, contactInfo: 160 };
 const settingsOf = (user) => ({

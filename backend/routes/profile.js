@@ -23,6 +23,7 @@ const { availabilityOptionsFor, PROFICIENCY, EMPLOYMENT_TYPES, SOCIAL_PLATFORMS,
 const Listing = require('../models/Listing');
 const Job = require('../models/Job');
 const { isBlockedBetween } = require('../utils/userRelations');
+const { isAllowedImageUrl, IMAGE_URL_ERROR } = require('../utils/imageUrls');
 
 const clip = (v, n) => String(v ?? '').trim().slice(0, n);
 
@@ -602,12 +603,18 @@ router.put('/update', auth, async (req, res) => {
     }
     if (bio !== undefined) updateData.bio = bio;
     if (pronouns !== undefined) updateData.pronouns = String(pronouns).slice(0, 30);
-    if (coverPhoto !== undefined) updateData.coverPhoto = coverPhoto;
+    if (coverPhoto !== undefined) {
+      if (coverPhoto && !isAllowedImageUrl(coverPhoto)) return res.status(400).json({ error: IMAGE_URL_ERROR, field: 'coverPhoto' });
+      updateData.coverPhoto = coverPhoto || '';
+    }
     if (location !== undefined && waitlistedStateOf(location)) {
       return res.status(400).json({ error: `BeeBark isn't open in ${waitlistedStateOf(location)} yet. Choose another city.`, field: 'location' });
     }
     if (location !== undefined) updateData.location = String(location).slice(0, 120);
-    if (profilePic !== undefined) updateData.profilePic = profilePic;
+    if (profilePic !== undefined) {
+      if (profilePic && !isAllowedImageUrl(profilePic)) return res.status(400).json({ error: IMAGE_URL_ERROR, field: 'profilePic' });
+      updateData.profilePic = profilePic || '';
+    }
     if (Array.isArray(skills)) updateData.skills = asTagList(skills).slice(0, 30);
     if (Array.isArray(experience)) {
       updateData.experience = cleanExperience(experience);

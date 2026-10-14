@@ -4,12 +4,30 @@ const fs = require('fs');
 const auth = require('../middleware/auth');
 const { upload, uploadChatFile, uploadToCloudinary } = require('../config/cloudinary');
 const { verifyProfilePhoto } = require('../utils/photoVerifier');
+const { moderateFiles } = require('../utils/imageModeration');
+
+// Runs before anything is stored: refuses nudity, sexual content, gore and hate
+// symbols. Sends the error itself and returns false when the upload is refused.
+async function safeOrRefuse(req, res, files, opts = {}) {
+  const check = await moderateFiles(files, { ...opts, userId: String(req.userId || '') });
+  if (check.ok) return true;
+  if (check.unavailable) {
+    res.status(503).json({ error: check.rejected[0]?.reason, moderation: true, retry: true });
+  } else {
+    const error = check.rejected.length === 1 || files.length === 1
+      ? check.rejected[0].reason
+      : `${check.rejected.length} of your images aren't allowed on BeeBark (${check.rejected.map((r) => r.name).join(', ')}). ${check.rejected[0].reason}`;
+    res.status(422).json({ error, rejected: check.rejected, moderation: true });
+  }
+  return false;
+}
 
 router.post('/image', auth, upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No image provided' });
     }
+    if (!(await safeOrRefuse(req, res, [req.file]))) return;
 
     if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY) {
       const result = await uploadToCloudinary(req.file.path);
@@ -41,6 +59,8 @@ router.post('/profile-photo', auth, upload.single('image'), async (req, res) => 
       return res.status(400).json({ error: 'No image provided' });
     }
 
+    if (!(await safeOrRefuse(req, res, [req.file], { profile: true }))) return;
+
     const check = await verifyProfilePhoto(req.file.path, req.file.mimetype);
     if (check && !check.suitable) {
       if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
@@ -68,6 +88,7 @@ router.post('/multiple', auth, upload.array('images', 10), async (req, res) => {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: 'No images provided' });
     }
+    if (!(await safeOrRefuse(req, res, req.files))) return;
 
     const images = [];
     
@@ -104,6 +125,7 @@ router.post('/chat-files', auth, (req, res) => {
     }
     if (!req.files || req.files.length === 0) return res.status(400).json({ error: 'No files provided' });
     try {
+      if (!(await safeOrRefuse(req, res, req.files))) return;
       const cloud = process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY;
       const files = [];
       for (const file of req.files) {

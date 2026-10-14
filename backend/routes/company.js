@@ -6,6 +6,7 @@ const Company = require('../models/Company');
 const User = require('../models/User');
 const Job = require('../models/Job');
 const Notification = require('../models/Notification');
+const { isAllowedImageUrl } = require('../utils/imageUrls');
 const { PAGE_TYPES, TEAM_SIZES } = Company;
 
 // Company Pages: anyone can create one, follow one, or list one in Experience
@@ -20,9 +21,10 @@ const clip = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
 const list = (v, maxItems, maxLen) => [...new Set((Array.isArray(v) ? v : []).map((x) => clip(x, maxLen)).filter(Boolean))].slice(0, maxItems);
 const withHttps = (v) => (v && !/^https?:\/\//i.test(v) ? `https://${v}` : v);
 const validUrl = (v) => { try { const u = new URL(v); return /^https?:$/.test(u.protocol) && u.hostname.includes('.'); } catch { return false; } };
+// Only images uploaded through BeeBark (checked on upload)
 const imageUrl = (v) => {
   const s = clip(v, 500);
-  return /^https:\/\/\S+$/i.test(s) || /^\/uploads\/[\w.-]+$/.test(s) ? s : '';
+  return isAllowedImageUrl(s) ? s : '';
 };
 const slugify = (v) => String(v || '').toLowerCase().normalize('NFKD').replace(/[^\w\s-]/g, '').trim()
   .replace(/[\s_]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
