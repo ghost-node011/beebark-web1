@@ -118,7 +118,7 @@ const TopBarFrame = () => {
             <DropdownMenuItem onClick={() => navigate('/settings')} data-testid="menu-settings"><FiSettings className="mr-2" />Settings & privacy</DropdownMenuItem>
             <DropdownMenuItem onClick={() => setInviteOpen(true)} data-testid="menu-invite"><FiUserPlus className="mr-2" />Invite to BeeBark</DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate('/terms')} data-testid="menu-user-agreement"><FiFileText className="mr-2" />User Agreement</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate('/settings#settings-legal')} data-testid="menu-policies"><FiFileText className="mr-2" />All policies</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate('/settings#settings-legal')} data-testid="menu-policies"><FiFileText className="mr-2" />Legal</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} data-testid="logout-this-device"><FiLogOut className="mr-2" />Log out</DropdownMenuItem>
             <DropdownMenuItem onClick={handleLogoutAll} className="text-red-600" data-testid="logout-all-devices">

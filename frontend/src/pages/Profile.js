@@ -277,6 +277,22 @@ const Profile = () => {
     }
   };
 
+  // Remove the cover: the default background comes back
+  const removeCoverPhoto = async () => {
+    if (!window.confirm('Remove your cover photo? The default background will be shown instead.')) return;
+    setUploadingCover(true);
+    try {
+      const response = await axios.put(`${API_URL}/api/profile/update`, { coverPhoto: '' });
+      setUser(response.data.user);
+      setFormData((f) => ({ ...f, coverPhoto: '' }));
+      toast.success('Cover photo removed');
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Could not remove the cover photo');
+    } finally {
+      setUploadingCover(false);
+    }
+  };
+
   // Shared by the Analytics / Work Gallery / Activity visibility pills —
   // `field` is galleryPublic or activityPublic (analytics are always private).
   const handleVisibilityToggle = async (field, checked) => {
@@ -289,29 +305,32 @@ const Profile = () => {
     }
   };
 
+  // "Add Photos": each photo becomes a portfolio project straight away (no AI step),
+  // titled from its file name; titles and details can be edited in Portfolio
+  const projectTitleFrom = (file) => {
+    const base = file.name.replace(/\.[a-z0-9]+$/i, '').replace(/[_-]+/g, ' ').trim();
+    return !base || /^(img|dsc|pxl|image|photo|screenshot|whatsapp image)\b|^\d[\d\s]*$/i.test(base) ? 'New project' : base.slice(0, 80);
+  };
   const handleGalleryFiles = async (fileList) => {
     const files = Array.from(fileList || []);
     if (!files.length) return;
+    const tooBig = files.find((f) => f.size > 18 * 1024 * 1024);
+    if (tooBig) return toast.error(`${tooBig.name} is too large. Each photo must be under 18 MB.`);
     setUploadingGallery(true);
     try {
       const uploadBody = new FormData();
       files.forEach((f) => uploadBody.append('images', f));
       const uploadRes = await axios.post(`${API_URL}/api/upload/multiple`, uploadBody, { headers: { 'Content-Type': 'multipart/form-data' } });
       const urls = (uploadRes.data.images || []).map((img) => img.url);
-      const draftRes = await axios.post(`${API_URL}/api/portfolio/auto-generate`, { images: urls });
-      const drafts = draftRes.data.drafts || [];
-      const workDrafts = drafts.filter((d) => d.isWorkPhoto);
-      const skipped = drafts.length - workDrafts.length;
-      if (workDrafts.length > 0) {
-        await axios.post(`${API_URL}/api/portfolio/items/bulk`, {
-          items: workDrafts.map((d) => ({ title: d.title, description: d.description, images: [d.imageUrl], tags: d.tags, category: d.category }))
-        });
-        toast.success(`Added ${workDrafts.length} to your Work Gallery — refine details anytime in Portfolio`);
-        fetchGalleryPreview();
-      }
-      if (skipped > 0) toast(`${skipped} photo${skipped > 1 ? 's' : ''} skipped — didn't look like work photos`);
+      if (!urls.length) throw new Error('No photos were uploaded');
+      const res = await axios.post(`${API_URL}/api/portfolio/items/bulk`, {
+        items: urls.map((url, i) => ({ title: projectTitleFrom(files[i] || {}), images: [url] }))
+      });
+      const added = res.data.items?.length || urls.length;
+      toast.success(`Added ${added} photo${added === 1 ? '' : 's'} to your portfolio. Add titles and details in Portfolio.`);
+      await fetchGalleryPreview();
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Failed to add photos');
+      toast.error(error.response?.data?.error || error.message || 'Could not add the photos. Please try again.', { duration: 8000 });
     } finally {
       setUploadingGallery(false);
     }
@@ -464,6 +483,12 @@ const Profile = () => {
     axios.get(`${API_URL}/api/profile/me`).then((res) => setUser(res.data.user)).catch(() => {});
   };
 
+  // Experience added from the resume review: show it straight away (with company logos)
+  const handleExperienceSaved = (experience) => {
+    setFormData((f) => ({ ...f, experience }));
+    axios.get(`${API_URL}/api/profile/me`).then((res) => setUser(res.data.user)).catch(() => {});
+  };
+
   // Education added from the resume review: show it straight away
   const handleEducationSaved = (education) => {
     setFormData((f) => ({ ...f, education }));
@@ -539,12 +564,20 @@ const Profile = () => {
               </>
             }
             headerExtra={
-              <label className="absolute top-3 right-3 z-20 cursor-pointer" data-testid="cover-photo-upload">
-                <input type="file" accept="image/*" onChange={(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) handleCoverPhotoFile(f); }} className="hidden" disabled={uploadingCover} />
-                <span className="flex items-center gap-1.5 text-xs font-medium text-white bg-black/50 hover:bg-black/70 backdrop-blur-sm rounded-lg px-3 py-1.5 transition">
-                  <FiCamera className="w-3.5 h-3.5" />{uploadingCover ? 'Uploading...' : 'Change cover'}
-                </span>
-              </label>
+              <div className="absolute top-3 right-3 z-20 flex items-center gap-2">
+                {(formData.coverPhoto || user?.coverPhoto) && (
+                  <button type="button" onClick={removeCoverPhoto} disabled={uploadingCover} data-testid="cover-photo-remove"
+                    className="flex items-center gap-1.5 rounded-lg bg-black/50 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm transition hover:bg-black/70 disabled:opacity-60">
+                    <FiTrash2 className="w-3.5 h-3.5" />Remove
+                  </button>
+                )}
+                <label className="cursor-pointer" data-testid="cover-photo-upload">
+                  <input type="file" accept="image/*" onChange={(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) handleCoverPhotoFile(f); }} className="hidden" disabled={uploadingCover} />
+                  <span className="flex items-center gap-1.5 text-xs font-medium text-white bg-black/50 hover:bg-black/70 backdrop-blur-sm rounded-lg px-3 py-1.5 transition">
+                    <FiCamera className="w-3.5 h-3.5" />{uploadingCover ? 'Saving...' : (formData.coverPhoto || user?.coverPhoto) ? 'Change cover' : 'Add cover'}
+                  </span>
+                </label>
+              </div>
             }
           />
 
@@ -977,7 +1010,7 @@ const Profile = () => {
                 onEditClick={() => edit('skills')} onCancel={cancelSection} onSave={saveSection} saving={saving}
                 editContent={
                   <div className="space-y-3">
-                    <ResumeImport onImported={handleResumeImported} onEducationSaved={handleEducationSaved} />
+                    <ResumeImport onImported={handleResumeImported} onEducationSaved={handleEducationSaved} onExperienceSaved={handleExperienceSaved} />
                     <SkillPicker
                       skills={formData.skills}
                       onAdd={(skill) => setFormData((f) => ({ ...f, skills: [...f.skills, skill] }))}
@@ -1101,7 +1134,7 @@ const Profile = () => {
                   <p className="text-slate-500 mb-3">Upload your resume to fill your skills and apply to jobs faster. Only you can see it.</p>
                 )}
                 <div className="mt-3">
-                  <ResumeImport onImported={handleResumeImported} onEducationSaved={handleEducationSaved} />
+                  <ResumeImport onImported={handleResumeImported} onEducationSaved={handleEducationSaved} onExperienceSaved={handleExperienceSaved} />
                   {user?.resume?.url && <p className="text-xs text-gray-400 mt-1">Uploading a new file replaces the current one.</p>}
                 </div>
               </Card>

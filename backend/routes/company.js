@@ -7,6 +7,7 @@ const User = require('../models/User');
 const Job = require('../models/Job');
 const Notification = require('../models/Notification');
 const { isAllowedImageUrl } = require('../utils/imageUrls');
+const { LEGAL_VERSION } = require('../utils/legal');
 const { PAGE_TYPES, TEAM_SIZES } = Company;
 
 // Company Pages: anyone can create one, follow one, or list one in Experience
@@ -151,8 +152,8 @@ router.post('/', auth, async (req, res) => {
       if (req.body.slug) return res.status(400).json({ error: 'That page address is taken' });
       slug = await freeSlug(fields.name);
     }
-    if (!req.body.confirmed) return res.status(400).json({ error: 'Please confirm you can act for this company' });
-    const page = await Company.create({ ...fields, slug, owner: req.userId, admins: [], followers: [req.userId] });
+    if (!req.body.confirmed) return res.status(400).json({ error: 'Please confirm you can act for this company and accept the Business Accounts & Hiring terms' });
+    const page = await Company.create({ ...fields, slug, owner: req.userId, admins: [], followers: [req.userId], termsAcceptance: { by: req.userId, version: LEGAL_VERSION, acceptedAt: new Date() } });
     res.status(201).json({ page: { ...pagePublic(page), role: 'owner' } });
   } catch (error) {
     res.status(500).json({ error: 'Failed to create the page' });

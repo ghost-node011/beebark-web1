@@ -140,6 +140,16 @@ const userSchema = new mongoose.Schema({
     updatedAt: { type: Date, default: Date.now }
   }],
   // Set by the BeeBark team only (identity checked / paid plan)
+  // Acceptance of the User Agreement and Privacy Policy (version, time, how)
+  legalConsent: {
+    version: { type: String, default: '' },
+    acceptedAt: Date,
+    method: { type: String, default: '' },
+    ip: { type: String, default: '' },
+    userAgent: { type: String, default: '' }
+  },
+  // When the "account created" email went out (sent once)
+  signupEmailSentAt: Date,
   badges: {
     verified: { type: Boolean, default: false },
     pro: { type: Boolean, default: false },

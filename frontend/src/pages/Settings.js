@@ -31,7 +31,7 @@ const NAV = [
   { id: 'privacy', label: 'Privacy', icon: FiLock },
   { id: 'jobs', label: 'Job settings', icon: FiBriefcase },
   { id: 'blocked', label: 'Blocked people', icon: FiSlash },
-  { id: 'legal', label: 'Policies', icon: FiFileText },
+  { id: 'legal', label: 'Legal', icon: FiFileText },
   { id: 'signout', label: 'Sign out', icon: FiLogOut },
   { id: 'close', label: 'Close account', icon: FiPauseCircle, danger: true }
 ];
@@ -257,7 +257,7 @@ const Settings = () => {
             )}
           </Section>
 
-          <Section id="legal" icon={FiFileText} title="Policies">
+          <Section id="legal" icon={FiFileText} title="Legal">
             <div className="divide-y divide-gray-100" data-testid="settings-policies">
               {LEGAL_DOCS.map((d) => (
                 <Link key={d.slug} to={d.path} className="flex items-center justify-between py-2.5 text-sm font-medium text-black hover:text-[#7A6450]">

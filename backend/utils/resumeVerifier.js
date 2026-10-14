@@ -1,5 +1,6 @@
 const { askGroqForJson } = require('./groqClient');
 const { cleanEducation } = require('./educationFromResume');
+const { cleanExperienceEntries } = require('./experienceFromResume');
 
 const VALID_INTENT = ['learn', 'network', 'hire', 'get_hired'];
 const VALID_INDUSTRY = ['architecture', 'interiors', 'construction', 'real_estate', 'related'];
@@ -40,7 +41,9 @@ concise/punchy, etc) — order them best-first, since the first one will be offe
 recommended default. Also suggest which of these platform intents apply —
 ${VALID_INTENT.join(', ')} — and which industries apply — ${VALID_INDUSTRY.join(', ')} — based only
 on what the resume actually shows. Also list the education entries exactly as the resume states
-them (school, degree, field of study, start and end year); leave a value empty or null when the
+them (school, degree, field of study, start and end year), and every work experience entry
+(job title, company, location, start and end month as "YYYY-MM", whether it is the current job,
+and the description or bullet points joined with new lines). Leave a value empty or null when the
 resume doesn't say it, and never guess.
 
 Respond ONLY with a JSON object in this exact shape:
@@ -52,10 +55,11 @@ Respond ONLY with a JSON object in this exact shape:
   "bios": ["bio option 1", "bio option 2", "bio option 3", "bio option 4", "bio option 5"],
   "suggestedIntent": ["learn"],
   "suggestedIndustries": ["architecture"],
-  "education": [{ "school": "CEPT University", "degree": "B.Arch", "field": "Architecture", "startYear": 2013, "endYear": 2018 }]
+  "education": [{ "school": "CEPT University", "degree": "B.Arch", "field": "Architecture", "startYear": 2013, "endYear": 2018 }],
+  "experience": [{ "title": "Senior Architect", "company": "Studio Mehta", "location": "Mumbai", "startDate": "2021-04", "endDate": null, "current": true, "description": "Led residential projects" }]
 }
 If it is NOT a resume, respond with:
-{ "isResume": false, "reason": "one short sentence explaining what it looks like instead", "detectedName": null, "detectedLocation": null, "bios": [], "suggestedIntent": [], "suggestedIndustries": [], "education": [] }`;
+{ "isResume": false, "reason": "one short sentence explaining what it looks like instead", "detectedName": null, "detectedLocation": null, "bios": [], "suggestedIntent": [], "suggestedIndustries": [], "education": [], "experience": [] }`;
 
   try {
     const result = await askGroqForJson(prompt);
@@ -70,7 +74,8 @@ If it is NOT a resume, respond with:
       bios: Array.isArray(result.bios) ? result.bios.slice(0, 5) : [],
       suggestedIntent: (Array.isArray(result.suggestedIntent) ? result.suggestedIntent : []).filter((i) => VALID_INTENT.includes(i)),
       suggestedIndustries: (Array.isArray(result.suggestedIndustries) ? result.suggestedIndustries : []).filter((i) => VALID_INDUSTRY.includes(i)),
-      education: cleanEducation(result.education)
+      education: cleanEducation(result.education),
+      experience: cleanExperienceEntries(result.experience)
     };
   } catch (error) {
     console.error('Resume analysis error:', error.message);

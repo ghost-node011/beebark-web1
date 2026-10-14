@@ -1,5 +1,12 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
+
+// Set on the sign-up page when the consent box is ticked, so Google, LinkedIn and
+// phone sign-ups (some finish on another page) record the acceptance too
+export const rememberTermsAccepted = (accepted) => {
+  try { if (accepted) sessionStorage.setItem('bb-accept-terms', '1'); else sessionStorage.removeItem('bb-accept-terms'); } catch { /* storage blocked */ }
+};
+const termsAcceptedHere = () => { try { return sessionStorage.getItem('bb-accept-terms') === '1'; } catch { return false; } };
 import { API_URL } from '../config/api';
 
 const AuthContext = createContext();
@@ -101,8 +108,8 @@ export const AuthProvider = ({ children }) => {
 
   // Step 1 of registration: creates an unverified account and emails an OTP.
   // Returns { requiresVerification, email } — no token yet.
-  const registerInit = async (name, email, password, role) => {
-    const response = await axios.post(`${API_URL}/api/auth/register`, { name, email, password, role });
+  const registerInit = async (name, email, password, role, acceptTerms = false) => {
+    const response = await axios.post(`${API_URL}/api/auth/register`, { name, email, password, role, acceptTerms });
     return response.data;
   };
 
@@ -119,19 +126,19 @@ export const AuthProvider = ({ children }) => {
 
   // Sign in / sign up with a Google ID token (credential) from Google Identity Services
   const googleLogin = async (credential, role) => {
-    const response = await axios.post(`${API_URL}/api/auth/google`, { credential, role });
+    const response = await axios.post(`${API_URL}/api/auth/google`, { credential, role, acceptTerms: termsAcceptedHere() });
     return establishSession(response.data, true);
   };
 
   // Sign in / sign up with a LinkedIn authorization code (OpenID Connect)
   const linkedinLogin = async (code, redirectUri) => {
-    const response = await axios.post(`${API_URL}/api/auth/linkedin`, { code, redirectUri });
+    const response = await axios.post(`${API_URL}/api/auth/linkedin`, { code, redirectUri, acceptTerms: termsAcceptedHere() });
     return establishSession(response.data, true);
   };
 
   // Sign in / sign up with a Firebase phone (SMS OTP) ID token
   const firebaseLogin = async (idToken) => {
-    const response = await axios.post(`${API_URL}/api/auth/firebase`, { idToken });
+    const response = await axios.post(`${API_URL}/api/auth/firebase`, { idToken, acceptTerms: termsAcceptedHere() });
     return establishSession(response.data, true);
   };
 

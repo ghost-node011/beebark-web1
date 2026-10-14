@@ -294,6 +294,30 @@ const sendWelcomeEmail = async (toEmail, name) => {
   });
 };
 
+// --- Account created (sent once, right after sign-up) ---
+const sendAccountCreatedEmail = async (toEmail, name) => {
+  const firstName = (name || '').split(' ')[0] || 'there';
+  const body = `
+    <p style="margin:0 0 16px 0;font-size:15px;color:${BRAND.ink};line-height:1.6;">Hi ${firstName},</p>
+    <p style="margin:0 0 16px 0;font-size:15px;color:${BRAND.ink};line-height:1.6;">
+      Your <strong>BeeBark</strong> account has been created with this email address. You can now sign in any time.
+    </p>
+    <p style="margin:0 0 16px 0;font-size:15px;color:${BRAND.ink};line-height:1.6;">
+      Next, finish setting up your profile: add your role, your city and a few projects, so the right people can find you.
+    </p>
+    ${button('Finish your profile', `${APP_URL()}/onboarding`)}
+    <p style="margin:16px 0 0 0;font-size:13px;color:${BRAND.muted};line-height:1.6;">
+      If you didn't create this account, reply to this email and we'll look into it.
+    </p>
+  `;
+  await send({
+    type: 'signup',
+    to: toEmail,
+    subject: 'Your BeeBark account is ready',
+    html: layout({ preheader: 'Your account is created. Finish your profile to get started.', heading: 'Your account is ready', body })
+  });
+};
+
 // --- New sign-in alert (a device this account hasn't used before) ---
 // details: { device: "Chrome on macOS", ip, at: Date, method: "password" | "google" | ... }
 const sendLoginAlertEmail = async (toEmail, name, { device, ip, at = new Date(), method = '' } = {}) => {
@@ -432,4 +456,4 @@ const sendQuoteRequestEmail = async (toEmail, ownerName, { buyer, product, quant
   });
 };
 
-module.exports = { sendOtpEmail, sendWelcomeEmail, sendPasswordResetEmail, sendPasswordResetOtpEmail, sendWaitlistEmail, sendNeedsAnswersEmail, sendQuoteRequestEmail, sendLoginAlertEmail, send };
+module.exports = { sendOtpEmail, sendWelcomeEmail, sendAccountCreatedEmail, sendPasswordResetEmail, sendPasswordResetOtpEmail, sendWaitlistEmail, sendNeedsAnswersEmail, sendQuoteRequestEmail, sendLoginAlertEmail, send };

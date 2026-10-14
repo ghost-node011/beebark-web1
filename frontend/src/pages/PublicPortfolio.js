@@ -13,6 +13,7 @@ import ShareMenu from '../components/ShareMenu';
 import ReportDialog from '../components/ReportDialog';
 import { exportPortfolioPdf } from '../utils/exportPortfolioPdf';
 import BeeLoader from '../components/BeeLoader';
+import LegalFooter from '../components/LegalFooter';
 import { FiArrowLeft, FiDownload, FiShare2, FiFlag, FiBookmark, FiMail, FiPhone, FiGlobe, FiMapPin, FiMessageCircle } from 'react-icons/fi';
 
 const PublicPortfolio = () => {
@@ -277,6 +278,7 @@ const PublicPortfolio = () => {
           itemTitle={viewingItem.title}
         />
       )}
+      <LegalFooter />
     </div>
   );
 };

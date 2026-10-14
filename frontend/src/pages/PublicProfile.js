@@ -21,6 +21,7 @@ import {
   sortExperience, PeopleGrid, Section, AnalyticsCards,
   ProjectGrid, ExperienceCard, ListingCards, ContactInfoDialog, InfoTiles, ReadMore, ActivityCards
 } from '../components/profile/ProfileSections';
+import LegalFooter from '../components/LegalFooter';
 import { personHeadline } from '../utils/personHeadline';
 
 const ROLE_LABELS = { student: 'Student', professional: 'Professional', firm: 'Firm', recruiter: 'Recruiter', company: 'Firm' };
@@ -133,6 +134,7 @@ const PublicProfile = ({ open = false }) => {
     <div className={`min-h-screen ${PAGE_BG}`}>
       {open ? <OpenHeader username={username} /> : (<><Sidebar /><TopBar /></>)}
       <div className={open ? 'pt-16' : 'lg:ml-64 mt-16'}><div className="p-4 sm:p-6 lg:p-8">{children}</div></div>
+      {open && <LegalFooter />}
     </div>
   );
 

@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth, postAuthPath } from '../context/AuthContext';
+import { useAuth, postAuthPath, rememberTermsAccepted } from '../context/AuthContext';
 import { toast } from 'sonner';
 import { FaEnvelope, FaUser, FaLock, FaEye, FaEyeSlash, FaCheck } from 'react-icons/fa';
 import AuthShell from '../components/auth/AuthShell';
@@ -39,6 +39,9 @@ const Register = () => {
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [accepted, setAccepted] = useState(false); // unticked until the person ticks it
+  const [showConsentError, setShowConsentError] = useState(false);
+  const accept = (v) => { setAccepted(v); rememberTermsAccepted(v); if (v) setShowConsentError(false); };
 
   const strength = useMemo(() => evaluatePassword(form.password), [form.password]);
   const update = (key) => (e) => setForm({ ...form, [key]: e.target.value });
@@ -58,10 +61,11 @@ const Register = () => {
     if (nameError(form.name)) return toast.error(nameError(form.name));
     if (!strength.allValid) return toast.error('Please meet all password requirements');
     if (form.password !== form.confirmPassword) return toast.error('Passwords do not match');
+    if (!accepted) { setShowConsentError(true); return toast.error('Please accept the User Agreement and Privacy Policy'); }
 
     setLoading(true);
     try {
-      await registerInit(form.name.trim(), form.email.trim(), form.password);
+      await registerInit(form.name.trim(), form.email.trim(), form.password, undefined, true);
       toast.success('Verification code sent to your email');
       setStep(1);
     } catch (error) {
@@ -137,18 +141,32 @@ const Register = () => {
               )}
             </div>
 
+            <label className={`flex items-start gap-3 rounded-xl border p-3 text-sm leading-relaxed ${showConsentError && !accepted ? 'border-red-400 bg-red-50' : 'border-[#E6E1DB] bg-white'}`} data-testid="register-consent">
+              <input type="checkbox" checked={accepted} onChange={(e) => accept(e.target.checked)} required className="mt-0.5 h-4 w-4 shrink-0 accent-[#32281F]" data-testid="register-consent-checkbox" />
+              <span className="text-[#3D342C]">
+                I'm 18 or older and I agree to BeeBark's{' '}
+                <a href="/terms" target="_blank" rel="noreferrer" className="font-semibold text-[#32281F] underline">User Agreement</a> and{' '}
+                <a href="/privacy" target="_blank" rel="noreferrer" className="font-semibold text-[#32281F] underline">Privacy Policy</a>, and to follow the{' '}
+                <a href="/community-standards" target="_blank" rel="noreferrer" className="font-semibold text-[#32281F] underline">Community Standards</a>.
+              </span>
+            </label>
+            {showConsentError && !accepted && <p className="-mt-2 text-xs text-red-600">Tick the box to create your account.</p>}
+
             <button type="submit" disabled={loading} className="auth-yellow-btn disabled:opacity-50 disabled:cursor-not-allowed" data-testid="register-submit-button">
               {loading ? 'Sending code...' : 'Create account'}
             </button>
-            <p className="text-center text-xs leading-relaxed text-[#857B71]" data-testid="register-consent">
-              By creating an account you confirm you're 18 or older and agree to BeeBark's{' '}
-              <a href="/terms" target="_blank" rel="noreferrer" className="font-medium text-[#32281F] underline">User Agreement</a>,{' '}
-              <a href="/privacy" target="_blank" rel="noreferrer" className="font-medium text-[#32281F] underline">Privacy Policy</a> and{' '}
-              <a href="/community-standards" target="_blank" rel="noreferrer" className="font-medium text-[#32281F] underline">Community Standards</a>.
-            </p>
           </form>
 
-          <SocialAuth onGoogleCredential={handleGoogle} text="signup_with" />
+          {/* Google, LinkedIn and phone sign-up also need the box ticked first */}
+          <div className="relative" data-testid="register-social">
+            <div className={accepted ? '' : 'pointer-events-none select-none opacity-40'} aria-hidden={!accepted}>
+              <SocialAuth onGoogleCredential={handleGoogle} text="signup_with" />
+            </div>
+            {!accepted && (
+              <button type="button" onClick={() => { setShowConsentError(true); toast.error('Please accept the User Agreement and Privacy Policy first'); }}
+                className="absolute inset-0 z-10 cursor-not-allowed" aria-label="Accept the User Agreement and Privacy Policy to continue with Google, LinkedIn or phone" data-testid="register-social-locked" />
+            )}
+          </div>
           <p className="mt-8 text-center text-[15px] text-[#6B625A]">
             Already a member?{' '}
             <Link to="/login" className="font-semibold text-[#1C1712] hover:underline">Sign in</Link>

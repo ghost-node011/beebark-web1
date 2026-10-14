@@ -18,6 +18,8 @@ const { rateProfile } = require('../utils/profileRating');
 const PortfolioItem = require('../models/PortfolioItem');
 const { cleanName, nameError } = require('../utils/names');
 const { educationFromResume } = require('../utils/educationFromResume');
+const { experienceFromResume } = require('../utils/experienceFromResume');
+const { LEGAL_VERSION, consentRecord } = require('../utils/legal');
 const Post = require('../models/Post');
 const { availabilityOptionsFor, PROFICIENCY, EMPLOYMENT_TYPES, SOCIAL_PLATFORMS, socialLinkError, yearsOfExperience } = require('../utils/profileOptions');
 const Listing = require('../models/Listing');
@@ -56,6 +58,18 @@ function cleanExperience(list) {
       ...(mongoose.isValidObjectId(e?.companyPage) ? { companyPage: String(e.companyPage) } : {})
     };
   }).filter((e) => e.title || e.company);
+}
+
+// Experience entries from a resume, each with the BeeBark company page whose name matches (if any)
+async function withCompanyPages(entries) {
+  const names = [...new Set(entries.map((e) => String(e.company || '').trim()).filter(Boolean))];
+  if (!names.length) return entries;
+  const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const pages = await Company.find({ name: { $in: names.map((n) => new RegExp(`^${esc(n)}$`, 'i')) } }).select('name slug logo').lean();
+  return entries.map((e) => {
+    const page = pages.find((p) => p.name.toLowerCase() === String(e.company || '').trim().toLowerCase());
+    return page ? { ...e, companyPage: String(page._id), page: { _id: String(page._id), name: page.name, slug: page.slug, logo: page.logo } } : e;
+  });
 }
 
 function cleanEducation(list) {
@@ -194,6 +208,8 @@ const meResponse = (user) => ({
       readReceipts: user.settings?.readReceipts !== false,
       jobsView: user.settings?.jobsView === 'list' ? 'list' : 'swipe',
       regionWaitlist: user.regionWaitlist?.state ? user.regionWaitlist : null,
+      // Accepted the current User Agreement and Privacy Policy
+      consentCurrent: user.legalConsent?.version === LEGAL_VERSION,
       publicProfile: user.settings?.publicProfile !== false,
       followerCount: (user.followers || []).length,
       followingCount: (user.following || []).length,
@@ -717,6 +733,17 @@ router.post('/region-waitlist', auth, async (req, res) => {
   }
 });
 
+// Accept the current User Agreement and Privacy Policy: { acceptTerms: true }
+router.post('/consent', auth, async (req, res) => {
+  try {
+    if (req.body.acceptTerms !== true) return res.status(400).json({ error: 'Tick the box to accept the User Agreement and Privacy Policy' });
+    await User.updateOne({ _id: req.userId }, { $set: { legalConsent: consentRecord(req, String(req.body.method || 'prompt').slice(0, 30)) } });
+    res.json({ consentCurrent: true, version: LEGAL_VERSION });
+  } catch (error) {
+    res.status(500).json({ error: 'Could not save your acceptance', message: error.message });
+  }
+});
+
 router.put('/onboarding', auth, async (req, res) => {
   try {
     const { role, intent, industries, industriesOther, bio, location, skills, profilePic, complete, name, background } = req.body;
@@ -755,7 +782,18 @@ router.put('/onboarding', auth, async (req, res) => {
       if (!saved?.location) return res.status(400).json({ error: 'Choose your city' });
     }
     if (Array.isArray(skills)) update.skills = skills.map((s) => String(s).trim()).filter(Boolean).slice(0, 30);
-    if (profilePic !== undefined) update.profilePic = profilePic;
+    if (profilePic !== undefined) {
+      if (profilePic && !isAllowedImageUrl(profilePic)) return res.status(400).json({ error: IMAGE_URL_ERROR, field: 'profilePic' });
+      update.profilePic = profilePic || '';
+    }
+    // The User Agreement and Privacy Policy must be accepted before the profile goes live
+    if (req.body.acceptTerms === true) update.legalConsent = consentRecord(req, 'onboarding');
+    if (complete === true && !update.legalConsent) {
+      const saved = await User.findById(req.userId).select('legalConsent').lean();
+      if (saved?.legalConsent?.version !== LEGAL_VERSION) {
+        return res.status(400).json({ error: 'Please accept the User Agreement and Privacy Policy to continue', code: 'CONSENT_REQUIRED' });
+      }
+    }
     if (complete === true) update.onboardingCompleted = true;
     // First time onboarding is finished: send the welcome email after saving
     const firstFinish = complete === true
@@ -868,6 +906,8 @@ router.post('/import-resume', auth, (req, res) => {
 
       // Education to review before saving: the AI reading, or the rules when it found nothing
       const educationEntries = analysis?.education?.length ? analysis.education : educationFromResume(parsed.rawText);
+      // Work experience the same way, each matched to its BeeBark company page (for the logo) when there is one
+      const experienceEntries = await withCompanyPages(analysis?.experience?.length ? analysis.experience : experienceFromResume(parsed.rawText));
 
       user.resume = {
         url: resumeUrl,
@@ -900,7 +940,8 @@ router.post('/import-resume', auth, (req, res) => {
         currentName: user.name,
         detectedLocation: analysis?.detectedLocation || null,
         bios: analysis?.bios || [],
-        educationEntries
+        educationEntries,
+        experienceEntries
       });
     } catch (e) {
       console.error('Resume import error:', e);

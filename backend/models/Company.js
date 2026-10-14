@@ -16,6 +16,12 @@ const companySchema = new mongoose.Schema({
   cover: { type: String, default: '' },
   // Which part of the cover shows in the wide banner: 0 = top, 50 = middle, 100 = bottom
   coverPosition: { type: Number, default: 50, min: 0, max: 100 },
+  // Who confirmed they can act for the company and accepted the business terms, and when
+  termsAcceptance: {
+    by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    version: { type: String, default: '' },
+    acceptedAt: Date
+  },
   // What the company is, in the owner's words, when type is 'other'
   typeOther: { type: String, default: '', trim: true, maxlength: 60 },
   website: { type: String, default: '' },

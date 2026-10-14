@@ -11,6 +11,7 @@ import TopProgressBar from './components/TopProgressBar';
 import { Pages, warmUp } from './lib/pages';
 import { installAxiosProgress } from './lib/progress';
 import { NEWS_ENABLED } from './config/features';
+import ConsentGate from './components/ConsentGate';
 import './App.css';
 
 installAxiosProgress();
@@ -71,6 +72,7 @@ function App() {
           <PagesProvider>
           <UIProvider>
           <Toaster position="top-right" richColors />
+          <ConsentGate />
           <TopProgressBar />
           <Standalone>
           <Routes>

@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { FiUploadCloud, FiFileText, FiUpload, FiBookOpen } from 'react-icons/fi';
+import { FiUploadCloud, FiFileText, FiUpload, FiBookOpen, FiBriefcase } from 'react-icons/fi';
 import { API_URL } from '../config/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import MonthYearPicker from './MonthYearPicker';
+import CompanyLogo from './company/CompanyLogo';
 
 const yearOptions = () => {
   const now = new Date().getFullYear();
@@ -124,10 +126,105 @@ const EducationReview = ({ entries, onClose, onSaved }) => {
  * Calls onImported(data) where data = { skills, parsed } so the parent can
  * prefill its fields. A LinkedIn "Save to PDF" export works here too.
  */
-const ResumeImport = ({ onImported, onEducationSaved, variant = 'button' }) => {
+const expKey = (e) => `${String(e.title || '').toLowerCase().replace(/[^a-z0-9]/g, '')}|${String(e.company || e.page?.name || '').toLowerCase().split(',')[0].replace(/[^a-z0-9]/g, '')}`;
+
+/**
+ * Work experience found in a resume, shown for review: role, company (with its
+ * BeeBark page logo when matched), place, months and description can be
+ * corrected or left out. Entries already on the profile are skipped.
+ */
+const ExperienceReview = ({ entries, onClose, onSaved }) => {
+  const [rows, setRows] = useState(() => entries.map((e) => ({ ...e, keep: true })));
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    axios.get(`${API_URL}/api/profile/me`).then(({ data }) => {
+      const keys = new Set((data.user?.experience || []).map(expKey));
+      setRows((list) => list.map((r) => (keys.has(expKey(r)) ? { ...r, keep: false, existing: true } : r)));
+    }).catch(() => {});
+  }, []);
+  const set = (i, key, value) => setRows((list) => list.map((r, j) => (j === i ? { ...r, [key]: value, ...(key === 'company' && r.page && value !== r.page.name ? { page: null, companyPage: '' } : {}) } : r)));
+  const chosen = rows.filter((r) => r.keep && (r.title.trim() || r.company.trim()));
+  const full = (v) => /^\d{4}-\d{2}$/.test(v || '');
+
+  const save = async () => {
+    const bad = chosen.find((r) => !full(r.startDate) || (!r.current && !full(r.endDate)) || (!r.current && r.endDate < r.startDate));
+    if (bad) return toast.error(`Check the dates for ${bad.title || bad.company}: choose the start and end month, or tick "Current job"`);
+    setSaving(true);
+    try {
+      const { data } = await axios.get(`${API_URL}/api/profile/me`);
+      const current = (data.user?.experience || []).map(({ page, _id, ...e }) => ({ ...e, companyPage: e.companyPage?._id || e.companyPage || page?._id || undefined }));
+      const keys = new Set(current.map(expKey));
+      const added = chosen.filter((r) => !keys.has(expKey(r))).map((r) => ({
+        title: r.title.trim(), company: r.company.trim(), location: (r.location || '').trim(),
+        startDate: r.startDate, endDate: r.current ? '' : r.endDate, current: !!r.current,
+        description: (r.description || '').trim(), ...(r.companyPage ? { companyPage: r.companyPage } : {})
+      }));
+      if (!added.length) { toast('That experience is already on your profile'); onClose(); return; }
+      const res = await axios.put(`${API_URL}/api/profile/update`, { experience: [...current, ...added] });
+      toast.success(`Added ${added.length} experience ${added.length === 1 ? 'entry' : 'entries'} to your profile`);
+      onSaved?.(res.data.user?.experience || [...current, ...added]);
+      onClose();
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Could not save your experience');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const field = 'h-10 w-full rounded-lg border border-[#E6E1DB] bg-white px-3 text-sm outline-none focus:border-[#E0B93C]';
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o && !saving) onClose(); }}>
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto" data-testid="experience-review">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><FiBriefcase className="text-[#C9A227]" />Experience found in your resume</DialogTitle>
+        </DialogHeader>
+        <p className="-mt-2 text-sm text-gray-500">Check each job, correct anything that's wrong, and untick what you don't want. Nothing is added until you save.</p>
+        <div className="space-y-3">
+          {rows.map((r, i) => (
+            <div key={i} className={`rounded-xl border p-3 ${r.keep ? 'border-[#F1DFA8] bg-[#FFFBEF]' : 'border-gray-200 bg-gray-50 opacity-60'}`} data-testid={`exp-review-${i}`}>
+              <label className="mb-2 flex items-center gap-2 text-sm font-medium text-[#1C1712]">
+                <input type="checkbox" checked={r.keep} onChange={(e) => set(i, 'keep', e.target.checked)} className="accent-[#32281F]" />Add this job
+                {r.existing && <span className="ml-auto rounded-full bg-gray-200 px-2 py-0.5 text-xs font-normal text-gray-600" data-testid={`exp-review-existing-${i}`}>Already on your profile</span>}
+              </label>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <label className="text-xs text-gray-600">Role / title
+                  <input value={r.title} onChange={(e) => set(i, 'title', e.target.value)} maxLength={120} className={field} data-testid={`exp-review-title-${i}`} /></label>
+                <label className="text-xs text-gray-600">Company
+                  <div className="flex items-center gap-2">
+                    {r.page && <CompanyLogo page={r.page} className="h-10 w-10 shrink-0" text="text-xs" />}
+                    <input value={r.company} onChange={(e) => set(i, 'company', e.target.value)} maxLength={120} className={field} data-testid={`exp-review-company-${i}`} />
+                  </div>
+                  {r.page && <span className="mt-0.5 block text-[11px] text-green-700" data-testid={`exp-review-page-${i}`}>Linked to {r.page.name}'s BeeBark page</span>}
+                </label>
+                <label className="text-xs text-gray-600 sm:col-span-2">Location
+                  <input value={r.location || ''} onChange={(e) => set(i, 'location', e.target.value)} maxLength={120} className={field} /></label>
+                <MonthYearPicker label="Start date" value={r.startDate || ''} max={new Date().toISOString().slice(0, 7)} onChange={(v) => set(i, 'startDate', v)} testId={`exp-review-start-${i}`} />
+                <MonthYearPicker label="End date" value={r.current ? '' : (r.endDate || '')} disabled={r.current} min={full(r.startDate) ? r.startDate : ''} max={new Date().toISOString().slice(0, 7)} placeholder={r.current ? '' : 'Not set'} onChange={(v) => set(i, 'endDate', v)} testId={`exp-review-end-${i}`} />
+                <label className="flex items-center gap-2 text-sm text-gray-700 sm:col-span-2">
+                  <input type="checkbox" checked={!!r.current} onChange={(e) => set(i, 'current', e.target.checked)} className="accent-[#32281F]" />Current job
+                </label>
+                <label className="text-xs text-gray-600 sm:col-span-2">Description
+                  <textarea value={r.description || ''} onChange={(e) => set(i, 'description', e.target.value)} rows={3} maxLength={2000} className="w-full rounded-lg border border-[#E6E1DB] bg-white px-3 py-2 text-sm outline-none focus:border-[#E0B93C]" /></label>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="flex justify-end gap-2 pt-2">
+          <button type="button" onClick={onClose} disabled={saving} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium">Skip</button>
+          <button type="button" onClick={save} disabled={saving || chosen.length === 0} className="rounded-lg bg-[#32281F] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50" data-testid="exp-review-save">
+            {saving ? 'Saving…' : `Add ${chosen.length || ''} to profile`}
+          </button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const ResumeImport = ({ onImported, onEducationSaved, onExperienceSaved, variant = 'button' }) => {
   const inputRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [education, setEducation] = useState(null); // entries found in the resume, to review
+  const [experience, setExperience] = useState(null); // shown after the education review
 
   const handleFile = async (e) => {
     const file = e.target.files?.[0];
@@ -143,6 +240,7 @@ const ResumeImport = ({ onImported, onEducationSaved, variant = 'button' }) => {
       toast.success(count ? `Imported ${count} skill${count === 1 ? '' : 's'} from your resume` : 'Resume imported');
       onImported?.(res.data);
       if (res.data?.educationEntries?.length) setEducation(res.data.educationEntries);
+      if (res.data?.experienceEntries?.length) setExperience(res.data.experienceEntries);
     } catch (error) {
       const data = error.response?.data;
       const message = data?.reason ? `${data.error} — ${data.reason}` : data?.error;
@@ -153,9 +251,13 @@ const ResumeImport = ({ onImported, onEducationSaved, variant = 'button' }) => {
     }
   };
 
-  const review = education && (
+  // Education first, then experience
+  const review = education ? (
     <EducationReview entries={education.map((e) => ({ school: e.school || '', degree: e.degree || '', field: e.field || '', startYear: e.startYear || '', endYear: e.endYear || '' }))}
       onClose={() => setEducation(null)} onSaved={onEducationSaved} />
+  ) : experience && (
+    <ExperienceReview entries={experience.map((e) => ({ title: e.title || '', company: e.company || '', location: e.location || '', startDate: e.startDate || '', endDate: e.endDate || '', current: !!e.current, description: e.description || '', companyPage: e.companyPage || '', page: e.page || null }))}
+      onClose={() => setExperience(null)} onSaved={onExperienceSaved} />
   );
 
   // Onboarding: a card with the import button on the side
@@ -197,7 +299,7 @@ const ResumeImport = ({ onImported, onEducationSaved, variant = 'button' }) => {
         <FiUploadCloud className="text-base" />
         {loading ? 'Reading resume…' : 'Import from resume (PDF / DOCX)'}
       </button>
-      <p className="mt-1 text-xs text-gray-400 text-center">Auto-fills your skills and education. A LinkedIn “Save to PDF” export works too.</p>
+      <p className="mt-1 text-xs text-gray-400 text-center">Auto-fills your skills, education and experience. A LinkedIn “Save to PDF” export works too.</p>
     </div>
   );
 };

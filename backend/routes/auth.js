@@ -19,8 +19,22 @@ const {
 } = require('../utils/otp');
 const {
   sendOtpEmail,
-  sendPasswordResetOtpEmail
+  sendPasswordResetOtpEmail,
+  sendAccountCreatedEmail
 } = require('../utils/email');
+const { LEGAL_VERSION, consentRecord } = require('../utils/legal');
+
+// "Account created" email, once per account (not for phone-only accounts)
+const sendSignupEmailOnce = async (user) => {
+  if (user.signupEmailSentAt || !user.email || /@phone\.beebark\.local$/i.test(user.email)) return;
+  try {
+    await sendAccountCreatedEmail(user.email, user.name);
+    await User.updateOne({ _id: user._id }, { $set: { signupEmailSentAt: new Date() } });
+  } catch (e) {
+    console.error('Failed to send account-created email:', e.message);
+  }
+};
+const acceptedTerms = (req) => req.body.acceptTerms === true;
 
 // Roles a user may self-select at signup (others are reserved/legacy)
 // Firms aren't an account type any more: people create company Pages instead
@@ -56,7 +70,9 @@ const publicUser = (user) => ({
   skills: user.skills || [],
   isVerified: user.isVerified,
   onboardingCompleted: user.onboardingCompleted,
-  profilePic: user.profilePic
+  profilePic: user.profilePic,
+  // Accepted the current User Agreement and Privacy Policy
+  consentCurrent: user.legalConsent?.version === LEGAL_VERSION
 });
 
 // Strong password (PDF Day 3): min 8 chars, upper + lower + number + special
@@ -107,7 +123,8 @@ router.post(
     body('name').customSanitizer(cleanName).custom((v) => { const e = nameError(v); if (e) throw new Error(e); return true; }),
     body('email').isEmail().withMessage('A valid email is required').normalizeEmail(),
     body('password').custom(strongPassword).withMessage(PASSWORD_MESSAGE),
-    body('role').optional().isIn(SELECTABLE_ROLES).withMessage('Please choose a valid account type')
+    body('role').optional().isIn(SELECTABLE_ROLES).withMessage('Please choose a valid account type'),
+    body('acceptTerms').custom((v) => v === true).withMessage('Please accept the User Agreement and Privacy Policy to create your account')
   ],
   async (req, res) => {
     try {
@@ -157,6 +174,7 @@ router.post(
         existing.role = role;
         existing.authProvider = 'local';
         existing.emailVerification = verification;
+        existing.legalConsent = consentRecord(req, 'email-signup');
         user = await existing.save();
       } else {
         user = new User({
@@ -167,7 +185,8 @@ router.post(
           role,
           authProvider: 'local',
           isVerified: false,
-          emailVerification: verification
+          emailVerification: verification,
+          legalConsent: consentRecord(req, 'email-signup')
         });
         await user.save();
       }
@@ -236,7 +255,8 @@ router.post(
       user.emailVerification = undefined;
       await user.save();
 
-      // The welcome email goes out when onboarding is finished (routes/profile.js)
+      // "Account created" now; the welcome email goes out when onboarding is finished (routes/profile.js)
+      sendSignupEmailOnce(user);
 
       res.json({
         message: 'Email verified successfully',
@@ -398,10 +418,13 @@ router.post(
           authProvider: 'google',
           isVerified: true,
           role: SELECTABLE_ROLES.includes(req.body.role) ? req.body.role : 'professional',
+          ...(acceptedTerms(req) ? { legalConsent: consentRecord(req, 'google-signup') } : {}),
           profilePic: payload.picture || ''
         });
         await user.save();
       }
+
+      if (isNewUser) sendSignupEmailOnce(user);
 
       res.json({
         message: 'Google sign-in successful',
@@ -491,10 +514,13 @@ router.post(
           authProvider: 'linkedin',
           isVerified: true,
           role: SELECTABLE_ROLES.includes(req.body.role) ? req.body.role : 'professional',
+          ...(acceptedTerms(req) ? { legalConsent: consentRecord(req, 'linkedin-signup') } : {}),
           profilePic: profile.picture || ''
         });
         await user.save();
       }
+
+      if (isNewUser) sendSignupEmailOnce(user);
 
       res.json({
         message: 'LinkedIn sign-in successful',
@@ -568,7 +594,8 @@ router.post(
           firebaseUid: uid,
           authProvider: 'phone',
           isVerified: true,
-          role: SELECTABLE_ROLES.includes(req.body.role) ? req.body.role : 'professional'
+          role: SELECTABLE_ROLES.includes(req.body.role) ? req.body.role : 'professional',
+          ...(acceptedTerms(req) ? { legalConsent: consentRecord(req, 'phone-signup') } : {})
         });
         await user.save();
       }
