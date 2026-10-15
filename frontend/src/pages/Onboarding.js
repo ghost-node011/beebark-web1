@@ -6,6 +6,7 @@ import { FaCheck, FaTimes } from 'react-icons/fa';
 import { FiArrowLeft, FiArrowRight, FiUser, FiPlus, FiClock } from 'react-icons/fi';
 import axios from 'axios';
 import { API_URL } from '../config/api';
+import { imageFileError, uploadImage } from '../lib/imageUpload';
 import ResumeImport from '../components/ResumeImport';
 import { ROLES } from '../config/roles';
 import { intentsFor, INDUSTRIES } from '../config/onboarding';
@@ -13,7 +14,7 @@ import { AutocompleteInput } from '../components/AutocompleteInput';
 import CompanyInput from '../components/company/CompanyInput';
 import ProfessionPicker from '../components/ProfessionPicker';
 import CityPicker from '../components/CityPicker';
-import { isWaitlistedLocation } from '../config/cities';
+import { isWaitlistedLocation, WAITLISTED_STATES } from '../config/cities';
 import SkillPicker from '../components/SkillPicker';
 
 const TOTAL_STEPS = 4;
@@ -80,8 +81,11 @@ const Onboarding = () => {
   const [nameMismatch, setNameMismatch] = useState(null);
   const [skills, setSkills] = useState(user?.skills || []);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  // Students can skip their school and course for now (added later from the profile)
+  const [educationSkipped, setEducationSkipped] = useState(false);
   // A city in a state BeeBark hasn't opened in: they wait for it instead of joining
-  const [regionWait, setRegionWait] = useState(user?.regionWaitlist?.state && !user?.location ? user.regionWaitlist : null);
+  // (only while their state is still waitlisted: once it opens they carry on)
+  const [regionWait, setRegionWait] = useState(WAITLISTED_STATES.includes(user?.regionWaitlist?.state) && !user?.location ? user.regionWaitlist : null);
   const joinRegionWaitlist = async (c) => {
     try {
       const res = await axios.post(`${API_URL}/api/profile/region-waitlist`, { city: c.city, state: c.state });
@@ -97,16 +101,13 @@ const Onboarding = () => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    if (!/^image\/(jpeg|png|webp|gif)$/.test(file.type)) { toast.error('Please choose a JPG, PNG or WebP image'); return; }
-    if (file.size > 18 * 1024 * 1024) { toast.error('That image is too large. Please choose one under 18 MB.'); return; }
+    const problem = imageFileError(file);
+    if (problem) { toast.error(problem); return; }
     setUploadingPhoto(true);
     try {
-      const body = new FormData();
-      body.append('image', file);
-      const res = await axios.post(`${API_URL}/api/upload/profile-photo`, body, { headers: { 'Content-Type': 'multipart/form-data' } });
-      setProfilePic(res.data.url);
+      setProfilePic(await uploadImage(file, { endpoint: '/api/upload/profile-photo', maxSide: 1200 }));
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Could not upload that photo');
+      toast.error(error.message || 'Could not upload that photo');
     } finally {
       setUploadingPhoto(false);
     }
@@ -114,9 +115,21 @@ const Onboarding = () => {
 
   const selectIndustry = (value) => setIndustries((prev) => toggle(prev, value));
 
+  const educationDone = !!background.school.trim() && !!background.field.trim();
   const backgroundDone = (isStudent
-    ? !!background.school.trim() && !!background.field.trim()
+    ? educationDone || educationSkipped
     : !!background.title.trim()) && !!location.trim() && !isWaitlistedLocation(location);
+
+  // Skip the school step: only the city is still needed to continue
+  const skipEducation = () => {
+    setEducationSkipped(true);
+    if (!location.trim() || isWaitlistedLocation(location)) {
+      toast.message('Choose your city to continue. You can add your school later from your profile.');
+      return;
+    }
+    setStep((s) => s + 1);
+    window.scrollTo({ top: 0 });
+  };
 
   const canContinue =
     ((current === 'role' && !!role) ||
@@ -136,7 +149,7 @@ const Onboarding = () => {
     setSaving(true);
     try {
       const bg = isStudent
-        ? { school: background.school.trim(), field: background.field.trim(), gradYear: background.gradYear }
+        ? (educationDone ? { school: background.school.trim(), field: background.field.trim(), gradYear: background.gradYear } : { skipped: true })
         : { title: background.title.trim(), company: background.company.trim(), companyPage: background.companyPage || undefined, selfEmployed: background.selfEmployed };
       await updateOnboarding({ role, background: bg, intent: intent.filter((v) => intentsFor({ role }).some((i) => i.value === v)), industries, industriesOther: '', bio, location, skills, profilePic, name, complete: true });
       toast.success("You're all set!");
@@ -175,6 +188,8 @@ const Onboarding = () => {
             </span>
             {current === 'profile' ? (
               <button type="button" onClick={finish} disabled={saving} className="text-[15px] text-[#6B625A] hover:text-black disabled:opacity-50" data-testid="onboarding-skip">Skip</button>
+            ) : current === 'background' && isStudent && !educationDone ? (
+              <button type="button" onClick={skipEducation} className="text-[15px] font-medium text-[#6B625A] hover:text-black" data-testid="onboarding-skip-education">Skip</button>
             ) : (
               <span className="text-sm text-[#6B625A] whitespace-nowrap" data-testid="onboarding-step">Step {step + 1} of {TOTAL_STEPS}</span>
             )}
@@ -282,7 +297,15 @@ const Onboarding = () => {
                   <CityPicker value={location} testId="onboarding-city" onChange={(label) => setLocation(label)} onWaitlisted={joinRegionWaitlist} />
                   {detectedLocation && location === detectedLocation && <p className="mt-1 text-xs text-gray-400">From your resume. Edit it if it isn't right.</p>}
                 </div>
-                <p className="text-sm text-[#6B625A]">You can update this later.</p>
+                {isStudent && !educationDone ? (
+                  <p className="text-sm text-[#6B625A]">
+                    You can update this later.{' '}
+                    <button type="button" onClick={skipEducation} className="font-semibold text-[#32281F] underline underline-offset-2 hover:text-black" data-testid="onboarding-skip-education-link">Skip for now</button>
+                    {educationSkipped && <span className="block mt-1">School skipped. Choose your city, then continue.</span>}
+                  </p>
+                ) : (
+                  <p className="text-sm text-[#6B625A]">You can update this later.</p>
+                )}
               </div>
             )}
 

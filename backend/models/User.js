@@ -62,6 +62,8 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  // Which part of the cover shows: 0 (top) to 100 (bottom)
+  coverPosition: { type: Number, default: 50, min: 0, max: 100 },
   profileViews: {
     type: Number,
     default: 0

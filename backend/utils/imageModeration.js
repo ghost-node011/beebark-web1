@@ -53,6 +53,8 @@ async function preview(filePath, mimeType, size = 1280) {
   }
 }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// Set when Rekognition refuses us (no permission / no credentials): skipped until then
+let rekognitionOffUntil = 0;
 
 async function checkWithRekognition(bytes, { profile }) {
   const { DetectModerationLabelsCommand } = require('@aws-sdk/client-rekognition');
@@ -116,16 +118,22 @@ async function checkImage(filePath, mimeType, { profile = false } = {}) {
   const img = await preview(filePath, mimeType);
   if (!img) return { ok: false, reason: "This file couldn't be read as an image. Please try a JPG or PNG.", provider: 'none', labels: [] };
 
-  if (useRekognition()) {
+  if (useRekognition() && Date.now() > rekognitionOffUntil) {
     try {
       return await checkWithRekognition(img.bytes, { profile });
     } catch (error) {
+      // Not allowed or not set up (permissions, credentials): stop asking for a while, so each
+      // upload doesn't wait on a call that can't work
+      if (/AccessDenied|UnrecognizedClient|InvalidSignature|CredentialsProvider|Could not load credentials|SubscriptionRequired/i.test(`${error.name} ${error.message}`)) {
+        rekognitionOffUntil = Date.now() + 15 * 60 * 1000;
+      }
       console.error('Image moderation (Rekognition) failed, using the vision AI:', error.name || '', error.message);
     }
   }
   const small = (await preview(filePath, mimeType, 448)) || img;
-  // The free AI plan limits requests per minute: wait and retry a few times before giving up
-  for (const wait of [0, 4000, 8000, 15000, 25000]) {
+  // The free AI plan limits requests per minute: wait and retry briefly before giving up
+  // (kept short so an upload never waits close to a minute)
+  for (const wait of [0, 2000, 5000]) {
     if (wait) await sleep(wait);
     try {
       return await checkWithVisionAi(small.bytes, small.mime, { profile });

@@ -1,10 +1,9 @@
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import axios from 'axios';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
 import { FiUpload, FiX } from 'react-icons/fi';
-import { API_URL } from '../config/api';
+import { IMAGE_FORMAT_ERROR, imageFileError, uploadImage, uploadImages, failedSummary } from '../lib/imageUpload';
 
 const ImageUpload = ({ onUploadComplete, multiple = false, endpoint }) => {
   const [uploading, setUploading] = useState(false);
@@ -14,35 +13,20 @@ const ImageUpload = ({ onUploadComplete, multiple = false, endpoint }) => {
     if (acceptedFiles.length === 0) return;
 
     setUploading(true);
-    const formData = new FormData();
-
-    if (multiple) {
-      acceptedFiles.forEach(file => {
-        formData.append('images', file);
-      });
-    } else {
-      formData.append('image', acceptedFiles[0]);
-      setPreview(URL.createObjectURL(acceptedFiles[0]));
-    }
-
+    if (!multiple) setPreview(URL.createObjectURL(acceptedFiles[0]));
     try {
-      const targetEndpoint = endpoint || (multiple ? '/api/upload/multiple' : '/api/upload/image');
-      const response = await axios.post(`${API_URL}${targetEndpoint}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-
       if (multiple) {
-        onUploadComplete(response.data.images);
+        const { uploaded, failed } = await uploadImages(acceptedFiles);
+        if (uploaded.length) onUploadComplete(uploaded.map(({ url }) => ({ url })));
+        if (failed.length) toast.error(failedSummary(failed, acceptedFiles.length), { duration: 8000 });
+        else toast.success('Image uploaded successfully!');
       } else {
-        onUploadComplete(response.data.url);
+        onUploadComplete(await uploadImage(acceptedFiles[0], endpoint ? { endpoint } : undefined));
+        toast.success('Image uploaded successfully!');
       }
-      toast.success('Image uploaded successfully!');
     } catch (error) {
-      console.error('Upload error:', error);
       setPreview(null);
-      toast.error(error.response?.data?.error || 'Failed to upload image');
+      toast.error(error.message || 'Failed to upload image');
     } finally {
       setUploading(false);
     }
@@ -50,8 +34,10 @@ const ImageUpload = ({ onUploadComplete, multiple = false, endpoint }) => {
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
+    // Wrong format or too big: say so instead of silently ignoring the file
+    onDropRejected: (rejections) => toast.error(imageFileError(rejections[0]?.file) || IMAGE_FORMAT_ERROR),
     accept: {
-      'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp']
+      'image/jpeg': ['.jpeg', '.jpg'], 'image/png': ['.png'], 'image/gif': ['.gif'], 'image/webp': ['.webp']
     },
     multiple,
     maxSize: 18 * 1024 * 1024

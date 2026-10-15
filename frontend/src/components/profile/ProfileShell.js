@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import CompanyLogo from '../company/CompanyLogo';
 import PhotoLightbox from '../PhotoLightbox';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { FiCamera, FiMapPin, FiPlus, FiBriefcase, FiInfo, FiGlobe, FiCalendar, FiCheck } from 'react-icons/fi';
+import { FiCamera, FiMapPin, FiPlus, FiBriefcase, FiInfo, FiGlobe, FiCalendar, FiCheck, FiMove } from 'react-icons/fi';
 import {
   FaLinkedin, FaInstagram, FaBehance, FaPinterest, FaYoutube, FaXTwitter, FaFacebook, FaGithub, FaHouzz, FaDribbble
 } from 'react-icons/fa6';
@@ -169,20 +170,48 @@ const Badges = ({ badges }) => (
 // the cover beside it (as in the reference design). Shared by the own,
 // in-app and public profile pages, so they can't drift apart.
 export const ProfileHero = ({
-  coverPhoto, profilePic, name, roleLabel, headline, pronouns, location, yearsOfExperience,
-  connectionCount, followerCount, socialLinks, badges, actions, headerExtra, onPhotoEdit, onAddLocation, onContactInfo, onFollowers
+  coverPhoto, coverPosition = 50, coverEditing = false, onCoverPosition, profilePic, name, roleLabel, headline, pronouns, location, yearsOfExperience,
+  connectionCount, followerCount, socialLinks, badges, actions, headerExtra, onPhotoEdit, onAddLocation, onContactInfo, onFollowers,
+  companyPages = []
 }) => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  // Repositioning the cover (coverEditing): drag it up or down to choose which part shows
+  const coverBox = useRef(null);
+  const drag = useRef(null);
+  const position = Number.isFinite(Number(coverPosition)) ? Number(coverPosition) : 50;
+  const dragStart = (e) => {
+    // Buttons on the cover (Save, Cancel…) keep working
+    if (!coverEditing || e.target.closest('button, label, input')) return;
+    drag.current = { y: e.touches ? e.touches[0].clientY : e.clientY, pos: position };
+    e.preventDefault();
+  };
+  const dragMove = (e) => {
+    if (!drag.current || !coverBox.current) return;
+    const y = e.touches ? e.touches[0].clientY : e.clientY;
+    // Dragging the photo down shows more of its top, like LinkedIn
+    const delta = ((drag.current.y - y) / coverBox.current.clientHeight) * 60;
+    onCoverPosition?.(Math.min(100, Math.max(0, Math.round(drag.current.pos + delta))));
+  };
+  const dragEnd = () => { drag.current = null; };
   const parts = String(headline || '').split('|').map((p) => p.trim()).filter(Boolean);
   return (
     <div className="-mx-4 sm:-mx-6 lg:-mx-8 -mt-4 sm:-mt-6 lg:-mt-8">
       <div
-        className="relative h-56 sm:h-72 lg:h-80"
+        ref={coverBox}
+        className={`relative h-56 sm:h-72 lg:h-80 ${coverEditing ? 'cursor-grab select-none active:cursor-grabbing' : ''}`}
         style={coverPhoto
-          ? { backgroundImage: `url(${coverPhoto})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+          ? { backgroundImage: `url(${coverPhoto})`, backgroundSize: 'cover', backgroundPosition: `center ${position}%` }
           : { background: 'linear-gradient(120deg, #6B5440 0%, #4A3A2C 40%, #32281F 75%, #221A14 100%)' }}
+        onMouseDown={dragStart} onMouseMove={dragMove} onMouseUp={dragEnd} onMouseLeave={dragEnd}
+        onTouchStart={dragStart} onTouchMove={dragMove} onTouchEnd={dragEnd}
+        data-testid="profile-cover"
       >
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(20,15,10,0) 35%, rgba(20,15,10,0.55) 100%)' }} />
+        <div className="pointer-events-none absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(20,15,10,0) 35%, rgba(20,15,10,0.55) 100%)' }} />
+        {coverEditing && (
+          <span className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1.5 text-xs font-medium text-white"><FiMove className="h-3.5 w-3.5" />Drag to reposition</span>
+          </span>
+        )}
         {headerExtra}
         <div className="absolute inset-x-0 bottom-0">
           <div className="max-w-6xl mx-auto px-4 sm:px-8 flex items-end gap-5 sm:gap-8">
@@ -201,7 +230,7 @@ export const ProfileHero = ({
               {onPhotoEdit && (
                 <label className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-[#32281F] text-white border-2 border-white cursor-pointer hover:bg-[#F2B21B] hover:text-black transition" aria-label="Change profile photo">
                   <FiCamera className="w-4 h-4" />
-                  <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && onPhotoEdit(e.target.files[0])} />
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) onPhotoEdit(f); }} />
                 </label>
               )}
             </div>
@@ -245,6 +274,18 @@ export const ProfileHero = ({
             )}
             <SocialIcons links={socialLinks} size="w-4 h-4" />
           </div>
+          {companyPages.length > 0 && (
+            // Company pages they created (owner / founder), each linking to its page
+            <div className="mt-3 flex flex-wrap items-center gap-2" data-testid="profile-company-pages">
+              <span className="text-sm pf-muted">Founder of</span>
+              {companyPages.map((p) => (
+                <Link key={p._id} to={`/company/${p.slug}`} className="inline-flex max-w-full items-center gap-2 rounded-full border border-[#E6E1DB] bg-white py-1 pl-1 pr-3 text-sm font-semibold text-[#32281F] hover:border-[#C9A227] hover:bg-[#FFFBEF]" data-testid="profile-company-page">
+                  <CompanyLogo page={p} className="h-6 w-6" rounded="rounded-full" text="text-[10px]" />
+                  <span className="truncate">{p.name}</span>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-3 pt-5 pb-6">{actions}</div>
       </div>

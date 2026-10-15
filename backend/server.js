@@ -144,6 +144,10 @@ app.use('/api/waitlist', waitlistRoutes);
 app.use('/api/external/waitlist', require('./routes/externalWaitlist'));
 
 app.use((err, req, res, next) => {
+  // Upload limits and file types: the person can fix these, so say what's wrong
+  if (err.code === 'LIMIT_FILE_SIZE') return res.status(400).json({ error: 'Each image must be under 18 MB.' });
+  if (err.code === 'LIMIT_FILE_COUNT' || err.code === 'LIMIT_UNEXPECTED_FILE') return res.status(400).json({ error: 'Too many files at once. Please upload up to 10.' });
+  if (err.status === 400) return res.status(400).json({ error: err.message });
   console.error(err.stack);
   res.status(500).json({ error: 'Something went wrong!', message: err.message });
 });

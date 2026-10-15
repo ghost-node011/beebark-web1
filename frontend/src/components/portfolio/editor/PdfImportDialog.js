@@ -6,14 +6,14 @@ import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../ui/dialog';
 import { API_URL } from '../../../config/api';
+import { uploadImages } from '../../../lib/imageUpload';
 
 const PDFJS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
 const PDFJS_WORKER_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 const MAX_PDF_BYTES = 40 * 1024 * 1024;
 const MAX_PAGES = 100;
 const RENDER_SCALE = 2;
-const MAX_SIDE = 3200; // keeps very large drawings under the upload limit
-const UPLOAD_BATCH = 8;
+const MAX_SIDE = 2400; // sharp enough on screen, and quick to upload
 const SAVE_BATCH = 10; // the bulk endpoint takes up to 10 at a time
 
 let pdfjsPromise = null;
@@ -92,12 +92,18 @@ const PdfImportDialog = ({ open, onOpenChange, kind = 'project', onImported }) =
   const [titles, setTitles] = useState({}); // first page number → title typed by the person
   const [saveProgress, setSaveProgress] = useState('');
   const cancelled = useRef(false);
+  // What's done already, so "Import" again carries on instead of starting over:
+  // page number -> uploaded URL, and the projects (by first page) already saved
+  const uploadedRef = useRef({});
+  const savedRef = useRef(new Set());
   const pagesRef = useRef([]);
   pagesRef.current = pages;
 
   const reset = () => {
     pagesRef.current.forEach((p) => URL.revokeObjectURL(p.url));
     setPages([]); setStage('pick'); setFileName(''); setTitles({}); setEachPage(false); setSaveProgress('');
+    uploadedRef.current = {};
+    savedRef.current = new Set();
   };
   useEffect(() => () => pagesRef.current.forEach((p) => URL.revokeObjectURL(p.url)), []);
 
@@ -167,43 +173,56 @@ const PdfImportDialog = ({ open, onOpenChange, kind = 'project', onImported }) =
     if (!groups.length) return toast.error('Select at least one page');
     if (groups.some((g) => !g.title.trim())) return toast.error('Give every project a title');
     setStage('saving');
-    const allPages = groups.flatMap((g) => g.pages);
-    const urls = {};
     try {
-      for (let i = 0; i < allPages.length; i += UPLOAD_BATCH) {
-        const batch = allPages.slice(i, i + UPLOAD_BATCH);
-        setSaveProgress(`Uploading pages ${i + 1}–${i + batch.length} of ${allPages.length}…`);
-        const formData = new FormData();
-        batch.forEach((p) => formData.append('images', new File([p.blob], `page-${p.n}.jpg`, { type: 'image/jpeg' })));
-        const res = await axios.post(`${API_URL}/api/upload/multiple`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-        const uploaded = res.data.images || [];
-        if (uploaded.length !== batch.length) throw new Error('Some pages were not uploaded');
-        batch.forEach((p, j) => { urls[p.n] = uploaded[j].url; });
+      // 1) Pages not uploaded yet, a few at a time; ones that fail can be tried again
+      const toUpload = groups.flatMap((g) => g.pages).filter((p) => !uploadedRef.current[p.n]);
+      if (toUpload.length) {
+        setSaveProgress(`Uploading pages 0 of ${toUpload.length}…`);
+        const pageOf = new Map();
+        const files = toUpload.map((p) => {
+          const f = new File([p.blob], `page-${p.n}.jpg`, { type: 'image/jpeg' });
+          pageOf.set(f, p.n);
+          return f;
+        });
+        const { uploaded, failed } = await uploadImages(files, { onProgress: (done, total) => setSaveProgress(`Uploading pages ${done} of ${total}…`) });
+        uploaded.forEach(({ file, url }) => { uploadedRef.current[pageOf.get(file)] = url; });
+        if (failed.length) {
+          const which = failed.map((f) => pageOf.get(f.file)).sort((a, b) => a - b);
+          toast.error(`${failed.length} page${failed.length === 1 ? '' : 's'} (${which.slice(0, 6).join(', ')}${which.length > 6 ? '…' : ''}) didn't upload: ${failed[0].error} Press Import again to retry; pages already uploaded won't be sent again.`, { duration: 10000 });
+          setStage('select');
+          setSaveProgress('');
+          return;
+        }
       }
-      const items = groups.map((g) => ({
-        kind,
-        title: g.title.trim().slice(0, 200),
-        description: g.first.body || '',
-        images: g.pages.map((p) => urls[p.n]),
-        captions: g.pages.map((p) => `Page ${p.n}`)
-      }));
-      let saved = 0;
-      for (let i = 0; i < items.length; i += SAVE_BATCH) {
-        setSaveProgress(`Saving ${kind === 'product' ? 'products' : 'projects'} ${i + 1}–${Math.min(i + SAVE_BATCH, items.length)} of ${items.length}…`);
-        // Save from the last batch back so the PDF's order is kept at the top of the portfolio
-        const batch = items.slice(Math.max(0, items.length - i - SAVE_BATCH), items.length - i);
-        const res = await axios.post(`${API_URL}/api/portfolio/items/bulk`, { items: batch });
-        saved += res.data.items?.length || 0;
+
+      // 2) Projects not saved yet (from the last back, so the PDF's order is kept at the top of the portfolio)
+      const pending = groups.filter((g) => !savedRef.current.has(g.first.n));
+      let saved = groups.length - pending.length;
+      for (let i = 0; i < pending.length; i += SAVE_BATCH) {
+        setSaveProgress(`Saving ${noun}s ${Math.min(i + SAVE_BATCH, pending.length)} of ${pending.length}…`);
+        const batch = pending.slice(Math.max(0, pending.length - i - SAVE_BATCH), pending.length - i);
+        const res = await axios.post(`${API_URL}/api/portfolio/items/bulk`, {
+          items: batch.map((g) => ({
+            kind,
+            title: g.title.trim().slice(0, 200),
+            description: g.first.body || '',
+            images: g.pages.map((p) => uploadedRef.current[p.n]),
+            captions: g.pages.map((p) => `Page ${p.n}`)
+          }))
+        }, { timeout: 60000 });
+        batch.forEach((g) => savedRef.current.add(g.first.n));
+        saved += res.data.items?.length || batch.length;
       }
-      toast.success(`Added ${saved} ${kind === 'product' ? 'product' : 'project'}${saved === 1 ? '' : 's'} from your PDF`);
+      toast.success(`Added ${saved} ${noun}${saved === 1 ? '' : 's'} from your PDF`);
       reset();
       onOpenChange(false);
       onImported?.();
     } catch (error) {
-      toast.error(error.response?.data?.error || 'The import stopped part-way. Please try again.');
+      const done = savedRef.current.size;
+      toast.error(`${error.response?.data?.error || 'The import stopped part-way.'} ${done ? `${done} of ${groups.length} ${noun}s were saved. ` : ''}Press Import again to finish; nothing already done is repeated.`, { duration: 10000 });
       setStage('select');
       setSaveProgress('');
-      onImported?.();
+      if (done) onImported?.();
     }
   };
 

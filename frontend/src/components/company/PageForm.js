@@ -9,6 +9,7 @@ import { LocationInput } from '../AutocompleteInput';
 import CoverEditor from './CoverEditor';
 import CompanyTypePicker from './CompanyTypePicker';
 import { API_URL } from '../../config/api';
+import { IMAGE_ACCEPT, uploadImage } from '../../lib/imageUpload';
 import { TEAM_SIZE_OPTIONS } from '../../context/PagesContext';
 import { checkPhone, checkYear, digitsOnly } from '../../utils/validation';
 
@@ -46,14 +47,6 @@ const SPECIALTY_HINTS = {
   other: []
 };
 
-/** Upload one image and return its URL */
-const uploadImage = async (file) => {
-  if (!/^image\/(jpeg|png|webp|gif)$/.test(file.type)) throw new Error('Please choose a JPG, PNG or WebP image');
-  const body = new FormData();
-  body.append('image', file);
-  const res = await axios.post(`${API_URL}/api/upload/image`, body, { headers: { 'Content-Type': 'multipart/form-data' } });
-  return res.data.url;
-};
 
 /**
  * Fields of a company Page (create and edit). `form`/`setForm` are owned by the parent.
@@ -127,7 +120,7 @@ const PageForm = ({ form, setForm, showErrors = false, pageId = null }) => {
             {form.logo
               ? <img src={form.logo} alt="" className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover border-[3px] border-white bg-white" />
               : <span className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-[3px] border-white bg-white/90 flex flex-col items-center justify-center text-[11px] text-gray-600"><FiCamera className="w-5 h-5 mb-0.5" />{uploading === 'logo' ? '…' : 'Logo'}</span>}
-            <input type="file" accept="image/*" className="hidden" onChange={pickImage('logo')} />
+            <input type="file" accept={IMAGE_ACCEPT} className="hidden" onChange={pickImage('logo')} />
           </label>
         </CoverEditor>
       </div>

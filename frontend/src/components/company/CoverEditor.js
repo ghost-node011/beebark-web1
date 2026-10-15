@@ -58,7 +58,7 @@ const CoverEditor = ({ cover, position = 50, onPosition, onPick, uploading = fal
             )}
             <label className="cursor-pointer rounded-lg bg-black/55 px-2.5 py-1 text-xs font-medium text-white hover:bg-black/75" data-testid="page-cover-upload">
               <FiCamera className="mr-1 inline h-3.5 w-3.5" />{uploading ? 'Uploading…' : cover ? 'Change cover' : 'Add cover'}
-              <input type="file" accept="image/*" className="hidden" onChange={onPick} />
+              <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={onPick} />
             </label>
           </div>
         )}

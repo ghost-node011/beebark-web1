@@ -22,7 +22,7 @@ const {
   sendPasswordResetOtpEmail,
   sendAccountCreatedEmail
 } = require('../utils/email');
-const { LEGAL_VERSION, consentRecord } = require('../utils/legal');
+const { consentRecord, hasAccepted } = require('../utils/legal');
 
 // "Account created" email, once per account (not for phone-only accounts)
 const sendSignupEmailOnce = async (user) => {
@@ -72,7 +72,7 @@ const publicUser = (user) => ({
   onboardingCompleted: user.onboardingCompleted,
   profilePic: user.profilePic,
   // Accepted the current User Agreement and Privacy Policy
-  consentCurrent: user.legalConsent?.version === LEGAL_VERSION
+  consentCurrent: hasAccepted(user)
 });
 
 // Strong password (PDF Day 3): min 8 chars, upper + lower + number + special

@@ -15,6 +15,7 @@ import { LocationInput } from '../components/AutocompleteInput';
 import ShareMenu from '../components/ShareMenu';
 import { SkeletonCards } from '../components/Skeletons';
 import { API_URL } from '../config/api';
+import { IMAGE_ACCEPT, imageFileError, uploadImages, failedSummary } from '../lib/imageUpload';
 
 const PURPOSES = [{ value: 'sale', label: 'For sale' }, { value: 'rent', label: 'For rent' }, { value: 'lease', label: 'For lease' }];
 const TYPES = [
@@ -77,15 +78,15 @@ const Listings = () => {
   const upload = async (files) => {
     const list = Array.from(files || []);
     if (!list.length) return;
+    const usable = list.filter((f) => !imageFileError(f));
+    if (!usable.length) return toast.error(imageFileError(list[0]));
     setUploading(true);
     try {
-      const body = new FormData();
-      list.forEach((f) => body.append('images', f));
-      const res = await axios.post(`${API_URL}/api/upload/multiple`, body, { headers: { 'Content-Type': 'multipart/form-data' } });
-      const urls = (res.data.images || []).map((i) => i.url);
+      const { uploaded, failed } = await uploadImages(usable);
+      const urls = uploaded.map((u) => u.url);
       setDraft((d) => ({ ...d, images: [...d.images, ...urls].slice(0, 20) }));
-    } catch (error) {
-      toast.error(error.response?.data?.error || 'Could not upload photos');
+      if (failed.length) toast.error(failedSummary(failed, usable.length), { duration: 8000 });
+      else if (usable.length < list.length) toast.error(imageFileError(list.find((f) => imageFileError(f))));
     } finally {
       setUploading(false);
     }
@@ -279,7 +280,7 @@ const Listings = () => {
                     </div>
                   ))}
                   <label className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-xs text-gray-500 cursor-pointer hover:border-gray-400">
-                    <input type="file" accept="image/*" multiple className="hidden" disabled={uploading} onChange={(e) => upload(e.target.files)} />
+                    <input type="file" accept={IMAGE_ACCEPT} multiple className="hidden" disabled={uploading} onChange={(e) => { upload(e.target.files); e.target.value = ''; }} />
                     <FiUpload className="w-4 h-4 mb-0.5" />{uploading ? 'Uploading' : 'Add'}
                   </label>
                 </div>

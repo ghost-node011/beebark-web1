@@ -75,11 +75,21 @@ function experienceFromResume(text) {
     .slice(0, 12);
 }
 
+// "YYYY-MM" from "2021-04", "2021-4", "04/2021" or a bare year ("2021" -> "2021-01"); '' otherwise
+function month(v) {
+  const s = String(v ?? '').trim();
+  let m = s.match(/^((?:19|20)\d{2})[-/.](\d{1,2})$/);
+  if (m && Number(m[2]) >= 1 && Number(m[2]) <= 12) return `${m[1]}-${pad(Number(m[2]))}`;
+  m = s.match(/^(\d{1,2})[-/.]((?:19|20)\d{2})$/);
+  if (m && Number(m[1]) >= 1 && Number(m[1]) <= 12) return `${m[2]}-${pad(Number(m[1]))}`;
+  m = s.match(/^((?:19|20)\d{2})$/);
+  return m ? `${m[1]}-01` : '';
+}
+
 // Keep only well-formed entries (from the AI or the rules)
 function cleanExperienceEntries(list) {
-  const month = (v) => (/^(19|20)\d{2}-(0[1-9]|1[0-2])$/.test(String(v || '')) ? String(v) : '');
   return (Array.isArray(list) ? list : []).map((e) => {
-    const current = e?.current === true;
+    const current = e?.current === true || /^(present|current|now|till date|ongoing)$/i.test(String(e?.endDate || '').trim());
     return {
       title: tidy(e?.title).slice(0, 120),
       company: tidy(e?.company).slice(0, 120),
@@ -89,7 +99,41 @@ function cleanExperienceEntries(list) {
       current,
       description: String(e?.description || '').trim().slice(0, 2000)
     };
-  }).filter((e) => e.title || e.company).slice(0, 12);
+  }).filter((e) => e.title || e.company).slice(0, 15);
 }
 
-module.exports = { experienceFromResume, cleanExperienceEntries };
+/**
+ * Every work experience entry in a resume, read by the AI on its own (a focused
+ * question gets all the jobs, with their companies, dates and bullet points).
+ * Returns the cleaned entries, or null when the AI can't answer.
+ */
+async function experienceWithAi(rawText) {
+  const text = String(rawText || '').trim();
+  if (!text) return null;
+  const { askGroqForJson } = require('./groqClient');
+  const prompt = `Below is the text of a resume/CV. List EVERY work experience entry in it (jobs, internships,
+freelance work and positions held), newest first, exactly as the resume states them. Do not merge or
+skip entries, and do not invent anything.
+For each entry give:
+- "title": the job title or role (e.g. "Senior Architect", "Design Intern")
+- "company": the organisation's name only (e.g. "Crave Design"), without the city or dates
+- "location": the city/place if stated, else ""
+- "startDate" and "endDate": "YYYY-MM" (use "YYYY" when only the year is given); endDate null when it is the current job
+- "current": true only if the resume says it is ongoing (Present, Current, Till date…)
+- "description": the responsibilities and bullet points for that entry, each on its own line
+Resume text:
+"""
+${text.slice(0, 20000)}
+"""
+Respond ONLY with JSON: { "experience": [ { "title": "", "company": "", "location": "", "startDate": "2021-04", "endDate": null, "current": true, "description": "" } ] }
+If there is no work experience, respond with { "experience": [] }.`;
+  try {
+    const result = await askGroqForJson(prompt, { timeout: 45000 });
+    return Array.isArray(result?.experience) ? cleanExperienceEntries(result.experience) : null;
+  } catch (error) {
+    console.error('Resume experience reading error:', error.message);
+    return null;
+  }
+}
+
+module.exports = { experienceFromResume, cleanExperienceEntries, experienceWithAi };

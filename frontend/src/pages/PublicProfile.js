@@ -218,6 +218,8 @@ const PublicProfile = ({ open = false }) => {
     <>
         <ProfileHero
           coverPhoto={user.coverPhoto}
+          coverPosition={user.coverPosition}
+          companyPages={data.companyPages || []}
           profilePic={user.profilePic}
           name={user.name}
           roleLabel={ROLE_LABELS[user.role] || 'Professional'}

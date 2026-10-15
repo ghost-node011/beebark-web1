@@ -39,6 +39,19 @@ export const checkSalary = (raw) => {
   return '';
 };
 
+// A website address (or empty): a full domain such as yourstudio.com or https://yourstudio.com/work
+export const WEBSITE_ERROR = 'Please enter a valid website URL, e.g. https://example.com.';
+export const checkWebsite = (raw) => {
+  const text = String(raw || '').trim();
+  if (!text) return '';
+  if (/\s/.test(text)) return WEBSITE_ERROR;
+  let url;
+  try { url = new URL(/^https?:\/\//i.test(text) ? text : `https://${text}`); } catch { return WEBSITE_ERROR; }
+  const host = url.hostname.toLowerCase();
+  if (!/^https?:$/.test(url.protocol) || !/^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/.test(host)) return WEBSITE_ERROR;
+  return '';
+};
+
 // Social links: a real link on the chosen platform (the backend checks the same)
 const SOCIAL_DOMAINS = {
   linkedin: ['linkedin.com', 'lnkd.in'], instagram: ['instagram.com', 'instagr.am'], behance: ['behance.net'], pinterest: ['pinterest.com', 'pinterest.in', 'pin.it'],

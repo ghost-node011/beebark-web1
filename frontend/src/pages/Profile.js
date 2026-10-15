@@ -16,7 +16,7 @@ import {
   FiEdit2, FiPlus, FiTrash2, FiBriefcase, FiImage, FiZap,
   FiEye, FiUsers, FiTarget, FiLayers, FiGlobe, FiCamera,
   FiMessageSquare, FiBookOpen, FiUpload, FiFileText, FiExternalLink,
-  FiHome, FiCheckCircle, FiFolder, FiShare2, FiBookmark, FiCalendar, FiLink
+  FiHome, FiCheckCircle, FiFolder, FiShare2, FiBookmark, FiCalendar, FiLink, FiMove
 } from 'react-icons/fi';
 import { FaLinkedin } from 'react-icons/fa6';
 import { Link, useNavigate } from 'react-router-dom';
@@ -37,7 +37,8 @@ import CompanyInput from '../components/company/CompanyInput';
 import CompanyLogo from '../components/company/CompanyLogo';
 import { usePages } from '../context/PagesContext';
 import MonthYearPicker from '../components/MonthYearPicker';
-import { checkPhone, checkYear, checkSocialLink, nameError } from '../utils/validation';
+import { checkPhone, checkYear, checkSocialLink, checkWebsite, nameError } from '../utils/validation';
+import { IMAGE_ACCEPT, imageFileError, uploadImage, uploadImages, failedSummary } from '../lib/imageUpload';
 
 const ROLE_LABELS = {
   student: 'Student',
@@ -80,6 +81,8 @@ const fieldErrors = (form) => {
     const { error } = checkPhone(form.contact?.[key]);
     if (error) out[`contact.${key}`] = `${label}: ${error}`;
   }
+  const badWebsite = checkWebsite(form.contact?.website);
+  if (badWebsite) out['contact.website'] = badWebsite;
   (form.socialLinks || []).forEach((l, i) => {
     const error = checkSocialLink(l.platform, l.url);
     if (error) out[`social.${i}`] = `Social link ${i + 1}: ${error}`;
@@ -177,6 +180,12 @@ const Profile = () => {
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
+  const [galleryProgress, setGalleryProgress] = useState(null); // { done, total }
+  // Photos that didn't upload (and weren't refused): offered for another try
+  const [galleryRetry, setGalleryRetry] = useState([]);
+  // Cover reposition: the position being tried (0 top … 100 bottom) while editing, else null
+  const [coverDraft, setCoverDraft] = useState(null);
+  const [savingCoverPosition, setSavingCoverPosition] = useState(false);
 
   useEffect(() => {
     if (user) setFormData(emptyFormFromUser(user));
@@ -238,42 +247,48 @@ const Profile = () => {
   };
 
   const handleAvatarFile = async (file) => {
+    const problem = imageFileError(file);
+    if (problem) return toast.error(problem);
     setUploadingAvatar(true);
-    const body = new FormData();
-    body.append('image', file);
     try {
-      const uploadRes = await axios.post(`${API_URL}/api/upload/profile-photo`, body, { headers: { 'Content-Type': 'multipart/form-data' } });
-      const response = await axios.put(`${API_URL}/api/profile/update`, { profilePic: uploadRes.data.url });
+      const url = await uploadImage(file, { endpoint: '/api/upload/profile-photo', maxSide: 1200 });
+      const response = await axios.put(`${API_URL}/api/profile/update`, { profilePic: url });
       setUser(response.data.user);
       toast.success('Profile photo updated');
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Failed to upload profile photo');
+      toast.error(error.response?.data?.error || error.message || 'Failed to upload profile photo');
     } finally {
       setUploadingAvatar(false);
     }
   };
 
   const handleCoverPhotoFile = async (file) => {
-    if (!/^image\/(jpeg|png|webp|gif)$/.test(file.type)) {
-      toast.error('Please choose a JPG, PNG or WebP image');
-      return;
-    }
-    if (file.size > 18 * 1024 * 1024) {
-      toast.error('That image is too large. Please choose one under 18 MB.');
-      return;
-    }
+    const problem = imageFileError(file);
+    if (problem) return toast.error(problem);
     setUploadingCover(true);
-    const body = new FormData();
-    body.append('image', file);
     try {
-      const uploadRes = await axios.post(`${API_URL}/api/upload/image`, body, { headers: { 'Content-Type': 'multipart/form-data' } });
-      const response = await axios.put(`${API_URL}/api/profile/update`, { coverPhoto: uploadRes.data.url });
+      const url = await uploadImage(file);
+      const response = await axios.put(`${API_URL}/api/profile/update`, { coverPhoto: url, coverPosition: 50 });
       setUser(response.data.user);
       toast.success('Cover photo updated');
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Failed to upload cover photo');
+      toast.error(error.response?.data?.error || error.message || 'Failed to upload cover photo');
     } finally {
       setUploadingCover(false);
+    }
+  };
+
+  const saveCoverPosition = async () => {
+    setSavingCoverPosition(true);
+    try {
+      const response = await axios.put(`${API_URL}/api/profile/update`, { coverPosition: coverDraft });
+      setUser(response.data.user);
+      setCoverDraft(null);
+      toast.success('Cover position saved');
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Could not save the cover position');
+    } finally {
+      setSavingCoverPosition(false);
     }
   };
 
@@ -311,28 +326,38 @@ const Profile = () => {
     const base = file.name.replace(/\.[a-z0-9]+$/i, '').replace(/[_-]+/g, ' ').trim();
     return !base || /^(img|dsc|pxl|image|photo|screenshot|whatsapp image)\b|^\d[\d\s]*$/i.test(base) ? 'New project' : base.slice(0, 80);
   };
+  // Each photo uploads on its own; the ones that worked are saved even if others fail,
+  // and failed ones (not refused by the safety check) can be tried again without duplicates
   const handleGalleryFiles = async (fileList) => {
     const files = Array.from(fileList || []);
     if (!files.length) return;
-    const tooBig = files.find((f) => f.size > 18 * 1024 * 1024);
-    if (tooBig) return toast.error(`${tooBig.name} is too large. Each photo must be under 18 MB.`);
+    const wrongType = files.filter((f) => imageFileError(f));
+    if (wrongType.length === files.length) return toast.error(imageFileError(files[0]));
+    const usable = files.filter((f) => !imageFileError(f));
     setUploadingGallery(true);
+    setGalleryRetry([]);
+    setGalleryProgress({ done: 0, total: usable.length });
     try {
-      const uploadBody = new FormData();
-      files.forEach((f) => uploadBody.append('images', f));
-      const uploadRes = await axios.post(`${API_URL}/api/upload/multiple`, uploadBody, { headers: { 'Content-Type': 'multipart/form-data' } });
-      const urls = (uploadRes.data.images || []).map((img) => img.url);
-      if (!urls.length) throw new Error('No photos were uploaded');
-      const res = await axios.post(`${API_URL}/api/portfolio/items/bulk`, {
-        items: urls.map((url, i) => ({ title: projectTitleFrom(files[i] || {}), images: [url] }))
-      });
-      const added = res.data.items?.length || urls.length;
-      toast.success(`Added ${added} photo${added === 1 ? '' : 's'} to your portfolio. Add titles and details in Portfolio.`);
-      await fetchGalleryPreview();
+      const { uploaded, failed } = await uploadImages(usable, { onProgress: (done, total) => setGalleryProgress({ done, total }) });
+      // The bulk endpoint takes 10 at a time
+      let added = 0;
+      for (let i = 0; i < uploaded.length; i += 10) {
+        const res = await axios.post(`${API_URL}/api/portfolio/items/bulk`, {
+          items: uploaded.slice(i, i + 10).map(({ file, url }) => ({ title: projectTitleFrom(file), images: [url] }))
+        });
+        added += res.data.items?.length || 0;
+      }
+      if (added) toast.success(`Added ${added} photo${added === 1 ? '' : 's'} to your portfolio. Add titles and details in Portfolio.`);
+      const skipped = wrongType.length ? ` ${wrongType.length} file${wrongType.length === 1 ? ' was' : 's were'} skipped: ${imageFileError(wrongType[0])}` : '';
+      if (failed.length) toast.error(failedSummary(failed, usable.length) + skipped, { duration: 8000 });
+      else if (skipped) toast.error(skipped.trim(), { duration: 8000 });
+      setGalleryRetry(failed.filter((f) => !f.refused).map((f) => f.file));
+      if (added) await fetchGalleryPreview();
     } catch (error) {
       toast.error(error.response?.data?.error || error.message || 'Could not add the photos. Please try again.', { duration: 8000 });
     } finally {
       setUploadingGallery(false);
+      setGalleryProgress(null);
     }
   };
 
@@ -413,13 +438,11 @@ const Profile = () => {
     axios.get(`${API_URL}/api/profile/activity`).then((res) => setActivity(res.data.posts || [])).catch(() => {});
   }, []);
   const uploadPostImage = async (file) => {
-    const body = new FormData();
-    body.append('image', file);
     try {
-      const res = await axios.post(`${API_URL}/api/upload/image`, body, { headers: { 'Content-Type': 'multipart/form-data' } });
-      setPostDraft((d) => ({ ...d, mediaUrl: res.data.url }));
+      const url = await uploadImage(file);
+      setPostDraft((d) => ({ ...d, mediaUrl: url }));
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Could not upload photo');
+      toast.error(error.message || 'Could not upload photo');
     }
   };
   const publishPost = async () => {
@@ -539,6 +562,10 @@ const Profile = () => {
         <div className="max-w-5xl mx-auto space-y-6">
           <ProfileHero
             coverPhoto={formData.coverPhoto}
+            coverPosition={coverDraft ?? user?.coverPosition ?? 50}
+            coverEditing={coverDraft !== null}
+            onCoverPosition={setCoverDraft}
+            companyPages={myPages.filter((p) => p.role === 'owner')}
             profilePic={formData.profilePic}
             name={user?.name}
             roleLabel={roleLabel}
@@ -564,7 +591,25 @@ const Profile = () => {
               </>
             }
             headerExtra={
+              coverDraft !== null ? (
+                <div className="absolute top-3 right-3 z-20 flex items-center gap-2" data-testid="cover-reposition-controls">
+                  <button type="button" onClick={() => setCoverDraft(null)} disabled={savingCoverPosition}
+                    className="rounded-lg bg-black/50 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm transition hover:bg-black/70 disabled:opacity-60">
+                    Cancel
+                  </button>
+                  <button type="button" onClick={saveCoverPosition} disabled={savingCoverPosition} data-testid="cover-reposition-save"
+                    className="rounded-lg bg-[#F2B21B] px-3 py-1.5 text-xs font-semibold text-black transition hover:bg-[#FFC94A] disabled:opacity-60">
+                    {savingCoverPosition ? 'Saving…' : 'Save position'}
+                  </button>
+                </div>
+              ) : (
               <div className="absolute top-3 right-3 z-20 flex items-center gap-2">
+                {(formData.coverPhoto || user?.coverPhoto) && (
+                  <button type="button" onClick={() => setCoverDraft(Number(user?.coverPosition ?? 50))} disabled={uploadingCover} data-testid="cover-reposition"
+                    className="flex items-center gap-1.5 rounded-lg bg-black/50 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm transition hover:bg-black/70 disabled:opacity-60">
+                    <FiMove className="w-3.5 h-3.5" />Reposition
+                  </button>
+                )}
                 {(formData.coverPhoto || user?.coverPhoto) && (
                   <button type="button" onClick={removeCoverPhoto} disabled={uploadingCover} data-testid="cover-photo-remove"
                     className="flex items-center gap-1.5 rounded-lg bg-black/50 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm transition hover:bg-black/70 disabled:opacity-60">
@@ -572,12 +617,13 @@ const Profile = () => {
                   </button>
                 )}
                 <label className="cursor-pointer" data-testid="cover-photo-upload">
-                  <input type="file" accept="image/*" onChange={(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) handleCoverPhotoFile(f); }} className="hidden" disabled={uploadingCover} />
+                  <input type="file" accept={IMAGE_ACCEPT} onChange={(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) handleCoverPhotoFile(f); }} className="hidden" disabled={uploadingCover} />
                   <span className="flex items-center gap-1.5 text-xs font-medium text-white bg-black/50 hover:bg-black/70 backdrop-blur-sm rounded-lg px-3 py-1.5 transition">
                     <FiCamera className="w-3.5 h-3.5" />{uploadingCover ? 'Saving...' : (formData.coverPhoto || user?.coverPhoto) ? 'Change cover' : 'Add cover'}
                   </span>
                 </label>
               </div>
+              )
             }
           />
 
@@ -840,10 +886,15 @@ const Profile = () => {
                     </a>
                   )}
                   <Link to="/portfolio" className="text-sm font-medium text-black hover:underline hidden sm:inline">Edit</Link>
+                  {galleryRetry.length > 0 && !uploadingGallery && (
+                    <button type="button" onClick={() => handleGalleryFiles(galleryRetry)} className="rounded-lg border border-[#E6E1DB] bg-white px-3 py-1.5 text-sm font-semibold text-[#32281F] hover:bg-gray-50" data-testid="gallery-retry">
+                      Retry {galleryRetry.length} failed
+                    </button>
+                  )}
                   <label className="cursor-pointer">
-                    <input type="file" accept="image/*" multiple onChange={(e) => handleGalleryFiles(e.target.files)} className="hidden" disabled={uploadingGallery} />
+                    <input type="file" accept={IMAGE_ACCEPT} multiple onChange={(e) => { handleGalleryFiles(e.target.files); e.target.value = ''; }} className="hidden" disabled={uploadingGallery} />
                     <span className="flex items-center gap-1.5 text-sm font-medium bg-[#32281F] hover:bg-[#221A14] text-white rounded-lg px-3 py-1.5 transition">
-                      <FiUpload className="w-3.5 h-3.5" />{uploadingGallery ? 'Adding...' : 'Add Photos'}
+                      <FiUpload className="w-3.5 h-3.5" />{uploadingGallery ? (galleryProgress?.total > 1 ? `Adding ${galleryProgress.done}/${galleryProgress.total}…` : 'Adding...') : 'Add Photos'}
                     </span>
                   </label>
                 </>
@@ -1163,7 +1214,7 @@ const Profile = () => {
                     <Textarea value={postDraft.content} onChange={(e) => setPostDraft((d) => ({ ...d, content: e.target.value }))} placeholder="Share a project milestone, an idea or news" rows={4} maxLength={5000} spellCheck data-testid="post-content" />
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <label className="inline-flex cursor-pointer items-center gap-1.5 text-sm pf-muted hover:text-[#32281F]">
-                        <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files[0] && uploadPostImage(e.target.files[0])} />
+                        <input type="file" accept={IMAGE_ACCEPT} className="hidden" onChange={(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) uploadPostImage(f); }} />
                         <FiImage className="w-4 h-4" />{postDraft.mediaUrl ? 'Change photo' : 'Add a photo'}
                       </label>
                       <div className="flex gap-2">

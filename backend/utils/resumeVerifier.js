@@ -28,7 +28,7 @@ networking app (architecture, real estate, construction, or general professional
 
 File text:
 """
-${rawText.slice(0, 8000)}
+${rawText.slice(0, 14000)}
 """
 
 First, decide if this text is actually a resume/CV (a document about one person's work history,
@@ -62,7 +62,8 @@ If it is NOT a resume, respond with:
 { "isResume": false, "reason": "one short sentence explaining what it looks like instead", "detectedName": null, "detectedLocation": null, "bios": [], "suggestedIntent": [], "suggestedIndustries": [], "education": [], "experience": [] }`;
 
   try {
-    const result = await askGroqForJson(prompt);
+    // A full answer (bios, education, every job) takes a while to write
+    const result = await askGroqForJson(prompt, { timeout: 45000 });
     if (typeof result.isResume !== 'boolean') return null;
 
     return {

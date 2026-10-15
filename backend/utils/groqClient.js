@@ -108,7 +108,8 @@ const requestProvider = async (provider, key, messages, opts) => {
     try {
       const { data } = await axios.post(provider.url, body, {
         headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-        timeout: TIMEOUT_MS
+        // Long answers (reading a whole resume) can ask for more time
+        timeout: opts?.timeout || TIMEOUT_MS
       });
       const text = data?.choices?.[0]?.message?.content;
       if (!text) throw new Error(`${provider.name} returned no content`);

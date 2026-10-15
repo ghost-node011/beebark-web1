@@ -18,8 +18,9 @@ const { rateProfile } = require('../utils/profileRating');
 const PortfolioItem = require('../models/PortfolioItem');
 const { cleanName, nameError } = require('../utils/names');
 const { educationFromResume } = require('../utils/educationFromResume');
-const { experienceFromResume } = require('../utils/experienceFromResume');
-const { LEGAL_VERSION, consentRecord } = require('../utils/legal');
+const { companyKey, firstWord } = require('../utils/companyNames');
+const { experienceFromResume, experienceWithAi } = require('../utils/experienceFromResume');
+const { LEGAL_VERSION, consentRecord, hasAccepted } = require('../utils/legal');
 const Post = require('../models/Post');
 const { availabilityOptionsFor, PROFICIENCY, EMPLOYMENT_TYPES, SOCIAL_PLATFORMS, socialLinkError, yearsOfExperience } = require('../utils/profileOptions');
 const Listing = require('../models/Listing');
@@ -65,9 +66,12 @@ async function withCompanyPages(entries) {
   const names = [...new Set(entries.map((e) => String(e.company || '').trim()).filter(Boolean))];
   if (!names.length) return entries;
   const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const pages = await Company.find({ name: { $in: names.map((n) => new RegExp(`^${esc(n)}$`, 'i')) } }).select('name slug logo').lean();
+  // Names compare loosely ("Crave Design Pvt. Ltd." finds "Crave Design")
+  const words = [...new Set(names.map(firstWord).filter(Boolean))].slice(0, 30);
+  const pages = words.length ? await Company.find({ name: { $in: words.map((w) => new RegExp(esc(w), 'i')) } }).select('name slug logo').limit(500).lean() : [];
   return entries.map((e) => {
-    const page = pages.find((p) => p.name.toLowerCase() === String(e.company || '').trim().toLowerCase());
+    const key = companyKey(e.company);
+    const page = key && pages.find((p) => companyKey(p.name) === key);
     return page ? { ...e, companyPage: String(page._id), page: { _id: String(page._id), name: page.name, slug: page.slug, logo: page.logo } } : e;
   });
 }
@@ -109,8 +113,11 @@ function cleanBusiness(b) {
   };
 }
 
+// Which part of the cover shows (0 top … 100 bottom); 50 when not chosen
+const coverPositionOf = (u) => (Number.isFinite(Number(u?.coverPosition)) && u?.coverPosition !== null ? Number(u.coverPosition) : 50);
 const withHttps = (v) => (v && !/^https?:\/\//i.test(v) ? `https://${v}` : v);
-const validUrl = (v) => { try { const u = new URL(v); return /^https?:$/.test(u.protocol) && u.hostname.includes('.'); } catch { return false; } };
+const validUrl = (v) => { try { const u = new URL(v); return /^https?:$/.test(u.protocol) && /^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i.test(u.hostname) && !/\s/.test(v); } catch { return false; } };
+const WEBSITE_ERROR = 'Please enter a valid website URL, e.g. https://example.com.';
 
 // Indian numbers: 10 digits, optionally with +91 / 91 / 0 in front. Returns
 // "+91 98765 43210", '' for empty, or null when the number is invalid.
@@ -179,6 +186,7 @@ const meResponse = (user) => ({
       isVerified: user.isVerified,
       profilePic: user.profilePic,
       coverPhoto: user.coverPhoto,
+      coverPosition: coverPositionOf(user),
       bio: user.bio,
       pronouns: user.pronouns || '',
       skills: user.skills,
@@ -209,7 +217,7 @@ const meResponse = (user) => ({
       jobsView: user.settings?.jobsView === 'list' ? 'list' : 'swipe',
       regionWaitlist: user.regionWaitlist?.state ? user.regionWaitlist : null,
       // Accepted the current User Agreement and Privacy Policy
-      consentCurrent: user.legalConsent?.version === LEGAL_VERSION,
+      consentCurrent: hasAccepted(user),
       publicProfile: user.settings?.publicProfile !== false,
       followerCount: (user.followers || []).length,
       followingCount: (user.following || []).length,
@@ -311,7 +319,7 @@ function activeProjects(items) {
   return [ongoing && `${ongoing} ongoing`, pre && `${pre} in pre-launch`].filter(Boolean).join(', ');
 }
 
-const PUBLIC_SELECT = 'name username profilePic coverPhoto bio pronouns headline contact socialLinks role careerStage location industries skills specialization projectTypeFocus markets activeProjects experience education languages availability business associatedProfessionals connections followers following badges createdAt settings accountStatus blockedUsers profileViews';
+const PUBLIC_SELECT = 'name username profilePic coverPhoto coverPosition bio pronouns headline contact socialLinks role careerStage location industries skills specialization projectTypeFocus markets activeProjects experience education languages availability business associatedProfessionals connections followers following badges createdAt settings accountStatus blockedUsers profileViews';
 
 /**
  * Everything a profile page shows, for a signed-in viewer (viewerId) or an
@@ -360,14 +368,16 @@ async function buildProfile(username, viewerId, { visitor = '', countView = true
   const showGallery = isOwnProfile || galleryPublic;
   const showActivity = isOwnProfile || activityPublic;
 
-  const [items, portfolioCount, recentPosts, listings, listingCount, openJobs] = await Promise.all([
+  const [items, portfolioCount, recentPosts, listings, listingCount, openJobs, companyPages] = await Promise.all([
     PortfolioItem.find({ user: user._id }).sort({ order: 1, createdAt: -1 }).limit(24).lean(),
     PortfolioItem.countDocuments({ user: user._id }),
     showActivity ? Post.find({ author: user._id }).sort({ createdAt: -1 }).limit(5).select('title kind content mediaUrl likes comments createdAt').lean() : [],
     Listing.find({ user: user._id, status: { $ne: 'draft' } }).sort({ createdAt: -1 }).limit(6).lean(),
     Listing.countDocuments({ user: user._id, status: { $ne: 'draft' } }),
     Job.find({ postedBy: user._id, status: { $ne: 'closed' } }).sort({ createdAt: -1 }).limit(6)
-      .select('title company location salary employmentType workplace experienceLevel createdAt applicants').lean()
+      .select('title company location salary employmentType workplace experienceLevel createdAt applicants').lean(),
+    // Company pages they created (owner / founder)
+    Company.find({ owner: user._id }).sort({ createdAt: 1 }).select('name slug logo').lean()
   ]);
 
   // Contact details follow the owner's choice; anonymous visitors never see them
@@ -386,6 +396,7 @@ async function buildProfile(username, viewerId, { visitor = '', countView = true
       username: user.username,
       profilePic: user.profilePic,
       coverPhoto: user.coverPhoto,
+      coverPosition: coverPositionOf(user),
       bio: user.bio,
       pronouns: user.pronouns || '',
       role: user.role,
@@ -427,6 +438,7 @@ async function buildProfile(username, viewerId, { visitor = '', countView = true
     contactHiddenReason: contact ? null : !viewerId ? 'signin' : (visibility === 'only_me' ? 'private' : 'connect'),
     listings,
     listingCount,
+    companyPages: companyPages.map((p) => ({ _id: p._id, name: p.name, slug: p.slug, logo: p.logo || '' })),
     openJobs: openJobs.map(({ applicants, ...j }) => ({
       ...j, applicantCount: (applicants || []).length, hasApplied: Boolean(viewerId && (applicants || []).some((a) => String(a.user) === String(viewerId)))
     })),
@@ -606,7 +618,7 @@ router.get('/:userId', auth, async (req, res) => {
 
 router.put('/update', auth, async (req, res) => {
   try {
-    const { name, bio, pronouns, profilePic, coverPhoto, skills, experience, education, location, intent, industries, specialization, projectTypeFocus, markets, activeProjects, galleryPublic, activityPublic, readReceipts, jobsView, publicProfile, careerStage, headline, contact, socialLinks, languages, availability, business, associatedProfessionals } = req.body;
+    const { name, bio, pronouns, profilePic, coverPhoto, coverPosition, skills, experience, education, location, intent, industries, specialization, projectTypeFocus, markets, activeProjects, galleryPublic, activityPublic, readReceipts, jobsView, publicProfile, careerStage, headline, contact, socialLinks, languages, availability, business, associatedProfessionals } = req.body;
     const VALID_INTENT = ['learn', 'network', 'hire', 'get_hired'];
     const VALID_INDUSTRY = ['architecture', 'interiors', 'construction', 'real_estate', 'related'];
     const asTagList = (arr) => arr.map((s) => String(s).trim()).filter(Boolean).slice(0, 20);
@@ -623,6 +635,8 @@ router.put('/update', auth, async (req, res) => {
       if (coverPhoto && !isAllowedImageUrl(coverPhoto)) return res.status(400).json({ error: IMAGE_URL_ERROR, field: 'coverPhoto' });
       updateData.coverPhoto = coverPhoto || '';
     }
+    // Which part of the cover shows: 0 (top) to 100 (bottom)
+    if (coverPosition !== undefined && Number.isFinite(Number(coverPosition))) updateData.coverPosition = Math.min(100, Math.max(0, Math.round(Number(coverPosition))));
     if (location !== undefined && waitlistedStateOf(location)) {
       return res.status(400).json({ error: `BeeBark isn't open in ${waitlistedStateOf(location)} yet. Choose another city.`, field: 'location' });
     }
@@ -659,6 +673,8 @@ router.put('/update', auth, async (req, res) => {
       for (const [key, label] of [['phone', 'Phone'], ['whatsapp', 'WhatsApp']]) {
         if (cleanPhone(contact[key]) === null) return res.status(400).json({ error: `${label} number must have 10 digits`, field: `contact.${key}` });
       }
+      const site = String(contact.website || '').trim();
+      if (site && !validUrl(withHttps(clip(site, 200)))) return res.status(400).json({ error: WEBSITE_ERROR, field: 'contact.website' });
       updateData.contact = cleanContact(contact);
     }
     if (Array.isArray(socialLinks)) {
@@ -790,7 +806,7 @@ router.put('/onboarding', auth, async (req, res) => {
     if (req.body.acceptTerms === true) update.legalConsent = consentRecord(req, 'onboarding');
     if (complete === true && !update.legalConsent) {
       const saved = await User.findById(req.userId).select('legalConsent').lean();
-      if (saved?.legalConsent?.version !== LEGAL_VERSION) {
+      if (!hasAccepted(saved)) {
         return res.status(400).json({ error: 'Please accept the User Agreement and Privacy Policy to continue', code: 'CONSENT_REQUIRED' });
       }
     }
@@ -805,7 +821,10 @@ router.put('/onboarding', auth, async (req, res) => {
     if (background && typeof background === 'object') {
       const current = await User.findById(req.userId).select('experience education headline bio role badges').lean();
       const asRole = update.role || current.role;
-      if (asRole === 'student') {
+      if (asRole === 'student' && background.skipped === true) {
+        // School skipped during onboarding: added later from the profile (education stays incomplete)
+        update.careerStage = 'studying';
+      } else if (asRole === 'student') {
         const school = clip(background.school, 160);
         const field = clip(background.field, 120);
         if (!school || !field) return res.status(400).json({ error: 'Add your school and course' });
@@ -865,7 +884,11 @@ router.post('/import-resume', auth, (req, res) => {
       const user = await User.findById(req.userId);
 
       // AI check: is this actually a resume? Skip (don't block) if Groq is unavailable.
-      const analysis = await analyzeResumeForProfile(parsed.rawText, user.name);
+      // Work experience is read by its own focused question at the same time (every job, in full).
+      const [analysis, aiExperience] = await Promise.all([
+        analyzeResumeForProfile(parsed.rawText, user.name),
+        experienceWithAi(parsed.rawText)
+      ]);
       if (analysis && analysis.isResume === false) {
         return res.status(400).json({
           error: "This doesn't look like a resume",
@@ -907,7 +930,7 @@ router.post('/import-resume', auth, (req, res) => {
       // Education to review before saving: the AI reading, or the rules when it found nothing
       const educationEntries = analysis?.education?.length ? analysis.education : educationFromResume(parsed.rawText);
       // Work experience the same way, each matched to its BeeBark company page (for the logo) when there is one
-      const experienceEntries = await withCompanyPages(analysis?.experience?.length ? analysis.experience : experienceFromResume(parsed.rawText));
+      const experienceEntries = await withCompanyPages(aiExperience?.length ? aiExperience : analysis?.experience?.length ? analysis.experience : experienceFromResume(parsed.rawText));
 
       user.resume = {
         url: resumeUrl,

@@ -67,7 +67,7 @@ const CityPicker = ({ value, onChange, onWaitlisted, placeholder = 'Select your 
                 <input ref={searchRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search cities..." data-testid={`${testId}-search`}
                   className="h-12 w-full rounded-full border border-[#F1DFA8] bg-[#FFFAEB] pl-12 pr-4 text-[15px] outline-none focus:border-[#E0B93C]" />
               </div>
-              <p className="mt-2 px-1 text-xs text-[#857B71]">BeeBark isn't open in {WAITLISTED_STATES.join(' and ')} yet; cities there are waitlisted.</p>
+              {WAITLISTED_STATES.length > 0 && <p className="mt-2 px-1 text-xs text-[#857B71]">BeeBark isn't open in {WAITLISTED_STATES.join(' and ')} yet; cities there are waitlisted.</p>}
             </div>
             <div className="flex-1 overflow-y-auto overscroll-contain pb-6">
               {list.slice(0, term ? 60 : 400).map((c) => {

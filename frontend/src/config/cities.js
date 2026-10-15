@@ -1,7 +1,8 @@
 // Indian cities by state/union territory, for the city picker in onboarding.
 // States in WAITLISTED_STATES aren't open yet: their cities are shown but can't
 // be chosen to enter the app (the backend checks the same list).
-export const WAITLISTED_STATES = ['Kerala', 'Tamil Nadu'];
+// Every state is open for now (it was Kerala and Tamil Nadu); keep in step with the backend's utils/regions.js
+export const WAITLISTED_STATES = [];
 
 export const CITIES_BY_STATE = {
   'Andhra Pradesh': ['Visakhapatnam', 'Vijayawada', 'Guntur', 'Nellore', 'Kurnool', 'Rajahmundry', 'Kakinada', 'Tirupati', 'Anantapur', 'Kadapa', 'Eluru', 'Ongole', 'Vizianagaram', 'Srikakulam', 'Amaravati'],

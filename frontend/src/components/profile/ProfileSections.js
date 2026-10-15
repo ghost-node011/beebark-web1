@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import CompanyLogo from '../company/CompanyLogo';
+import CompanyLogo, { companyInitials } from '../company/CompanyLogo';
 import { toast } from 'sonner';
 import {
   FiGlobe, FiMapPin, FiUsers, FiCalendar, FiExternalLink, FiMail, FiPhone, FiCopy, FiLock, FiChevronDown,
@@ -133,8 +133,6 @@ export const ProjectGrid = ({ items, linkFor }) => {
   );
 };
 
-// Initials of a company with no BeeBark page, e.g. "Studio Mehta" -> "SM"
-const initialsOf = (name) => String(name || '').split(/\s+/).filter((w) => /^[\p{L}\p{N}]/u.test(w)).slice(0, 2).map((w) => w[0].toUpperCase()).join('') || '?';
 const LOGO_TONES = ['bg-[#F2EBDD] text-[#7A5A1E]', 'bg-[#E7EEF0] text-[#2F5560]', 'bg-[#EFE7EE] text-[#5E3A5A]', 'bg-[#E9EFE6] text-[#3D5A34]', 'bg-[#F3E6DF] text-[#7A3E26]'];
 const toneOf = (name) => LOGO_TONES[[...String(name || '')].reduce((n, c) => n + c.charCodeAt(0), 0) % LOGO_TONES.length];
 
@@ -152,7 +150,7 @@ export const ExperienceCard = ({ exp, actions }) => {
           <CompanyLogo page={exp.page} className="w-12 h-12 sm:w-14 sm:h-14" text="text-sm" />
         </Link>
       ) : (
-        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-base font-bold sm:h-14 sm:w-14 sm:text-lg ${toneOf(company)}`} aria-hidden="true">{initialsOf(company)}</div>
+        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-base font-bold sm:h-14 sm:w-14 sm:text-lg ${toneOf(company)}`} aria-hidden="true">{companyInitials(company) || <FiBriefcase className="h-1/2 w-1/2" />}</div>
       )}
       <div className="min-w-0 flex-1">
         <p className="text-[17px] font-semibold leading-snug text-[#1C1712] sm:text-lg">{exp.title}</p>

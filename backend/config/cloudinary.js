@@ -36,7 +36,7 @@ const upload = multer({
     if (mimetype && extname) {
       return cb(null, true);
     } else {
-      cb(new Error('Only image files are allowed'));
+      cb(Object.assign(new Error('Please select an image in JPEG or PNG format.'), { status: 400 }));
     }
   }
 });
