@@ -19,7 +19,7 @@ const PortfolioItem = require('../models/PortfolioItem');
 const { cleanName, nameError } = require('../utils/names');
 const { educationFromResume } = require('../utils/educationFromResume');
 const { companyKey, firstWord } = require('../utils/companyNames');
-const { experienceFromResume, experienceWithAi } = require('../utils/experienceFromResume');
+const { experienceFromResume, experienceWithAi, fillGaps } = require('../utils/experienceFromResume');
 const { LEGAL_VERSION, consentRecord, hasAccepted } = require('../utils/legal');
 const Post = require('../models/Post');
 const { availabilityOptionsFor, PROFICIENCY, EMPLOYMENT_TYPES, SOCIAL_PLATFORMS, socialLinkError, yearsOfExperience } = require('../utils/profileOptions');
@@ -930,7 +930,8 @@ router.post('/import-resume', auth, (req, res) => {
       // Education to review before saving: the AI reading, or the rules when it found nothing
       const educationEntries = analysis?.education?.length ? analysis.education : educationFromResume(parsed.rawText);
       // Work experience the same way, each matched to its BeeBark company page (for the logo) when there is one
-      const experienceEntries = await withCompanyPages(aiExperience?.length ? aiExperience : analysis?.experience?.length ? analysis.experience : experienceFromResume(parsed.rawText));
+      const experienceEntries = await withCompanyPages(aiExperience?.length ? aiExperience
+        : analysis?.experience?.length ? fillGaps(analysis.experience, experienceFromResume(parsed.rawText)) : experienceFromResume(parsed.rawText));
 
       user.resume = {
         url: resumeUrl,

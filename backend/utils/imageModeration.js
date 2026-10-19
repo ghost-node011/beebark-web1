@@ -7,8 +7,9 @@ const { askGroqVisionForJson } = require('./groqClient');
 //   1. Amazon Rekognition content moderation (when AWS is set up: S3_BUCKET or
 //      MODERATION_REKOGNITION=1; region REKOGNITION_REGION, else AWS_REGION, else ap-southeast-2)
 //   2. The vision AI (Groq / Gemini, see groqClient)
-// If neither can answer, the upload is refused ("try again"), so nothing
-// unchecked gets through. MODERATION_DISABLED=1 turns all of this off (local dev only).
+// If neither can answer right now, the image is stored and checked again in
+// the background for a few minutes (checkLater); one that's refused then is
+// deleted from storage. MODERATION_DISABLED=1 turns all of this off (local dev only).
 
 let sharp = null;
 try { sharp = require('sharp'); } catch { /* optional: images are sent as they are */ }
@@ -117,6 +118,12 @@ async function moderateImage(filePath, mimeType, opts = {}) {
 async function checkImage(filePath, mimeType, { profile = false } = {}) {
   const img = await preview(filePath, mimeType);
   if (!img) return { ok: false, reason: "This file couldn't be read as an image. Please try a JPG or PNG.", provider: 'none', labels: [] };
+  return checkBytes(img.bytes, img.mime, { profile });
+}
+
+// The check itself, on a ready-made preview (JPEG bytes)
+async function checkBytes(bytes, mime, { profile = false } = {}) {
+  const img = { bytes, mime };
 
   if (useRekognition() && Date.now() > rekognitionOffUntil) {
     try {
@@ -130,7 +137,8 @@ async function checkImage(filePath, mimeType, { profile = false } = {}) {
       console.error('Image moderation (Rekognition) failed, using the vision AI:', error.name || '', error.message);
     }
   }
-  const small = (await preview(filePath, mimeType, 448)) || img;
+  const small = (sharp && await sharp(img.bytes).resize(448, 448, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 80 }).toBuffer()
+    .then((b) => ({ bytes: b, mime: 'image/jpeg' })).catch(() => null)) || img;
   // The free AI plan limits requests per minute: wait and retry briefly before giving up
   // (kept short so an upload never waits close to a minute)
   for (const wait of [0, 2000, 5000]) {
@@ -147,8 +155,10 @@ async function checkImage(filePath, mimeType, { profile = false } = {}) {
 }
 
 /**
- * Check several multer files; removes the temp files of any that are refused.
- * Returns { ok, rejected: [{ name, reason }], unavailable }.
+ * Check several multer files. Refused images have their temp files removed.
+ * Images no checker could answer right now are let through with
+ * `file.recheck` set (a small preview to check again later with checkLater).
+ * Returns { ok, rejected: [{ name, reason }], pending: count }.
  */
 async function moderateFiles(files, { profile = false, userId = '' } = {}) {
   // Two at a time, to stay inside the AI's per-minute limits on big batches
@@ -156,16 +166,50 @@ async function moderateFiles(files, { profile = false, userId = '' } = {}) {
   for (let i = 0; i < files.length; i += 2) {
     results.push(...await Promise.all(files.slice(i, i + 2).map(async (f) => ({ f, r: /^image\//.test(f.mimetype) ? await moderateImage(f.path, f.mimetype, { profile }) : { ok: true } }))));
   }
-  const rejected = results.filter(({ r }) => !r.ok);
+  const rejected = results.filter(({ r }) => !r.ok && !r.unavailable);
   for (const { f, r } of rejected) {
-    if (!r.unavailable) console.warn(`Image refused for user ${userId}: ${f.originalname} (${r.provider}: ${(r.labels || []).map((l) => `${l.name} ${l.confidence}`).join(', ')})`);
+    console.warn(`Image refused for user ${userId}: ${f.originalname} (${r.provider}: ${(r.labels || []).map((l) => `${l.name} ${l.confidence}`).join(', ')})`);
   }
-  if (rejected.length) for (const f of files) { try { if (f.path && fs.existsSync(f.path)) fs.unlinkSync(f.path); } catch { /* already gone */ } }
-  return {
-    ok: rejected.length === 0,
-    unavailable: rejected.some(({ r }) => r.unavailable),
-    rejected: rejected.map(({ f, r }) => ({ name: f.originalname, reason: r.reason }))
-  };
+  if (rejected.length) {
+    for (const f of files) { try { if (f.path && fs.existsSync(f.path)) fs.unlinkSync(f.path); } catch { /* already gone */ } }
+    return { ok: false, rejected: rejected.map(({ f, r }) => ({ name: f.originalname, reason: r.reason })), pending: 0 };
+  }
+  // Not checked yet: keep a small preview so it can be checked after it's stored
+  const pending = results.filter(({ r }) => r.unavailable);
+  for (const { f } of pending) {
+    const img = await preview(f.path, f.mimetype).catch(() => null);
+    if (img) f.recheck = { bytes: img.bytes, mime: img.mime, profile, userId, name: f.originalname };
+  }
+  if (pending.length) console.warn(`Image safety check unavailable: ${pending.length} image(s) from user ${userId} stored and queued for a later check`);
+  return { ok: true, rejected: [], pending: pending.length };
 }
 
-module.exports = { moderateImage, moderateFiles };
+// Checked again 30 s, 1, 2, 4 and 8 minutes after upload
+const RECHECK_DELAYS = [30e3, 60e3, 120e3, 240e3, 480e3];
+
+/**
+ * Check a stored image again in the background (file.recheck from moderateFiles).
+ * `remove()` deletes it from storage if it's refused.
+ */
+function checkLater(recheck, remove) {
+  if (!recheck) return;
+  let attempt = 0;
+  const run = async () => {
+    try {
+      const r = await checkBytes(recheck.bytes, recheck.mime, { profile: recheck.profile });
+      if (r.ok) return;
+      if (!r.unavailable) {
+        console.warn(`Image refused after upload for user ${recheck.userId}: ${recheck.name} (${r.provider}: ${(r.labels || []).map((l) => `${l.name} ${l.confidence}`).join(', ')}); removing it`);
+        await remove();
+        return;
+      }
+    } catch (error) {
+      console.error('Later image check failed:', error.message);
+    }
+    if (attempt < RECHECK_DELAYS.length) setTimeout(run, RECHECK_DELAYS[attempt++]).unref();
+    else console.warn(`Image never checked (no checker answered): ${recheck.name} from user ${recheck.userId}`);
+  };
+  setTimeout(run, RECHECK_DELAYS[attempt++]).unref();
+}
+
+module.exports = { moderateImage, moderateFiles, checkLater };

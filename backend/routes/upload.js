@@ -2,24 +2,29 @@ const express = require('express');
 const router = express.Router();
 const fs = require('fs');
 const auth = require('../middleware/auth');
-const { upload, uploadChatFile, uploadToCloudinary } = require('../config/cloudinary');
+const { cloudinary, upload, uploadChatFile, uploadToCloudinary } = require('../config/cloudinary');
 const { verifyProfilePhoto } = require('../utils/photoVerifier');
-const { moderateFiles } = require('../utils/imageModeration');
+const { moderateFiles, checkLater } = require('../utils/imageModeration');
 
 // Runs before anything is stored: refuses nudity, sexual content, gore and hate
 // symbols. Sends the error itself and returns false when the upload is refused.
+// Images the check couldn't answer for yet are stored and checked again later (see store).
 async function safeOrRefuse(req, res, files, opts = {}) {
   const check = await moderateFiles(files, { ...opts, userId: String(req.userId || '') });
   if (check.ok) return true;
-  if (check.unavailable) {
-    res.status(503).json({ error: check.rejected[0]?.reason, moderation: true, retry: true });
-  } else {
-    const error = check.rejected.length === 1 || files.length === 1
-      ? check.rejected[0].reason
-      : `${check.rejected.length} of your images aren't allowed on BeeBark (${check.rejected.map((r) => r.name).join(', ')}). ${check.rejected[0].reason}`;
-    res.status(422).json({ error, rejected: check.rejected, moderation: true });
-  }
+  const error = check.rejected.length === 1 || files.length === 1
+    ? check.rejected[0].reason
+    : `${check.rejected.length} of your images aren't allowed on BeeBark (${check.rejected.map((r) => r.name).join(', ')}). ${check.rejected[0].reason}`;
+  res.status(422).json({ error, rejected: check.rejected, moderation: true });
   return false;
+}
+
+// Store one checked file on Cloudinary; one that couldn't be checked yet is checked
+// again in the background and deleted if it's refused then
+async function store(file, folder) {
+  const result = await uploadToCloudinary(file.path, folder);
+  checkLater(file.recheck, () => cloudinary.uploader.destroy(result.publicId, { invalidate: true }));
+  return result;
 }
 
 router.post('/image', auth, upload.single('image'), async (req, res) => {
@@ -30,7 +35,7 @@ router.post('/image', auth, upload.single('image'), async (req, res) => {
     if (!(await safeOrRefuse(req, res, [req.file]))) return;
 
     if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY) {
-      const result = await uploadToCloudinary(req.file.path);
+      const result = await store(req.file);
       return res.json({
         message: 'Image uploaded successfully',
         url: result.url,
@@ -71,7 +76,7 @@ router.post('/profile-photo', auth, upload.single('image'), async (req, res) => 
     }
 
     if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY) {
-      const result = await uploadToCloudinary(req.file.path);
+      const result = await store(req.file);
       return res.json({ message: 'Photo uploaded successfully', url: result.url, publicId: result.publicId });
     } else {
       const localUrl = `/uploads/${req.file.filename}`;
@@ -94,7 +99,7 @@ router.post('/multiple', auth, upload.array('images', 10), async (req, res) => {
     
     if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY) {
       for (const file of req.files) {
-        const result = await uploadToCloudinary(file.path);
+        const result = await store(file);
         images.push(result);
       }
     } else {
@@ -129,7 +134,7 @@ router.post('/chat-files', auth, (req, res) => {
       const cloud = process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY;
       const files = [];
       for (const file of req.files) {
-        const url = cloud ? (await uploadToCloudinary(file.path, 'chat')).url : `/uploads/${file.filename}`;
+        const url = cloud ? (await store(file, 'chat')).url : `/uploads/${file.filename}`;
         files.push({
           url,
           name: file.originalname.slice(0, 200),
