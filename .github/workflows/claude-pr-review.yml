@@ -1,0 +1,97 @@
+name: Claude PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Remove old approval label (new commits = fresh review)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr edit ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --remove-label claude-approved || true
+
+      - name: Claude review
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}   # AUTH (Option B: anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }})
+          github_token: ${{ github.token }}
+          prompt: |
+            You are reviewing PR #${{ github.event.pull_request.number }} in ${{ github.repository }}.
+
+            1. Read REVIEW_GUIDELINES.md at the repo root. Those are the owner's rules. Follow them strictly.
+            2. Run `gh pr view ${{ github.event.pull_request.number }}` and `gh pr diff ${{ github.event.pull_request.number }}` to see the PR.
+            3. Read surrounding code in the repo if you need context.
+            4. Decide: does this PR have any real problems according to the guidelines
+               (bugs, security issues, rule violations, missing tests where required)?
+               Ignore tiny style nitpicks unless the guidelines say otherwise.
+
+            IF THERE ARE PROBLEMS:
+              - Post an inline comment on each problem line using mcp__github_inline_comment__create_inline_comment.
+                Each comment: what's wrong, why, and a suggested fix.
+              - Then run: gh pr review ${{ github.event.pull_request.number }} --request-changes --body "<short summary of issues>"
+              - Do NOT add the claude-approved label.
+
+            IF THERE ARE NO PROBLEMS:
+              - Run: gh pr comment ${{ github.event.pull_request.number }} --body "✅ Claude review passed. <2-3 line summary of what the PR does>. Ready for owner approval."
+              - Run: gh pr edit ${{ github.event.pull_request.number }} --add-label claude-approved
+              - Do NOT approve the PR yourself.
+          claude_args: |
+            --max-turns 30
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Read,Grep,Glob,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(gh pr review:*),Bash(gh pr edit:*)"
+
+      - name: Check Claude's verdict
+        id: verdict
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh pr view ${{ github.event.pull_request.number }} --repo ${{ github.repository }} \
+               --json labels -q '.labels[].name' | grep -qx 'claude-approved'; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Email me – PR ready to approve
+        if: steps.verdict.outputs.ready == 'true'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          from: Claude PR Bot <${{ secrets.MAIL_USERNAME }}>
+          to: ${{ secrets.MAIL_TO }}
+          subject: "✅ Ready to approve: PR #${{ github.event.pull_request.number }} – ${{ github.event.pull_request.title }}"
+          body: |
+            Claude reviewed this PR and found no issues.
+
+            Repo:   ${{ github.repository }}
+            PR:     #${{ github.event.pull_request.number }} – ${{ github.event.pull_request.title }}
+            Author: ${{ github.event.pull_request.user.login }}
+
+            Open and approve:
+            ${{ github.event.pull_request.html_url }}
