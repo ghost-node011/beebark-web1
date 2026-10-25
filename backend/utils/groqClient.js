@@ -108,7 +108,8 @@ const requestProvider = async (provider, key, messages, opts) => {
   let lastError = null;
   for (const model of models) {
     if (models.length > 1 && retiredModels.has(`${provider.name}:${model}`)) continue;
-    const body = { model, messages, temperature: 0.3 };
+    // Reading documents and screenshots asks for temperature 0 (the same answer every time)
+    const body = { model, messages, temperature: opts?.temperature ?? 0.3 };
     if (opts?.json && provider.supportsJsonMode) body.response_format = { type: 'json_object' };
     try {
       const { data } = await axios.post(provider.url, body, {
@@ -138,7 +139,9 @@ const requestProvider = async (provider, key, messages, opts) => {
  * only if all of them fail, so callers can fall back to non-AI behaviour.
  */
 const askGroqMessages = async (messages, opts) => {
-  const pool = PROVIDERS.map((provider) => ({ provider, keys: keysFor(provider) })).filter((p) => p.keys.length);
+  // opts.prefer: a provider to try first (e.g. 'gemini' for reading long screenshots)
+  const ordered = opts?.prefer ? [...PROVIDERS].sort((a, b) => Number(b.name === opts.prefer) - Number(a.name === opts.prefer)) : PROVIDERS;
+  const pool = ordered.map((provider) => ({ provider, keys: keysFor(provider) })).filter((p) => p.keys.length);
   if (!pool.length) {
     throw new Error('No AI provider configured (set GROQ_API_KEYS and/or GEMINI_API_KEYS)');
   }
@@ -208,4 +211,19 @@ const askGroqVisionForJson = async (prompt, base64Data, mimeType) => {
   return parseJson(text);
 };
 
-module.exports = { askGroq, askGroqForJson, askGroqVisionForJson };
+// Question about several images at once ([{ base64, mime }]) plus a text prompt, expecting JSON.
+const askVisionForJson = async (prompt, images, opts = {}) => {
+  const text = await askGroqMessages(
+    [{
+      role: 'user',
+      content: [
+        { type: 'text', text: prompt },
+        ...images.map((img) => ({ type: 'image_url', image_url: { url: `data:${img.mime};base64,${img.base64}` } }))
+      ]
+    }],
+    { json: true, vision: true, ...opts }
+  );
+  return parseJson(text);
+};
+
+module.exports = { askGroq, askGroqForJson, askGroqVisionForJson, askVisionForJson };

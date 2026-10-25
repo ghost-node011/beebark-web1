@@ -23,7 +23,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 import {
   FiUpload, FiZap, FiCheckCircle, FiAward, FiEdit2, FiTrash2, FiLock, FiUnlock, FiX, FiUsers, FiPlus,
-  FiSearch, FiBookmark, FiChevronDown, FiStar
+  FiSearch, FiBookmark, FiChevronDown, FiStar, FiLinkedin
 } from 'react-icons/fi';
 import { API_URL } from '../config/api';
 import { getCopy } from '../config/roleDomainCopy';
@@ -109,6 +109,38 @@ const JobForm = ({ initial, submitLabel, onSubmit, pages = [], defaultPage = nul
   const set = (key) => (value) => setForm((f) => ({ ...f, [key]: value }));
   const [showSalaryError, setShowSalaryError] = useState(false);
   const salaryError = showSalaryError ? checkSalary(form.salary) : '';
+  // "Fill from a screenshot": a job post (e.g. on LinkedIn) read by the AI into this form
+  const [readingShot, setReadingShot] = useState(false);
+  const fillFromScreenshot = async (e) => {
+    const files = Array.from(e.target.files || []).slice(0, 6);
+    e.target.value = '';
+    if (!files.length) return;
+    if (files.some((f) => !/^image\/(jpeg|png|webp)$/.test(f.type))) { toast.error('Please choose screenshots in JPEG or PNG format.'); return; }
+    const fd = new FormData();
+    files.forEach((f) => fd.append('images', f));
+    setReadingShot(true);
+    try {
+      const { job } = (await axios.post(`${API_URL}/api/jobs/import-screenshot`, fd, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 120000 })).data;
+      setForm((f) => ({
+        ...f,
+        title: job.title || f.title,
+        company: f.companyPage ? f.company : job.company || f.company,
+        location: job.location || f.location,
+        salary: job.salary || f.salary,
+        employmentType: job.employmentType || f.employmentType,
+        workplace: job.workplace || f.workplace,
+        experienceLevel: job.experienceLevel || f.experienceLevel,
+        skills: [...new Set([...f.skills, ...(job.skills || [])])].slice(0, 20),
+        description: job.description || f.description
+      }));
+      setShowSalaryError(Boolean(job.salary));
+      toast.success('Filled from the screenshot. Check everything before posting.');
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Could not read that screenshot. Please try again.');
+    } finally {
+      setReadingShot(false);
+    }
+  };
 
   const addSkill = (picked) => {
     const skill = String(picked ?? skillInput).trim().replace(/,$/, '').slice(0, 40);
@@ -135,6 +167,16 @@ const JobForm = ({ initial, submitLabel, onSubmit, pages = [], defaultPage = nul
 
   return (
     <form onSubmit={submit} className="space-y-4 mt-4 pf-page">
+      {!initial && (
+        <label className={`flex cursor-pointer items-center gap-3 rounded-xl border-2 border-dashed border-[#CFE0F2] bg-[#F3F8FD] px-4 py-3 text-sm text-[#1C1712] hover:border-[#0A66C2] ${readingShot ? 'pointer-events-none opacity-60' : ''}`} data-testid="job-shot-button">
+          <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={fillFromScreenshot} data-testid="job-shot-input" />
+          <FiLinkedin className="h-5 w-5 shrink-0 text-[#0A66C2]" />
+          <span className="min-w-0">
+            <span className="block font-semibold">{readingShot ? 'Reading the job post…' : 'Fill from a job post screenshot'}</span>
+            <span className="block text-xs text-[#6B625A]">Posted this job on LinkedIn? Add screenshots of it and we'll fill in the form for you to check.</span>
+          </span>
+        </label>
+      )}
       {pages.length > 0 && (
         <div>
           <Label>Post as</Label>

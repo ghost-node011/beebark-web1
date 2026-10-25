@@ -10,7 +10,10 @@ const { WAITLISTED_STATES, waitlistedStateOf } = require('../utils/regions');
 const { waitlistBadgesFor } = require('../utils/waitlistBadges');
 const Waitlist = require('../models/Waitlist');
 const auth = require('../middleware/auth');
-const { uploadDocument, uploadToCloudinary } = require('../config/cloudinary');
+const { upload, uploadDocument, uploadToCloudinary } = require('../config/cloudinary');
+const rateLimit = require('../middleware/rateLimit');
+// Screenshots read by the AI: a few per person every 15 minutes
+const screenshotLimiter = rateLimit({ bucket: 'screenshot-import', windowMs: 15 * 60 * 1000, max: 20, message: 'Too many screenshot imports. Please try again in a few minutes.' });
 const { parseResume } = require('../utils/resumeParser');
 const { getDashboardInsights, computeProfileCompletion } = require('../utils/dashboardInsights');
 const { analyzeResumeForProfile } = require('../utils/resumeVerifier');
@@ -874,6 +877,48 @@ router.put('/onboarding', auth, async (req, res) => {
 
 // Import a resume/CV (PDF/DOCX): parse it, merge extracted skills into the
 // profile, and store the file + parsed data so users don't have to refill.
+// "Import from LinkedIn screenshots": the profile read by the AI. Skills are
+// added (like a resume import); headline, location and bio (About) fill only empty fields;
+// education and experience come back for the person to review before saving.
+router.post('/import-screenshots', auth, screenshotLimiter, upload.array('images', 6), async (req, res) => {
+  const files = req.files || [];
+  try {
+    if (!files.length) return res.status(400).json({ error: 'Add screenshots of your LinkedIn profile' });
+    const read = await require('../utils/screenshotReader').readLinkedInProfile(files);
+    if (!read.isProfile) return res.status(400).json({ error: "These don't look like LinkedIn profile screenshots. Try screenshots of your profile page." });
+    const user = await User.findById(req.userId).select('name skills headline location bio').lean();
+    const skills = [...(user.skills || [])];
+    const seen = new Set(skills.map((s) => s.toLowerCase()));
+    for (const s of read.skills) if (!seen.has(s.toLowerCase())) { skills.push(s); seen.add(s.toLowerCase()); }
+    const changes = { skills: skills.slice(0, 30) };
+    if (!user.headline && read.headline) changes.headline = read.headline;
+    // Their LinkedIn About is their own bio: used when they have none (no bio picker)
+    if (!user.bio && read.about) changes.bio = read.about.slice(0, 500);
+    if (!user.location && read.location && !waitlistedStateOf(read.location)) changes.location = read.location;
+    await User.updateOne({ _id: req.userId }, { $set: changes });
+    const experienceEntries = await withCompanyPages(read.experience);
+    res.json({
+      message: 'Profile read',
+      source: 'linkedin',
+      skills: changes.skills,
+      parsed: { skills: read.skills },
+      bios: [],
+      detectedName: read.name || null,
+      currentName: user.name,
+      nameMismatch: Boolean(read.name && user.name && read.name.trim().toLowerCase() !== user.name.trim().toLowerCase()),
+      headline: read.headline,
+      location: read.location,
+      educationEntries: read.education,
+      experienceEntries
+    });
+  } catch (error) {
+    console.error('LinkedIn screenshot import:', error.message);
+    res.status(503).json({ error: "We couldn't read the screenshots right now. Please try again in a minute." });
+  } finally {
+    for (const f of files) require('fs').promises.unlink(f.path).catch(() => {});
+  }
+});
+
 router.post('/import-resume', auth, (req, res) => {
   uploadDocument.single('resume')(req, res, async (err) => {
     if (err) return res.status(400).json({ error: err.message || 'Upload failed' });

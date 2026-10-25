@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { FiUploadCloud, FiFileText, FiUpload, FiBookOpen, FiBriefcase } from 'react-icons/fi';
+import { FiUploadCloud, FiFileText, FiUpload, FiBookOpen, FiBriefcase, FiLinkedin } from 'react-icons/fi';
 import { API_URL } from '../config/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import MonthYearPicker from './MonthYearPicker';
@@ -30,7 +30,7 @@ const sameEntry = (a, b) => schoolKey(a.school) === schoolKey(b.school)
  * or left out before it's added to the profile. Entries already on the
  * profile (same school and degree) are skipped.
  */
-const EducationReview = ({ entries, onClose, onSaved }) => {
+const EducationReview = ({ entries, onClose, onSaved, source = 'resume' }) => {
   const [rows, setRows] = useState(() => entries.map((e) => ({ ...e, keep: true })));
   const [saving, setSaving] = useState(false);
 
@@ -79,7 +79,7 @@ const EducationReview = ({ entries, onClose, onSaved }) => {
     <Dialog open onOpenChange={(o) => { if (!o && !saving) onClose(); }}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto" data-testid="education-review">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><FiBookOpen className="text-[#C9A227]" />Education found in your resume</DialogTitle>
+          <DialogTitle className="flex items-center gap-2"><FiBookOpen className="text-[#C9A227]" />Education found in your {source === 'linkedin' ? 'LinkedIn profile' : 'resume'}</DialogTitle>
         </DialogHeader>
         <p className="-mt-2 text-sm text-gray-500">Check each entry, correct anything that's wrong, and untick what you don't want. Nothing is added until you save.</p>
         <div className="space-y-3">
@@ -133,7 +133,7 @@ const expKey = (e) => `${String(e.title || '').toLowerCase().replace(/[^a-z0-9]/
  * BeeBark page logo when matched), place, months and description can be
  * corrected or left out. Entries already on the profile are skipped.
  */
-const ExperienceReview = ({ entries, onClose, onSaved }) => {
+const ExperienceReview = ({ entries, onClose, onSaved, source = 'resume' }) => {
   const [rows, setRows] = useState(() => entries.map((e) => ({ ...e, keep: true })));
   const [saving, setSaving] = useState(false);
   useEffect(() => {
@@ -176,7 +176,7 @@ const ExperienceReview = ({ entries, onClose, onSaved }) => {
     <Dialog open onOpenChange={(o) => { if (!o && !saving) onClose(); }}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto" data-testid="experience-review">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><FiBriefcase className="text-[#C9A227]" />Experience found in your resume</DialogTitle>
+          <DialogTitle className="flex items-center gap-2"><FiBriefcase className="text-[#C9A227]" />Experience found in your {source === 'linkedin' ? 'LinkedIn profile' : 'resume'}</DialogTitle>
         </DialogHeader>
         <p className="-mt-2 text-sm text-gray-500">Check each job, correct anything that's wrong, and untick what you don't want. Nothing is added until you save.</p>
         <div className="space-y-3">
@@ -222,9 +222,28 @@ const ExperienceReview = ({ entries, onClose, onSaved }) => {
 
 const ResumeImport = ({ onImported, onEducationSaved, onExperienceSaved, variant = 'button' }) => {
   const inputRef = useRef(null);
+  const shotsRef = useRef(null);
   const [loading, setLoading] = useState(false);
+  const [readingShots, setReadingShots] = useState(false);
+  const [source, setSource] = useState('resume'); // what the entries under review came from
   const [education, setEducation] = useState(null); // entries found in the resume, to review
   const [experience, setExperience] = useState(null); // shown after the education review
+  // The rest of an import (name check, bio picker) waits until the reviews are done, so
+  // only one dialog is open at a time
+  const [afterReview, setAfterReview] = useState(null);
+  useEffect(() => {
+    if (afterReview && !education && !experience) {
+      onImported?.(afterReview);
+      setAfterReview(null);
+    }
+  }, [afterReview, education, experience, onImported]);
+  const finishImport = (data) => {
+    const hasReview = Boolean(data?.educationEntries?.length || data?.experienceEntries?.length);
+    if (data?.educationEntries?.length) setEducation(data.educationEntries);
+    if (data?.experienceEntries?.length) setExperience(data.experienceEntries);
+    if (hasReview) setAfterReview(data);
+    else onImported?.(data);
+  };
 
   const handleFile = async (e) => {
     const file = e.target.files?.[0];
@@ -238,9 +257,8 @@ const ResumeImport = ({ onImported, onEducationSaved, onExperienceSaved, variant
       });
       const count = res.data?.parsed?.skills?.length || 0;
       toast.success(count ? `Imported ${count} skill${count === 1 ? '' : 's'} from your resume` : 'Resume imported');
-      onImported?.(res.data);
-      if (res.data?.educationEntries?.length) setEducation(res.data.educationEntries);
-      if (res.data?.experienceEntries?.length) setExperience(res.data.experienceEntries);
+      setSource('resume');
+      finishImport(res.data);
     } catch (error) {
       const data = error.response?.data;
       const message = data?.reason ? `${data.error} — ${data.reason}` : data?.error;
@@ -251,13 +269,36 @@ const ResumeImport = ({ onImported, onEducationSaved, onExperienceSaved, variant
     }
   };
 
+  // LinkedIn profile screenshots (up to 6): read by the AI, then the same review as a resume
+  const handleScreenshots = async (e) => {
+    const files = Array.from(e.target.files || []).slice(0, 6);
+    if (shotsRef.current) shotsRef.current.value = '';
+    if (!files.length) return;
+    if (files.some((f) => !/^image\/(jpeg|png|webp)$/.test(f.type))) { toast.error('Please choose screenshots in JPEG or PNG format.'); return; }
+    const fd = new FormData();
+    files.forEach((f) => fd.append('images', f));
+    setReadingShots(true);
+    try {
+      const res = await axios.post(`${API_URL}/api/profile/import-screenshots`, fd, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 120000 });
+      const d = res.data || {};
+      toast.success(`Read your LinkedIn profile: ${d.experienceEntries?.length || 0} experience, ${d.educationEntries?.length || 0} education, ${d.parsed?.skills?.length || 0} skills`);
+      setSource('linkedin');
+      finishImport({ ...d, source: 'linkedin' });
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Could not read those screenshots. Please try again.');
+    } finally {
+      setReadingShots(false);
+    }
+  };
+  const shotsInput = <input ref={shotsRef} type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={handleScreenshots} className="hidden" data-testid="linkedin-shots-input" />;
+
   // Education first, then experience
   const review = education ? (
     <EducationReview entries={education.map((e) => ({ school: e.school || '', degree: e.degree || '', field: e.field || '', startYear: e.startYear || '', endYear: e.endYear || '' }))}
-      onClose={() => setEducation(null)} onSaved={onEducationSaved} />
+      onClose={() => setEducation(null)} onSaved={onEducationSaved} source={source} />
   ) : experience && (
     <ExperienceReview entries={experience.map((e) => ({ title: e.title || '', company: e.company || '', location: e.location || '', startDate: e.startDate || '', endDate: e.endDate || '', current: !!e.current, description: e.description || '', companyPage: e.companyPage || '', page: e.page || null }))}
-      onClose={() => setExperience(null)} onSaved={onExperienceSaved} />
+      onClose={() => setExperience(null)} onSaved={onExperienceSaved} source={source} />
   );
 
   // Onboarding: a card with the import button on the side
@@ -281,6 +322,10 @@ const ResumeImport = ({ onImported, onEducationSaved, onExperienceSaved, variant
           <p className="mt-1 text-xs text-[#857B71]">PDF or DOCX</p>
         </div>
       </div>
+      {shotsInput}
+      <button type="button" onClick={() => shotsRef.current?.click()} disabled={readingShots} className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-[#32281F] underline underline-offset-2 hover:text-black disabled:opacity-50" data-testid="linkedin-shots-button">
+        <FiLinkedin className="h-4 w-4" />{readingShots ? 'Reading your screenshots…' : 'Or import from LinkedIn profile screenshots'}
+      </button>
       </>
     );
   }
@@ -300,6 +345,13 @@ const ResumeImport = ({ onImported, onEducationSaved, onExperienceSaved, variant
         {loading ? 'Reading resume…' : 'Import from resume (PDF / DOCX)'}
       </button>
       <p className="mt-1 text-xs text-gray-400 text-center">Auto-fills your skills, education and experience. A LinkedIn “Save to PDF” export works too.</p>
+      {shotsInput}
+      <button type="button" onClick={() => shotsRef.current?.click()} disabled={readingShots}
+        className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 px-4 py-3 text-sm font-medium text-gray-700 hover:border-[#0A66C2] hover:bg-[#F3F8FD] transition-colors disabled:opacity-50" data-testid="linkedin-shots-button">
+        <FiLinkedin className="text-base text-[#0A66C2]" />
+        {readingShots ? 'Reading your screenshots…' : 'Import from LinkedIn screenshots'}
+      </button>
+      <p className="mt-1 text-xs text-gray-400 text-center">Up to 6 screenshots of your LinkedIn profile (top, About, Experience, Education, Skills).</p>
     </div>
   );
 };

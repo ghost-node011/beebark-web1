@@ -6,7 +6,10 @@ const Company = require('../models/Company');
 const { isAdmin: isPageAdmin } = require('./company');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
-const { uploadDocument, uploadToCloudinary } = require('../config/cloudinary');
+const { upload, uploadDocument, uploadToCloudinary } = require('../config/cloudinary');
+const rateLimit = require('../middleware/rateLimit');
+// Screenshots read by the AI: a few per person every 15 minutes
+const screenshotLimiter = rateLimit({ bucket: 'screenshot-import', windowMs: 15 * 60 * 1000, max: 20, message: 'Too many screenshot imports. Please try again in a few minutes.' });
 const { parseResume } = require('../utils/resumeParser');
 const { matchCandidatesWithJobLLM, getJobRecommendationsLLM } = require('../utils/llmJobMatcher');
 const { analyzeResume } = require('../utils/resumeScorer');
@@ -105,6 +108,23 @@ const canPostJobs = (user) =>
     ['professional', 'firm', 'recruiter', 'company'].includes(user.role) ||
     (Array.isArray(user.intent) && user.intent.includes('hire'))
   );
+
+// "Fill from a screenshot": a job post (LinkedIn or similar) read by the AI into
+// the Post a job form's fields, for the poster to check before posting
+router.post('/import-screenshot', auth, screenshotLimiter, upload.array('images', 6), async (req, res) => {
+  const files = req.files || [];
+  try {
+    if (!files.length) return res.status(400).json({ error: 'Add a screenshot of the job post' });
+    const job = await require('../utils/screenshotReader').readJobPost(files);
+    if (!job.isJob) return res.status(400).json({ error: "That doesn't look like a job post. Try a clearer screenshot of the whole post." });
+    res.json({ job });
+  } catch (error) {
+    console.error('Job screenshot import:', error.message);
+    res.status(503).json({ error: "We couldn't read the screenshot right now. Please try again in a minute." });
+  } finally {
+    for (const f of files) fs.promises.unlink(f.path).catch(() => {});
+  }
+});
 
 router.post('/create', auth, async (req, res) => {
   try {

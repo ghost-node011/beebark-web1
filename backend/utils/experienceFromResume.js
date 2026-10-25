@@ -173,7 +173,7 @@ ${text.slice(0, 20000)}
 Respond ONLY with JSON: { "experience": [ { "title": "", "company": "", "location": "", "startDate": "2021-04", "endDate": null, "current": true, "description": "" } ] }
 If there is no work experience, respond with { "experience": [] }.`;
   try {
-    const result = await askGroqForJson(prompt, { timeout: 45000 });
+    const result = await askGroqForJson(prompt, { timeout: 45000, temperature: 0 });
     if (!Array.isArray(result?.experience)) return null;
     // Anything the AI left empty is filled from the rule-based reading of the same job
     return fillGaps(cleanExperienceEntries(result.experience), experienceFromResume(text));

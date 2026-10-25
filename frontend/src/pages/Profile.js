@@ -495,7 +495,7 @@ const Profile = () => {
       setBioSuggestions(data.bios);
     }
     if (data?.nameMismatch && data?.detectedName) {
-      setNameMismatch({ detectedName: data.detectedName, currentName: data.currentName });
+      setNameMismatch({ detectedName: data.detectedName, currentName: data.currentName, source: data.source });
     }
     // Backend may have auto-filled intent/industries too — refresh context so read-view badges update
     axios.get(`${API_URL}/api/profile/me`).then((res) => setUser(res.data.user)).catch(() => {});
@@ -1263,9 +1263,9 @@ const Profile = () => {
             <DialogTitle>Name doesn't match</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-gray-600">
-            Your resume says <span className="font-semibold text-black">{nameMismatch?.detectedName}</span>, but
+            Your {nameMismatch?.source === 'linkedin' ? 'LinkedIn profile' : 'resume'} says <span className="font-semibold text-black">{nameMismatch?.detectedName}</span>, but
             your account name is <span className="font-semibold text-black">{nameMismatch?.currentName}</span>.
-            Update your name everywhere on BeeBark to match your resume?
+            Update your name everywhere on BeeBark to match your {nameMismatch?.source === 'linkedin' ? 'LinkedIn profile' : 'resume'}?
           </p>
           <div className="flex gap-2 mt-2">
             <Button onClick={() => confirmNameChange(true)} className="flex-1 bg-[#32281F] text-white">
@@ -1276,7 +1276,8 @@ const Profile = () => {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!bioSuggestions} onOpenChange={(open) => !open && setBioSuggestions(null)}>
+      {/* After the name question, if there is one: one dialog at a time */}
+      <Dialog open={!!bioSuggestions && !nameMismatch} onOpenChange={(open) => !open && setBioSuggestions(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><FiZap className="text-yellow-500" />Pick a bio</DialogTitle>

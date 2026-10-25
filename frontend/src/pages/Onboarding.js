@@ -380,7 +380,7 @@ const Onboarding = () => {
                       if (!location.trim()) setLocation(data.detectedLocation);
                     }
                     if (data?.nameMismatch && data?.detectedName) {
-                      setNameMismatch({ detectedName: data.detectedName, currentName: data.currentName || user?.name || '' });
+                      setNameMismatch({ detectedName: data.detectedName, currentName: data.currentName || user?.name || '', source: data.source });
                     }
                   }}
                 />
@@ -388,7 +388,7 @@ const Onboarding = () => {
                 {nameMismatch && (
                   <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm" data-testid="resume-name-mismatch">
                     <p className="text-black">
-                      Your resume says <strong>{nameMismatch.detectedName}</strong>, but your account is registered as <strong>{nameMismatch.currentName}</strong>. Is this your resume?
+                      Your {nameMismatch.source === 'linkedin' ? 'LinkedIn profile' : 'resume'} says <strong>{nameMismatch.detectedName}</strong>, but your account is registered as <strong>{nameMismatch.currentName}</strong>. Is this {nameMismatch.source === 'linkedin' ? 'your profile' : 'your resume'}?
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <button type="button" onClick={() => { setName(nameMismatch.detectedName); setNameMismatch(null); }} className="btn-black rounded-full px-3 py-1.5 text-xs font-medium">
