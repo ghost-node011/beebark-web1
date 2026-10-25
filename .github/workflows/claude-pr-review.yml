@@ -78,13 +78,14 @@ jobs:
         if: steps.verdict.outputs.ready == 'true'
         uses: dawidd6/action-send-mail@v3
         with:
-          server_address: smtp.gmail.com
+          # Amazon SES SMTP (Sydney). SMTP credentials come from SES → SMTP settings, not IAM access keys.
+          server_address: email-smtp.ap-southeast-2.amazonaws.com
           server_port: 465
           secure: true
-          username: ${{ secrets.MAIL_USERNAME }}
-          password: ${{ secrets.MAIL_PASSWORD }}
-          from: Claude PR Bot <${{ secrets.MAIL_USERNAME }}>
-          to: ${{ secrets.MAIL_TO }}
+          username: ${{ secrets.SES_SMTP_USERNAME }}
+          password: ${{ secrets.SES_SMTP_PASSWORD }}
+          from: BeeBark PR Bot <no-reply@thebeebark.com>
+          to: sharmagaurank63@gmail.com
           subject: "✅ Ready to approve: PR #${{ github.event.pull_request.number }} – ${{ github.event.pull_request.title }}"
           body: |
             Claude reviewed this PR and found no issues.
