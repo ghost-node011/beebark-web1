@@ -144,10 +144,15 @@ export const ProfileTabs = ({ tabs, active: controlled, onChange }) => {
 
 const compact = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1).replace(/\.0$/, '')}M` : n >= 1e4 ? `${Math.round(n / 1e3)}K` : Number(n || 0).toLocaleString('en-IN'));
 
-// Verified tick, Founding Member medal (first 50 on the pre-launch waitlist) and Pro
-// badge, all set by the BeeBark team only
+// Verified tick, BeeBark Official (team accounts, with their role), Founding Member medal
+// (first 50 on the pre-launch waitlist) and Pro badge, all set by the BeeBark team only
 const Badges = ({ badges }) => (
   <>
+    {badges?.official && (
+      <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-[#F2B21B] bg-[#F2B21B] px-3 py-1 text-sm font-semibold text-[#1C1712] shadow-sm" title="This account belongs to the BeeBark team" data-testid="badge-official">
+        <img src="/image.png" alt="" className="h-4 w-4 object-contain" />BeeBark Official · {badges.official}
+      </span>
+    )}
     {badges?.verified && (
       <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#F2B21B] text-[#F2B21B]" title="Verified by BeeBark" aria-label="Verified">
         <FiCheck className="h-4 w-4" strokeWidth={3} />

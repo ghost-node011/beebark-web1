@@ -21,6 +21,8 @@ const userSchema = new mongoose.Schema({
     lowercase: true,
     trim: true
   },
+  // The mailbox the email delivers to (a.b+x@gmail.com -> ab@gmail.com): one account per mailbox
+  emailKey: { type: String, index: true },
   password: {
     type: String,
     // Password is only required for local (email/password) accounts
@@ -156,7 +158,9 @@ const userSchema = new mongoose.Schema({
     verified: { type: Boolean, default: false },
     pro: { type: Boolean, default: false },
     // First 50 people on the pre-launch waitlist
-    top50: { type: Boolean, default: false }
+    top50: { type: Boolean, default: false },
+    // A BeeBark team account's role, e.g. "HR" ('' for members)
+    official: { type: String, default: '', maxlength: 40 }
   },
   // One line under the name, e.g. "Real Estate Developer | Architect"
   headline: { type: String, default: '', trim: true, maxlength: 140 },
@@ -333,6 +337,28 @@ const userSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+userSchema.pre('save', function(next) {
+  if (this.isModified('email')) this.emailKey = require('../utils/emailRules').emailKey(this.email);
+  next();
+});
+
+/** The account using this mailbox, however the address is written */
+userSchema.statics.findByMailbox = function(email) {
+  const { emailKey } = require('../utils/emailRules');
+  return this.findOne({ $or: [{ email: String(email || '').trim().toLowerCase() }, { emailKey: emailKey(email) }] });
+};
+
+/** Another account already using this phone number (sign-in or contact phone; last 10 digits) */
+userSchema.statics.findOtherWithPhone = function(phone, exceptId = null) {
+  const digits = String(phone || '').replace(/\D/g, '').slice(-10);
+  if (digits.length < 10) return Promise.resolve(null);
+  const pattern = new RegExp(`${digits.split('').join('\\D*')}$`);
+  return this.findOne({
+    ...(exceptId ? { _id: { $ne: exceptId } } : {}),
+    $or: [{ phone: pattern }, { 'contact.phone': pattern }]
+  }).select('name email').lean();
+};
 
 // New accounts from the pre-launch waitlist get its badges (verified, Top 50)
 userSchema.pre('save', async function(next) {

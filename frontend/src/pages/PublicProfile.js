@@ -7,6 +7,7 @@ import TopBar from '../components/TopBar';
 import { Badge } from '../components/ui/badge';
 import { Card, CardContent } from '../components/ui/card';
 import { useAuth } from '../context/AuthContext';
+import { usePages } from '../context/PagesContext';
 import { API_URL } from '../config/api';
 import { ProfileHero, ProfileTabs, VisibilityPill, PillFilter, PAGE_BG, heroBtn, useProfileTab } from '../components/profile/ProfileShell';
 import {
@@ -49,6 +50,29 @@ const PublicProfile = ({ open = false }) => {
   const [galleryCategory, setGalleryCategory] = useState('All');
   const [reportOpen, setReportOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
+  // Acting as a company page: Connect is the page's own (none | sent | received | connected)
+  const { acting } = usePages();
+  const [pageStatus, setPageStatus] = useState(null);
+  const [pageBusy, setPageBusy] = useState(false);
+  const profileId = data?.user?._id;
+  useEffect(() => {
+    setPageStatus(null);
+    if (!acting || !profileId || data?.isOwnProfile) return;
+    axios.get(`${API_URL}/api/companies/${acting._id}/connections/${profileId}`, { silent: true })
+      .then((res) => setPageStatus(res.data.status)).catch(() => {});
+  }, [acting, profileId, data?.isOwnProfile]);
+  const pageConnect = async () => {
+    setPageBusy(true);
+    try {
+      const res = await axios.post(`${API_URL}/api/companies/${acting._id}/connections/${profileId}`);
+      setPageStatus(res.data.status);
+      toast.success(res.data.status === 'connected' ? `${acting.name} is now connected with ${data.user.name}` : `Invitation sent as ${acting.name}`);
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Could not send the request');
+    } finally {
+      setPageBusy(false);
+    }
+  };
 
   useEffect(() => {
     setData(null);
@@ -172,7 +196,14 @@ const PublicProfile = ({ open = false }) => {
   const shown = (id) => currentTab === 'section-overview' || currentTab === id;
   const projectLink = (item) => `/portfolio/${user.username}?project=${item._id}`;
 
-  const connectButton = status === 'connected' ? null
+  const pageConnectButton = acting && pageStatus && (
+    pageStatus === 'connected' ? <span className={heroBtn.outline} data-testid="page-connected"><FiCheck className="w-5 h-5" />Connected with {acting.name}</span>
+      : pageStatus === 'sent' ? <button type="button" disabled className={heroBtn.dark}><FiCheck className="w-5 h-5" />Invitation sent</button>
+      : <button type="button" onClick={pageConnect} disabled={pageBusy} className={heroBtn.dark} data-testid="page-connect">
+          <FiUserPlus className="w-5 h-5" />{pageStatus === 'received' ? `Accept for ${acting.name}` : `Connect as ${acting.name}`}
+        </button>
+  );
+  const connectButton = acting ? pageConnectButton : status === 'connected' ? null
     : status === 'sent' ? <button type="button" disabled className={heroBtn.dark}><FiCheck className="w-5 h-5" />Pending</button>
     : status === 'received' ? <button type="button" onClick={handleConnect} disabled={connecting} className={heroBtn.dark} data-testid="accept-request"><FiUserCheck className="w-5 h-5" />{connecting ? 'Accepting…' : 'Accept'}</button>
     : <button type="button" onClick={handleConnect} disabled={connecting} className={heroBtn.dark} data-testid="profile-connect"><FiUserPlus className="w-5 h-5" />{connecting ? 'Sending…' : 'Connect'}</button>;

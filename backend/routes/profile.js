@@ -221,7 +221,7 @@ const meResponse = (user) => ({
       publicProfile: user.settings?.publicProfile !== false,
       followerCount: (user.followers || []).length,
       followingCount: (user.following || []).length,
-      badges: { verified: Boolean(user.badges?.verified), pro: Boolean(user.badges?.pro), top50: Boolean(user.badges?.top50) },
+      badges: { verified: Boolean(user.badges?.verified), pro: Boolean(user.badges?.pro), top50: Boolean(user.badges?.top50), official: String(user.badges?.official || '').slice(0, 40) },
       profileViews: user.profileViews || 0,
       resume: user.resume?.url ? {
         url: user.resume.url,
@@ -417,7 +417,7 @@ async function buildProfile(username, viewerId, { visitor = '', countView = true
       languages: user.languages || [],
       availability: user.availability || [],
       business: user.business?.name ? user.business : null,
-      badges: { verified: Boolean(user.badges?.verified), pro: Boolean(user.badges?.pro), top50: Boolean(user.badges?.top50) },
+      badges: { verified: Boolean(user.badges?.verified), pro: Boolean(user.badges?.pro), top50: Boolean(user.badges?.top50), official: String(user.badges?.official || '').slice(0, 40) },
       connectionCount: active(user.connections).length,
       followerCount: (user.followers || []).length,
       followingCount: (user.following || []).length,
@@ -672,6 +672,9 @@ router.put('/update', auth, async (req, res) => {
     if (contact && typeof contact === 'object') {
       for (const [key, label] of [['phone', 'Phone'], ['whatsapp', 'WhatsApp']]) {
         if (cleanPhone(contact[key]) === null) return res.status(400).json({ error: `${label} number must have 10 digits`, field: `contact.${key}` });
+      }
+      if (cleanPhone(contact.phone) && await User.findOtherWithPhone(contact.phone, req.userId)) {
+        return res.status(400).json({ error: 'This phone number is already used by another BeeBark account.', field: 'contact.phone' });
       }
       const site = String(contact.website || '').trim();
       if (site && !validUrl(withHttps(clip(site, 200)))) return res.status(400).json({ error: WEBSITE_ERROR, field: 'contact.website' });

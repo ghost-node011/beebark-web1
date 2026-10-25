@@ -16,9 +16,11 @@ import { PAGE_BG } from '../components/profile/ProfileShell';
 import { API_URL } from '../config/api';
 import { usePages, pageTypeLabel } from '../context/PagesContext';
 import CompanyLogo from '../components/company/CompanyLogo';
+import PageConnections from '../components/company/PageConnections';
 
 const TABS = [
   { id: 'dashboard', label: 'Dashboard' },
+  { id: 'connections', label: 'Connections' },
   { id: 'edit', label: 'Edit page' },
   { id: 'admins', label: 'Admins' }
 ];
@@ -235,6 +237,8 @@ const CompanyAdmin = () => {
               </div>
             </div>
           )}
+
+          {tab === 'connections' && <PageConnections page={page} />}
 
           {tab === 'admins' && (
             <div className="pf-card p-5 sm:p-8 space-y-5">

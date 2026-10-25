@@ -33,6 +33,7 @@ const SidebarFrame = () => {
   const pageItems = acting && [
     { id: 'page-dashboard', path: `/company/${acting.slug}/admin`, icon: FiHome, label: 'Page dashboard', end: true },
     { id: 'page-view', path: `/company/${acting.slug}`, icon: FiGrid, label: 'Company page', end: true },
+    { id: 'page-connections', path: `/company/${acting.slug}/admin?tab=connections`, icon: FiUsers, label: 'Page connections' },
     { id: 'messages', path: '/chat', icon: FiMessageCircle, label: 'Messages' },
     { id: 'jobs', path: '/jobs?tab=posted', icon: FiBriefcase, label: 'Hiring' },
     { id: 'portfolio', path: '/portfolio', icon: FiImage, label: acting.type === 'supplier' ? 'Product catalogue' : 'Projects' },

@@ -65,8 +65,6 @@ const Portfolio = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [uploadProgress, setUploadProgress] = useState(null); // { done, total }
-  // Photos that didn't upload (and weren't refused): offered for another try, without duplicates
-  const [failedPhotos, setFailedPhotos] = useState([]);
   const [saving, setSaving] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   // The project dialog shows a project first ('view') and switches to the form ('form') to edit
@@ -97,11 +95,6 @@ const Portfolio = () => {
     fetchPortfolio();
   }, []);
 
-  // Failed photos belong to the project being edited: forget them when the dialog closes
-  useEffect(() => {
-    if (!showAddDialog) setFailedPhotos([]);
-  }, [showAddDialog]);
-
   const fetchPortfolio = async () => {
     try {
       const response = await axios.get(`${API_URL}/api/portfolio/me`);
@@ -123,7 +116,7 @@ const Portfolio = () => {
   };
 
   // Each photo uploads on its own (a few at a time); the ones that work are added
-  // straight away, and the ones that fail can be tried again on their own
+  // straight away, and the ones that fail are listed in the error message
   const handleImageFiles = async (fileList) => {
     const files = Array.from(fileList || []);
     if (!files.length) return;
@@ -131,13 +124,11 @@ const Portfolio = () => {
     const skipped = files.length - usable.length;
     if (!usable.length) return toast.error(imageFileError(files[0]));
 
-    setFailedPhotos([]);
     setUploadProgress({ done: 0, total: usable.length });
     try {
       const { uploaded, failed } = await uploadImages(usable, { onProgress: (done, total) => setUploadProgress({ done, total }) });
       const urls = uploaded.map((u) => u.url);
       if (urls.length) setForm((f) => ({ ...f, images: [...f.images, ...urls.filter((u) => !f.images.includes(u))] }));
-      setFailedPhotos(failed.filter((f) => !f.refused).map((f) => f.file));
       const note = skipped ? ` ${skipped} file${skipped === 1 ? ' was' : 's were'} skipped: ${imageFileError(files.find((f) => imageFileError(f)))}` : '';
       if (failed.length) toast.error(`${urls.length ? `${urls.length} of ${usable.length} photos added. ` : ''}${failedSummary(failed, usable.length)}${note}`, { duration: 8000 });
       else if (note) toast.error(note.trim(), { duration: 8000 });
@@ -800,13 +791,6 @@ const Portfolio = () => {
               </div>
               <p className="mt-2 text-xs text-gray-400">Add as many photos as you like • Max 18MB each • JPEG or PNG (WebP and GIF work too)</p>
               {uploadProgress && <p className="mt-2 text-xs text-gray-600">Uploading {uploadProgress.done} of {uploadProgress.total}…</p>}
-              {!uploadProgress && failedPhotos.length > 0 && (
-                <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700" data-testid="pf-failed-photos">
-                  <span>{failedPhotos.length} photo{failedPhotos.length === 1 ? '' : 's'} didn't upload.</span>
-                  <button type="button" onClick={() => handleImageFiles(failedPhotos)} className="font-semibold underline" data-testid="pf-retry-failed">Try {failedPhotos.length === 1 ? 'it' : 'them'} again</button>
-                  <button type="button" onClick={() => setFailedPhotos([])} className="text-red-500 hover:text-red-700">Dismiss</button>
-                </div>
-              )}
               {form.images.length > 1 && <p className="mt-2 text-xs text-gray-500">Tap the star on a photo to make it the cover.</p>}
               {form.images.length > 0 && (
                 <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">

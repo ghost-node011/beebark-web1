@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import CompanyLogo from '../components/company/CompanyLogo';
 import axios from 'axios';
 import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar';
@@ -151,7 +152,24 @@ const Connections = () => {
   const [loading, setLoading] = useState(true);
   const [connectionsLoading, setConnectionsLoading] = useState(true);
   const [searching, setSearching] = useState(false);
-  const [activeTab, setActiveTab] = useState('suggestions');
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(['connections', 'requests', 'sent', 'pages'].includes(searchParams.get('tab')) ? searchParams.get('tab') : 'suggestions');
+  // Company pages that invited me to connect with them (the page's own network)
+  const [pageInvites, setPageInvites] = useState([]);
+  const loadPageInvites = useCallback(() => {
+    axios.get(`${API_URL}/api/companies/connection-invites`, { silent: true }).then((res) => setPageInvites(res.data.invites || [])).catch(() => {});
+  }, []);
+  useEffect(() => { loadPageInvites(); }, [loadPageInvites]);
+  const answerPageInvite = async (page, accept) => {
+    try {
+      if (accept) await axios.post(`${API_URL}/api/companies/${page._id}/connect`);
+      else await axios.delete(`${API_URL}/api/companies/${page._id}/connect`);
+      if (accept) toast.success(`You're connected with ${page.name}`);
+      loadPageInvites();
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Could not update');
+    }
+  };
   const [field, setField] = useState('all');
   const [filter, setFilter] = useState('');
   const [sortBy, setSortBy] = useState('recent');
@@ -448,6 +466,7 @@ const Connections = () => {
               { id: 'connections', label: 'My connections', count: connections.length, testId: 'tab-connections' },
               { id: 'requests', label: 'Requests', count: pendingRequests.length, testId: 'tab-requests' },
               { id: 'sent', label: 'Sent', count: sentRequests.length, testId: 'tab-sent' },
+              ...(pageInvites.length || activeTab === 'pages' ? [{ id: 'pages', label: 'Company invitations', count: pageInvites.length, testId: 'tab-pages' }] : []),
               ...(hasSearched ? [{ id: 'search', label: 'Results', count: searchResults.length, testId: 'tab-search' }] : [])
             ].map((t) => (
               <button key={t.id} type="button" role="tab" aria-selected={activeTab === t.id} onClick={() => setActiveTab(t.id)} data-testid={t.testId}
@@ -512,6 +531,35 @@ const Connections = () => {
                 </button>
               ))}
             </div>
+          )}
+
+          {/* Company pages that invited me */}
+          {activeTab === 'pages' && (
+            <section className="mb-6 overflow-hidden rounded-xl border border-gray-200 bg-white" data-testid="page-invitations">
+              <div className="border-b border-gray-100 px-4 py-3 sm:px-5">
+                <h2 className="font-serif text-lg font-semibold text-black">Company invitations</h2>
+                <p className="text-sm text-gray-500">Company pages that want to connect with you. This connects you with the page, not with the people who run it.</p>
+              </div>
+              {pageInvites.length ? (
+                <ul className="divide-y divide-gray-100">
+                  {pageInvites.map(({ page }) => (
+                    <li key={page._id} className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:px-5">
+                      <Link to={`/company/${page.slug}`} className="group flex min-w-0 flex-1 items-center gap-3">
+                        <CompanyLogo page={page} className="h-12 w-12" text="text-sm" />
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-black group-hover:underline">{page.name}</p>
+                          {page.tagline && <p className="truncate text-sm text-gray-600">{page.tagline}</p>}
+                        </div>
+                      </Link>
+                      <div className="flex shrink-0 gap-2 sm:ml-auto">
+                        <Button variant="ghost" onClick={() => answerPageInvite(page, false)} className="flex-1 rounded-full text-gray-600 hover:text-black sm:flex-none">Ignore</Button>
+                        <Button onClick={() => answerPageInvite(page, true)} className="flex-1 rounded-full bg-[#32281F] text-white hover:bg-[#221A14] sm:flex-none" data-testid="page-invite-accept">Accept</Button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : <p className="px-5 py-6 text-sm text-gray-500">No company invitations right now.</p>}
+            </section>
           )}
 
           {/* Invitations */}

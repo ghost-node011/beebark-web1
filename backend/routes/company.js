@@ -6,6 +6,7 @@ const Company = require('../models/Company');
 const User = require('../models/User');
 const Job = require('../models/Job');
 const Notification = require('../models/Notification');
+const CompanyConnection = require('../models/CompanyConnection');
 const { isAllowedImageUrl } = require('../utils/imageUrls');
 const { LEGAL_VERSION } = require('../utils/legal');
 const { PAGE_TYPES, TEAM_SIZES } = Company;
@@ -132,6 +133,143 @@ router.get('/search', async (req, res) => {
   }
 });
 
+// ---- A page's own connections (separate from its admins' personal networks) ----
+
+// Where things stand between a page and a person, seen from one side:
+// none | sent (this side asked) | received (the other side asked) | connected
+const connectionStatus = (row, side) => (!row ? 'none' : row.status === 'connected' ? 'connected' : row.requestedBy === side ? 'sent' : 'received');
+const isObjectId = (v) => mongoose.Types.ObjectId.isValid(String(v || ''));
+const notifyPage = (recipient, actor, type, page, link) => Notification.create({
+  recipient, actor, type, meta: { pageId: String(page._id), pageName: page.name, slug: page.slug, link }
+}).catch((e) => console.error('Page connection notification:', e.message));
+const notifyPageAdmins = (page, actor, type) => Promise.all([...new Set([String(page.owner), ...(page.admins || []).map(String)])]
+  .map((a) => notifyPage(a, actor, type, page, `/company/${page.slug}/admin?tab=connections`)));
+const loadPage = async (req, res) => {
+  if (!isObjectId(req.params.id)) { res.status(400).json({ error: 'Invalid page' }); return null; }
+  const page = await Company.findById(req.params.id).lean();
+  if (!page) { res.status(404).json({ error: 'Page not found' }); return null; }
+  return page;
+};
+const personCard = (u) => ({ _id: String(u._id), name: u.name, username: u.username, profilePic: u.profilePic || '', headline: u.headline || '' });
+
+// Pages that invited me to connect
+router.get('/connection-invites', auth, async (req, res) => {
+  try {
+    const rows = await CompanyConnection.find({ user: req.userId, status: 'pending', requestedBy: 'page' }).sort({ createdAt: -1 })
+      .populate('page', 'name slug logo tagline').lean();
+    res.json({ invites: rows.filter((r) => r.page).map((r) => ({ page: { _id: String(r.page._id), name: r.page.name, slug: r.page.slug, logo: r.page.logo || '', tagline: r.page.tagline || '' }, createdAt: r.createdAt })) });
+  } catch (error) {
+    res.status(500).json({ error: 'Could not load page invitations' });
+  }
+});
+
+// Connect with a page as yourself (or accept its invitation)
+router.post('/:id/connect', auth, async (req, res) => {
+  try {
+    const page = await loadPage(req, res);
+    if (!page) return;
+    if (isAdmin(page, req.userId)) return res.status(400).json({ error: "You manage this page, so you can't connect with it as yourself" });
+    const row = await CompanyConnection.findOne({ page: page._id, user: req.userId });
+    if (row?.status === 'connected') return res.json({ status: 'connected' });
+    if (row?.requestedBy === 'page') {
+      row.status = 'connected'; row.connectedAt = new Date(); await row.save();
+      notifyPageAdmins(page, req.userId, 'page_connection_accepted');
+      return res.json({ status: 'connected' });
+    }
+    if (!row) {
+      await CompanyConnection.create({ page: page._id, user: req.userId, requestedBy: 'user' });
+      notifyPageAdmins(page, req.userId, 'page_connection_request');
+    }
+    res.json({ status: 'sent' });
+  } catch (error) {
+    res.status(500).json({ error: 'Could not connect with this page' });
+  }
+});
+
+// Withdraw a request, decline an invitation, or disconnect
+router.delete('/:id/connect', auth, async (req, res) => {
+  try {
+    const page = await loadPage(req, res);
+    if (!page) return;
+    await CompanyConnection.deleteOne({ page: page._id, user: req.userId });
+    res.json({ status: 'none' });
+  } catch (error) {
+    res.status(500).json({ error: 'Could not update the connection' });
+  }
+});
+
+// The page's connections, requests waiting for an answer, and invitations it sent (admins)
+router.get('/:id/connections', auth, async (req, res) => {
+  try {
+    const page = await loadPage(req, res);
+    if (!page) return;
+    if (!isAdmin(page, req.userId)) return res.status(403).json({ error: 'Only page admins can see this' });
+    const rows = (await CompanyConnection.find({ page: page._id }).sort({ updatedAt: -1 }).populate('user', 'name username profilePic headline').lean())
+      .filter((r) => r.user).map((r) => ({ status: r.status, requestedBy: r.requestedBy, createdAt: r.createdAt, connectedAt: r.connectedAt, person: personCard(r.user) }));
+    res.json({
+      connections: rows.filter((r) => r.status === 'connected'),
+      requests: rows.filter((r) => r.status === 'pending' && r.requestedBy === 'user'),
+      sent: rows.filter((r) => r.status === 'pending' && r.requestedBy === 'page')
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Could not load the page connections' });
+  }
+});
+
+// Where the page stands with one person (admins)
+router.get('/:id/connections/:userId', auth, async (req, res) => {
+  try {
+    const page = await loadPage(req, res);
+    if (!page) return;
+    if (!isAdmin(page, req.userId)) return res.status(403).json({ error: 'Only page admins can see this' });
+    if (!isObjectId(req.params.userId)) return res.status(400).json({ error: 'Invalid user' });
+    res.json({ status: connectionStatus(await CompanyConnection.findOne({ page: page._id, user: req.params.userId }).lean(), 'page') });
+  } catch (error) {
+    res.status(500).json({ error: 'Could not load the connection' });
+  }
+});
+
+// Invite a person to connect with the page, or accept their request (admins)
+router.post('/:id/connections/:userId', auth, async (req, res) => {
+  try {
+    const page = await loadPage(req, res);
+    if (!page) return;
+    if (!isAdmin(page, req.userId)) return res.status(403).json({ error: 'Only page admins can do this' });
+    const { userId } = req.params;
+    if (!isObjectId(userId) || isAdmin(page, userId)) return res.status(400).json({ error: "This person manages the page, so they can't connect with it" });
+    const person = await User.findById(userId).select('accountStatus').lean();
+    if (!person || person.accountStatus === 'deactivated') return res.status(404).json({ error: 'User not found' });
+    const row = await CompanyConnection.findOne({ page: page._id, user: userId });
+    if (row?.status === 'connected') return res.json({ status: 'connected' });
+    if (row?.requestedBy === 'user') {
+      row.status = 'connected'; row.connectedAt = new Date(); await row.save();
+      notifyPage(userId, req.userId, 'page_connection_accepted', page, `/company/${page.slug}`);
+      return res.json({ status: 'connected' });
+    }
+    if (!row) {
+      await CompanyConnection.create({ page: page._id, user: userId, requestedBy: 'page', requestedByUser: req.userId });
+      notifyPage(userId, req.userId, 'page_connection_invite', page, '/connections?tab=pages');
+    }
+    res.json({ status: 'sent' });
+  } catch (error) {
+    res.status(500).json({ error: 'Could not send the request' });
+  }
+});
+
+// Decline a request, withdraw an invitation, or remove a connection (admins)
+router.delete('/:id/connections/:userId', auth, async (req, res) => {
+  try {
+    const page = await loadPage(req, res);
+    if (!page) return;
+    if (!isAdmin(page, req.userId)) return res.status(403).json({ error: 'Only page admins can do this' });
+    if (!isObjectId(req.params.userId)) return res.status(400).json({ error: 'Invalid user' });
+    await CompanyConnection.deleteOne({ page: page._id, user: req.params.userId });
+    res.json({ status: 'none' });
+  } catch (error) {
+    res.status(500).json({ error: 'Could not update the connection' });
+  }
+});
+
 router.get('/check-slug', auth, async (req, res) => {
   const slug = slugify(req.query.slug);
   if (!slug || slug.length < 2) return res.json({ slug, available: false });
@@ -185,9 +323,16 @@ router.get('/:slug', async (req, res) => {
       admins = admins.map((a) => ({ ...a, role: String(a._id) === String(page.owner) ? 'owner' : 'admin' }));
     }
 
+    const [connectionCount, myConnection] = await Promise.all([
+      CompanyConnection.countDocuments({ page: page._id, status: 'connected' }),
+      viewerId && !admin ? CompanyConnection.findOne({ page: page._id, user: viewerId }).lean() : null
+    ]);
     res.json({
       page: pagePublic(page),
       isFollowing: !!viewerId && (page.followers || []).some((f) => String(f) === viewerId),
+      // The page's own connections; the viewer's status with the page (none | sent | received | connected)
+      connectionCount,
+      connection: viewerId && !admin ? connectionStatus(myConnection, 'user') : null,
       isAdmin: admin,
       isOwner: !!viewerId && String(page.owner) === viewerId,
       employees,

@@ -181,8 +181,6 @@ const Profile = () => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
   const [galleryProgress, setGalleryProgress] = useState(null); // { done, total }
-  // Photos that didn't upload (and weren't refused): offered for another try
-  const [galleryRetry, setGalleryRetry] = useState([]);
   // Cover reposition: the position being tried (0 top … 100 bottom) while editing, else null
   const [coverDraft, setCoverDraft] = useState(null);
   const [savingCoverPosition, setSavingCoverPosition] = useState(false);
@@ -326,8 +324,7 @@ const Profile = () => {
     const base = file.name.replace(/\.[a-z0-9]+$/i, '').replace(/[_-]+/g, ' ').trim();
     return !base || /^(img|dsc|pxl|image|photo|screenshot|whatsapp image)\b|^\d[\d\s]*$/i.test(base) ? 'New project' : base.slice(0, 80);
   };
-  // Each photo uploads on its own; the ones that worked are saved even if others fail,
-  // and failed ones (not refused by the safety check) can be tried again without duplicates
+  // Each photo uploads on its own; the ones that worked are saved even if others fail
   const handleGalleryFiles = async (fileList) => {
     const files = Array.from(fileList || []);
     if (!files.length) return;
@@ -335,7 +332,6 @@ const Profile = () => {
     if (wrongType.length === files.length) return toast.error(imageFileError(files[0]));
     const usable = files.filter((f) => !imageFileError(f));
     setUploadingGallery(true);
-    setGalleryRetry([]);
     setGalleryProgress({ done: 0, total: usable.length });
     try {
       const { uploaded, failed } = await uploadImages(usable, { onProgress: (done, total) => setGalleryProgress({ done, total }) });
@@ -351,7 +347,6 @@ const Profile = () => {
       const skipped = wrongType.length ? ` ${wrongType.length} file${wrongType.length === 1 ? ' was' : 's were'} skipped: ${imageFileError(wrongType[0])}` : '';
       if (failed.length) toast.error(failedSummary(failed, usable.length) + skipped, { duration: 8000 });
       else if (skipped) toast.error(skipped.trim(), { duration: 8000 });
-      setGalleryRetry(failed.filter((f) => !f.refused).map((f) => f.file));
       if (added) await fetchGalleryPreview();
     } catch (error) {
       toast.error(error.response?.data?.error || error.message || 'Could not add the photos. Please try again.', { duration: 8000 });
@@ -886,11 +881,6 @@ const Profile = () => {
                     </a>
                   )}
                   <Link to="/portfolio" className="text-sm font-medium text-black hover:underline hidden sm:inline">Edit</Link>
-                  {galleryRetry.length > 0 && !uploadingGallery && (
-                    <button type="button" onClick={() => handleGalleryFiles(galleryRetry)} className="rounded-lg border border-[#E6E1DB] bg-white px-3 py-1.5 text-sm font-semibold text-[#32281F] hover:bg-gray-50" data-testid="gallery-retry">
-                      Retry {galleryRetry.length} failed
-                    </button>
-                  )}
                   <label className="cursor-pointer">
                     <input type="file" accept={IMAGE_ACCEPT} multiple onChange={(e) => { handleGalleryFiles(e.target.files); e.target.value = ''; }} className="hidden" disabled={uploadingGallery} />
                     <span className="flex items-center gap-1.5 text-sm font-medium bg-[#32281F] hover:bg-[#221A14] text-white rounded-lg px-3 py-1.5 transition">

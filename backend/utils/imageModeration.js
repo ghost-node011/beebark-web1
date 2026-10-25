@@ -137,8 +137,10 @@ async function checkBytes(bytes, mime, { profile = false } = {}) {
       console.error('Image moderation (Rekognition) failed, using the vision AI:', error.name || '', error.message);
     }
   }
-  const small = (sharp && await sharp(img.bytes).resize(448, 448, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 80 }).toBuffer()
+  // Small previews for the vision AI, which counts image size against its per-minute allowance
+  const shrink = async (size, quality) => (sharp && await sharp(img.bytes).resize(size, size, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality }).toBuffer()
     .then((b) => ({ bytes: b, mime: 'image/jpeg' })).catch(() => null)) || img;
+  let small = await shrink(384, 75);
   // The free AI plan limits requests per minute: wait and retry briefly before giving up
   // (kept short so an upload never waits close to a minute)
   for (const wait of [0, 2000, 5000]) {
@@ -146,6 +148,8 @@ async function checkBytes(bytes, mime, { profile = false } = {}) {
     try {
       return await checkWithVisionAi(small.bytes, small.mime, { profile });
     } catch (error) {
+      // Too big for the plan: try again straight away with a smaller preview
+      if (/request too large/i.test(error.message) && small.bytes.length > 12000) { small = await shrink(256, 60); continue; }
       const limited = /429|rate limit|rate-limited/i.test(error.message);
       console.error(`Image moderation (vision AI) failed${limited ? ', rate-limited' : ''}:`, error.message.slice(0, 160));
       if (!limited) break;

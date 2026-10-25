@@ -4,7 +4,7 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import {
   FiMapPin, FiUsers, FiGlobe, FiMail, FiPhone, FiEdit2, FiShare2, FiEye, FiPlus, FiCheck,
-  FiCheckCircle, FiLink, FiCalendar, FiGrid, FiArrowRight
+  FiCheckCircle, FiLink, FiCalendar, FiGrid, FiArrowRight, FiClock, FiUserPlus
 } from 'react-icons/fi';
 import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar';
@@ -87,6 +87,29 @@ const CompanyPage = ({ open = false }) => {
     }
   };
 
+  // Connecting with the page itself (its own connections, not its admins')
+  const CONNECT_LABEL = { none: 'Connect', sent: 'Request sent', received: 'Accept invitation', connected: 'Connected' };
+  const toggleConnect = async () => {
+    if (!user) { navigate(`/register?next=${encodeURIComponent(`/company/${page.slug}`)}`); return; }
+    const status = data.connection || 'none';
+    if (status === 'connected' && !window.confirm(`Remove your connection with ${page.name}?`)) return;
+    if (status === 'sent' && !window.confirm('Withdraw your connection request?')) return;
+    setBusy(true);
+    try {
+      const res = status === 'none' || status === 'received'
+        ? await axios.post(`${API_URL}/api/companies/${page._id}/connect`)
+        : await axios.delete(`${API_URL}/api/companies/${page._id}/connect`);
+      const next = res.data.status;
+      setData((d) => ({ ...d, connection: next, connectionCount: Math.max(0, (d.connectionCount || 0) + (next === 'connected' ? 1 : status === 'connected' ? -1 : 0)) }));
+      if (next === 'sent') toast.success(`Request sent to ${page.name}`);
+      if (next === 'connected') toast.success(`You're connected with ${page.name}`);
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Could not update');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const tabs = [
     { id: 'page-overview', label: 'Overview' },
     { id: 'page-people', label: `People${employees.length ? ` (${employees.length})` : ''}` },
@@ -130,6 +153,7 @@ const CompanyPage = ({ open = false }) => {
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-[15px] pf-muted">
             <span data-testid="company-followers"><b className="font-semibold text-[#32281F]">{compact(page.followerCount)}</b> follower{page.followerCount === 1 ? '' : 's'}</span>
+            <span data-testid="company-connections"><b className="font-semibold text-[#32281F]">{compact(data.connectionCount || 0)}</b> connection{data.connectionCount === 1 ? '' : 's'}</span>
             {employees.length > 0 && <span><b className="font-semibold text-[#32281F]">{employees.length}</b> on BeeBark</span>}
           </div>
           <div className="flex flex-wrap items-center gap-3 pt-5 pb-6">
@@ -143,7 +167,11 @@ const CompanyPage = ({ open = false }) => {
               </>
             ) : (
               <>
-                <button type="button" onClick={toggleFollow} disabled={busy} className={data.isFollowing ? heroBtn.outline : heroBtn.dark} data-testid="company-follow">
+                <button type="button" onClick={toggleConnect} disabled={busy} className={['none', 'received'].includes(data.connection || 'none') ? heroBtn.dark : heroBtn.outline} data-testid="company-connect">
+                  {data.connection === 'connected' ? <FiCheck className="w-4 h-4" /> : data.connection === 'sent' ? <FiClock className="w-4 h-4" /> : <FiUserPlus className="w-4 h-4" />}
+                  {CONNECT_LABEL[data.connection || 'none']}
+                </button>
+                <button type="button" onClick={toggleFollow} disabled={busy} className={data.isFollowing ? heroBtn.outline : heroBtn.honey} data-testid="company-follow">
                   {data.isFollowing ? <><FiCheck className="w-4 h-4" />Following</> : <><FiPlus className="w-4 h-4" />Follow</>}
                 </button>
                 {page.website && <a href={page.website} target="_blank" rel="noreferrer" className={heroBtn.outline}><FiGlobe className="w-4 h-4" />Visit website</a>}

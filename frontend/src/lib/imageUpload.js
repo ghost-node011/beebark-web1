@@ -12,7 +12,10 @@ const MAX_BYTES = 18 * 1024 * 1024;
 const UPLOAD_TIMEOUT = 120000;
 
 /** True for the formats BeeBark takes (JPEG, PNG, WebP, GIF) */
-export const isSupportedImage = (file) => Boolean(file) && (TYPES.includes(file.type) || (!file.type && /\.(jpe?g|png|webp|gif)$/i.test(file.name || '')));
+// (the name's extension must be one of these too, as the server checks both; e.g. .jfif is refused)
+export const isSupportedImage = (file) => Boolean(file)
+  && (TYPES.includes(file.type) || !file.type)
+  && /\.(jpe?g|png|webp|gif)$/i.test(file.name || '');
 
 /** Why this file can't be uploaded, or '' */
 export const imageFileError = (file) => {

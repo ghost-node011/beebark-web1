@@ -10,6 +10,9 @@ const MESSAGES = {
   connection_accepted: (name) => `${name} accepted your connection request`,
   connection_declined: (name) => `${name} declined your connection request`,
   page_admin: (name, n) => `${name} made you an admin of ${n?.meta?.pageName || 'a company page'}`,
+  page_connection_invite: (name, n) => `${n?.meta?.pageName || 'A company page'} invited you to connect`,
+  page_connection_request: (name, n) => `${name} wants to connect with ${n?.meta?.pageName || 'your company page'}`,
+  page_connection_accepted: (name, n) => `${name} is now connected with ${n?.meta?.pageName || 'the company page'}`,
   follow: (name) => `${name} started following you`,
   quote_request: (name, n) => `${name} asked for a quote${n?.meta?.itemTitle ? ` for ${n.meta.itemTitle}` : ''}${n?.meta?.message ? `: "${n.meta.message.slice(0, 120)}"` : ''}`
 };
@@ -18,6 +21,9 @@ const ICONS = {
   connection_request: FiUserPlus,
   connection_accepted: FiUserCheck,
   connection_declined: FiUserX,
+  page_connection_invite: FiUserPlus,
+  page_connection_request: FiUserPlus,
+  page_connection_accepted: FiUserCheck,
   follow: FiRss,
   quote_request: FiTag
 };
@@ -77,7 +83,9 @@ const NotificationBell = () => {
 
   const handleClickNotification = (n) => {
     setOpen(false);
-    if (n.actor?.username) navigate(`/profile/${n.actor.username}`);
+    // Notifications about a company page open the page (or its connections); others the person
+    if (n.meta?.link) navigate(n.meta.link);
+    else if (n.actor?.username) navigate(`/profile/${n.actor.username}`);
   };
 
   return (

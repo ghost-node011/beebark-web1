@@ -15,7 +15,7 @@ import { notificationText, timeAgo } from '../components/NotificationBell';
 import FollowButton from '../components/FollowButton';
 import { refreshBadges } from '../hooks/useNavBadges';
 
-const ICONS = { connection_request: FiUserPlus, connection_accepted: FiUserCheck, connection_declined: FiUserX, follow: FiRss, quote_request: FiTag };
+const ICONS = { connection_request: FiUserPlus, connection_accepted: FiUserCheck, connection_declined: FiUserX, follow: FiRss, quote_request: FiTag, page_connection_invite: FiUserPlus, page_connection_request: FiUserPlus, page_connection_accepted: FiUserCheck };
 
 const groupOf = (d) => {
   const date = new Date(d);
@@ -155,7 +155,7 @@ const Notifications = () => {
                       </Avatar>
                     </Link>
                     <div className="flex-1 min-w-0">
-                      <button type="button" onClick={() => { markRead(n); if (n.actor?.username) navigate(`/profile/${n.actor.username}`); }} className="text-left">
+                      <button type="button" onClick={() => { markRead(n); if (n.meta?.link) navigate(n.meta.link); else if (n.actor?.username) navigate(`/profile/${n.actor.username}`); }} className="text-left">
                         <p className="text-sm text-black leading-snug">{notificationText(n)}</p>
                       </button>
                       <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1"><Icon className="w-3 h-3" />{timeAgo(n.createdAt)}</p>

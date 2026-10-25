@@ -32,9 +32,13 @@ const PROVIDERS = [
     name: 'gemini',
     url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
     keysEnv: ['GEMINI_API_KEYS', 'GEMINI_API_KEY'],
-    model: () => process.env.GEMINI_MODEL || 'gemini-2.5-flash',
-    lightModel: () => process.env.GEMINI_LIGHT_MODEL || 'gemini-2.5-flash-lite',
-    visionModel: () => process.env.GEMINI_VISION_MODEL || 'gemini-2.5-flash',
+    // "-latest" names always point at a current model (Google retires the numbered ones)
+    model: () => process.env.GEMINI_MODEL || 'gemini-flash-latest',
+    lightModel: () => process.env.GEMINI_LIGHT_MODEL || 'gemini-flash-lite-latest',
+    visionModel: () => process.env.GEMINI_VISION_MODEL || 'gemini-flash-latest',
+    // Tried in turn when a model has been retired
+    fallbacks: ['gemini-flash-latest', 'gemini-3.5-flash', 'gemini-2.5-flash', 'gemini-flash-lite-latest'],
+    visionFallbacks: ['gemini-flash-latest', 'gemini-3.5-flash', 'gemini-2.5-flash', 'gemini-flash-lite-latest'],
     // JSON is enforced by the prompt and parseJson below
     supportsJsonMode: false
   }
@@ -94,12 +98,13 @@ const pickModel = (provider, opts) => {
 const retiredModels = new Set();
 const isRetired = (error) => {
   const msg = String(error.response?.data?.error?.message || '');
-  return [400, 404].includes(error.response?.status) && /does not exist|decommissioned|not supported|no longer supported|model_not_found/i.test(msg);
+  const text = `${msg} ${JSON.stringify(error.response?.data || '')}`;
+  return [400, 404].includes(error.response?.status) && /does not exist|decommissioned|not supported|no longer supported|no longer available|model_not_found|is not found|NOT_FOUND/i.test(text);
 };
 
 const requestProvider = async (provider, key, messages, opts) => {
   const first = pickModel(provider, opts);
-  const models = opts?.vision ? [...new Set([first, ...(provider.visionFallbacks || [])])] : [first];
+  const models = [...new Set([first, ...((opts?.vision ? provider.visionFallbacks : provider.fallbacks) || [])])];
   let lastError = null;
   for (const model of models) {
     if (models.length > 1 && retiredModels.has(`${provider.name}:${model}`)) continue;
@@ -154,7 +159,9 @@ const askGroqMessages = async (messages, opts) => {
         try {
           return await requestProvider(provider, keys[index], messages, opts);
         } catch (error) {
-          if (error.response?.status === 429) {
+          // A request too big for the plan's per-minute allowance isn't a rate limit:
+          // the key stays usable for smaller requests
+          if (error.response?.status === 429 && !/request too large/i.test(describeAxiosError(error))) {
             coolingUntil.set(slot, Date.now() + cooldownFrom(error));
           }
           failures.push(`${slot} ${describeAxiosError(error)}`);

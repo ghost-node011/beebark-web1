@@ -23,6 +23,7 @@ const {
   sendAccountCreatedEmail
 } = require('../utils/email');
 const { consentRecord, hasAccepted } = require('../utils/legal');
+const { isDisposableEmail, DISPOSABLE_EMAIL_ERROR, emailKey } = require('../utils/emailRules');
 
 // "Account created" email, once per account (not for phone-only accounts)
 const sendSignupEmailOnce = async (user) => {
@@ -132,7 +133,9 @@ router.post(
       const { name, email, password } = req.body;
       const role = SELECTABLE_ROLES.includes(req.body.role) ? req.body.role : 'professional';
 
-      const existing = await User.findOne({ email });
+      if (isDisposableEmail(email)) return res.status(400).json({ error: DISPOSABLE_EMAIL_ERROR, field: 'email' });
+      // One account per mailbox: "a.b+x@gmail.com" finds the "ab@gmail.com" account
+      const existing = await User.findByMailbox(email);
       if (existing && existing.isVerified) {
         return res.status(400).json({ error: 'Email already registered. Please log in.' });
       }
@@ -398,7 +401,7 @@ router.post(
       }
 
       const email = String(payload.email).toLowerCase();
-      let user = await User.findOne({ $or: [{ googleId: payload.sub }, { email }] });
+      let user = await User.findOne({ $or: [{ googleId: payload.sub }, { email }, { emailKey: emailKey(email) }] });
       let isNewUser = false;
 
       if (user) {
@@ -496,7 +499,8 @@ router.post(
       }
 
       const email = String(profile.email).toLowerCase();
-      let user = await User.findOne({ $or: [{ linkedinId: profile.sub }, { email }] });
+      let user = await User.findOne({ $or: [{ linkedinId: profile.sub }, { email }, { emailKey: emailKey(email) }] });
+      if (!user && isDisposableEmail(email)) return res.status(400).json({ error: DISPOSABLE_EMAIL_ERROR });
       let isNewUser = false;
 
       if (user) {
@@ -582,6 +586,10 @@ router.post(
         if (!user.isVerified) { user.isVerified = true; changed = true; }
         if (changed) await user.save();
       } else {
+        // One number, one account: a number another account already uses can't start a new one
+        if (await User.findOtherWithPhone(phone)) {
+          return res.status(409).json({ error: 'This phone number is already used by another BeeBark account. Sign in to that account with its email or Google, or use a different number.', code: 'PHONE_IN_USE' });
+        }
         isNewUser = true;
         const digits = phone.replace(/[^0-9]/g, '');
         user = new User({
